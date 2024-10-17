@@ -215,6 +215,11 @@ debug_draw_render_batches(){
     ui_push_text_color(LIGHT_GRAY);
 
 
+    String8 zoom = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
+    ui_label(zoom);
+    String8 pos = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
+    ui_label(pos);
+
     String8 title = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
     ui_label(title);
 

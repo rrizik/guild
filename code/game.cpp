@@ -20,7 +20,7 @@ do_one_frame(void){
         show_cursor(true);
         load_assets(ts->asset_arena, &assets);
 
-        init_camera_2d(&camera, make_v2((WORLD_SIZE/2) * GRID_SIZE, (WORLD_SIZE/2) * GRID_SIZE), 5);
+        init_camera_2d(&camera, make_v2((WORLD_SIZE/2) * GRID_SIZE, (WORLD_SIZE/2) * GRID_SIZE), 30);
         init_console(global_arena, &camera, &window, &assets);
         init_ui(ts->hash_arena, &window, &controller, &assets);
         init_draw(ts->batch_arena, &assets);
@@ -47,7 +47,9 @@ do_one_frame(void){
             y += 1;
         }
 
-        state->castle = add_castle(TextureAsset_Castle1, camera.pos, make_v2(10, 10));
+        v2 pos = grid_pos_from_cell(50, 50);
+        pos = grid_cell_center(pos.x, pos.y);
+        state->castle = add_castle(TextureAsset_Castle1, pos, make_v2(10, 10));
 
         memory.initialized = true;
     }
@@ -469,26 +471,45 @@ handle_game_events(Event event){
     return(false);
 }
 
+v2s32 static
+mouse_cell(){
+    v2 pos = v2_world_from_screen(controller.mouse.pos);
+    pos.x = pos.x / GRID_SIZE;
+    pos.y = pos.y / GRID_SIZE;
+    v2s32 result = { (s32)pos.x, (s32)pos.y };
+    return(result);
+}
+
 static void update_game(void){
 
     // camera
     {
         // movement
         if(controller.button[KeyCode_UP].held || controller.mouse.edge_top){
-            camera.y += ((camera.size) + 10) * (f32)clock.dt;
+            camera.y += ((camera.size) + 50) * (f32)clock.dt;
         }
         if(controller.button[KeyCode_DOWN].held || controller.mouse.edge_bottom){
-            camera.y -= ((camera.size) + 10) * (f32)clock.dt;
+            camera.y -= ((camera.size) + 50) * (f32)clock.dt;
         }
         if(controller.button[KeyCode_LEFT].held || controller.mouse.edge_left){
-            camera.x -= ((camera.size) + 10) * (f32)clock.dt;
+            camera.x -= ((camera.size) + 50) * (f32)clock.dt;
         }
         if(controller.button[KeyCode_RIGHT].held || controller.mouse.edge_right){
-            camera.x += ((camera.size) + 10) * (f32)clock.dt;
+            camera.x += ((camera.size) + 50) * (f32)clock.dt;
         }
     }
 
+        //v2 pos = v2_world_from_screen(controller.mouse.pos);
+        //pos.x = pos.x / GRID_SIZE;
+        //pos.y = pos.y / GRID_SIZE;
+        //String8 cell = str8_format(ts->frame_arena, "(%i, %i)", (s32)pos.x, (s32)pos.y);
 
+    if(controller.button[MOUSE_BUTTON_LEFT].pressed || controller.button[MOUSE_BUTTON_LEFT].held){
+        print("POOP\n");
+        v2s32 cell = mouse_cell();
+        s32 idx = (s32)((cell.y * 100) + cell.x);
+        state->world_grid[idx] = 0;
+    }
 
     // resolve entity motion
     for(s32 i = 0; i < array_count(state->entities); ++i){

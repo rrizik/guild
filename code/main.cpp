@@ -168,6 +168,7 @@ static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param,
         } break;
 
         case WM_MOUSELEAVE:{
+            // note(rr): currently not happening because we clip mouse to client region
             Event event = {0};
             event.type = NO_CLIENT;
 
@@ -480,7 +481,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         // zoom
         if(camera.size > 10){
-            camera.size -= (f32)controller.mouse.wheel_dir * 30;
+            camera.size -= (f32)controller.mouse.wheel_dir * 20;
         }
         if(camera.size <= 10){
             camera.size -= (f32)controller.mouse.wheel_dir;
@@ -527,6 +528,14 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         console_draw();
 
         debug_draw_render_batches();
+
+        set_font(state->font);
+        v2 pos = v2_world_from_screen(controller.mouse.pos);
+        pos.x = pos.x / GRID_SIZE;
+        pos.y = pos.y / GRID_SIZE;
+        String8 cell = str8_format(ts->frame_arena, "(%i, %i)", (s32)pos.x, (s32)pos.y);
+        draw_text(cell, controller.mouse.pos, RED);
+
 
 
         {

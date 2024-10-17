@@ -36,6 +36,7 @@ typedef struct Level{
     s32 asteroid_count_max;
 } Level;
 
+v2s32 static mouse_cell();
 
 static void do_one_frame(void);
 static void draw_world_grid(void);
