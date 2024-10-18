@@ -78,6 +78,8 @@ typedef struct RenderCommand{
     String8 text;
 } RenderCommand;
 
+static RGBA brighten_color(RGBA color);
+static RGBA darken_color(RGBA color);
 static v2 v2_world_from_screen(v2 screen_pos, Camera2D* camera);
 static v2 v2_world_from_screen(v2 screen_pos);
 
@@ -104,7 +106,7 @@ static void draw_quad(Rect rect, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color);
 static void draw_quad(Quad quad, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color);
 
 static void draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color=WHITE);
-static void draw_texture(v2 pos, v2 dim, RGBA color);
+static void draw_texture(v2 pos, v2 dim, RGBA color=WHITE);
 static void draw_texture(Rect rect, RGBA color=WHITE);
 static void draw_texture(Quad quad, RGBA color=WHITE);
 

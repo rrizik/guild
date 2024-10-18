@@ -29,47 +29,14 @@
     #pragma warning(pop)
 #endif
 
-// IMPORTANT
-// UNTESTED We changed our Rect type to screenspace, and changed all functions. Some tested, some not.
-// CLEANUP
-#pragma pack(push, 1)
-typedef struct BitmapHeader {
-    u16 file_type;
-	u32 file_size;
-	u16 reserved1;
-	u16 reserved2;
-	u32 bitmap_offset;
-	u32 header_size;
-	s32 width;
-	s32 height;
-	u16 planes;
-	u16 bits_per_pixel;
-    u32 Compression;
-	u32 SizeOfBitmap;
-	s32 HorzResolution;
-	s32 VertResolution;
-	u32 ColorsUsed;
-	u32 ColorsImportant;
-    u32 RedMask;
-    u32 GreenMask;
-    u32 BlueMask;
-} BitmapHeader;
-#pragma pack(pop)
-
 typedef struct Bitmap{
     u8*  base;
 	s32  width;
 	s32  height;
 	s32  stride;
+	s32  channels;
 } Bitmap;
 
-static Bitmap stb_load_image(String8 dir, String8 file);
-typedef struct BitScanResult{
-    bool found;
-    u32 index;
-} BitScanResult;
-
-static BitScanResult find_first_set_bit(u32 value);
-static Bitmap bitmap_file_read(Arena* arena, String8 dir, String8 filename);
+static Bitmap stb_load_image_bitmap(String8 dir, String8 file);
 
 #endif

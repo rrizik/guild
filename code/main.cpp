@@ -149,22 +149,13 @@ static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param,
             return hit;
         } break;
 
-        case WM_CHAR:{
-            u64 keycode = w_param;
-
-            if(keycode > 31){
-                Event event = {0};
-                event.type = TEXT_INPUT;
-                event.keycode = keycode;
-                event.repeat = ((s32)l_param) & 0x40000000;
-
-                event.shift_pressed = shift_pressed;
-
-                events_add(&events, event);
-
-                if(w_param == VK_SHIFT)   { shift_pressed = true; }
+        case WM_ACTIVATE:{
+            if(w_param == WA_ACTIVE){
+                game_in_focus = true;
             }
-
+            if(w_param == WA_INACTIVE){
+                game_in_focus = false;
+            }
         } break;
 
         case WM_MOUSELEAVE:{
@@ -195,13 +186,15 @@ static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param,
             RECT client_rect;
             GetClientRect(hwnd, &client_rect);
             {
-                POINT top_left     = { client_rect.left, client_rect.top };
-                POINT bottom_right = { client_rect.right, client_rect.bottom };
-                ClientToScreen(hwnd, &top_left);
-                ClientToScreen(hwnd, &bottom_right);
+                if(game_in_focus){
+                    POINT top_left     = { client_rect.left, client_rect.top };
+                    POINT bottom_right = { client_rect.right, client_rect.bottom };
+                    ClientToScreen(hwnd, &top_left);
+                    ClientToScreen(hwnd, &bottom_right);
 
-                RECT screen_rect = { top_left.x, top_left.y, bottom_right.x, bottom_right.y };
-                ClipCursor(&screen_rect);
+                    RECT screen_rect = { top_left.x, top_left.y, bottom_right.x, bottom_right.y };
+                    ClipCursor(&screen_rect);
+                }
             }
 
             Event event = {0};
@@ -217,17 +210,19 @@ static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param,
             event.mouse_dy = delta_normalized.y;
 
             // check if mouse is at edge of client region
-            if((s32)event.mouse_x <= client_rect.left){
-                event.mouse_edge_left = true;
-            }
-            if((s32)event.mouse_x >= client_rect.right - 1){
-                event.mouse_edge_right = true;
-            }
-            if((s32)event.mouse_y <= client_rect.top){
-                event.mouse_edge_top = true;
-            }
-            if((s32)event.mouse_y >= client_rect.bottom - 1){
-                event.mouse_edge_bottom = true;
+            if(game_in_focus){
+                if((s32)event.mouse_x <= client_rect.left){
+                    event.mouse_edge_left = true;
+                }
+                if((s32)event.mouse_x >= client_rect.right - 1){
+                    event.mouse_edge_right = true;
+                }
+                if((s32)event.mouse_y <= client_rect.top){
+                    event.mouse_edge_top = true;
+                }
+                if((s32)event.mouse_y >= client_rect.bottom - 1){
+                    event.mouse_edge_bottom = true;
+                }
             }
 
             event.alt_pressed   = alt_pressed;
@@ -268,6 +263,7 @@ static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param,
         // TODO: IMPORTANT: These events likely pass in mouse positions, need to store them as part of the event
         // TODO: IMPORTANT: These events likely pass in mouse positions, need to store them as part of the event
         // TODO: IMPORTANT: These events likely pass in mouse positions, need to store them as part of the event
+        // TODO: IMPORTANT: Make sure the alt/shit/ctrl stuff is correct and the UP/DOWN ordering is correct
         // note(rr): mouse buttons are keyboard because it makes it easier to set pressed/held with everything else
         case WM_LBUTTONDOWN:
         case WM_LBUTTONUP:{
@@ -366,6 +362,25 @@ static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param,
             if(w_param == VK_SHIFT)   { shift_pressed = false; }
             if(w_param == VK_CONTROL) { ctrl_pressed  = false; }
         } break;
+
+        case WM_CHAR:{
+            u64 keycode = w_param;
+
+            if(keycode > 31){
+                Event event = {0};
+                event.type = TEXT_INPUT;
+                event.keycode = keycode;
+                event.repeat = ((s32)l_param) & 0x40000000;
+
+                event.shift_pressed = shift_pressed;
+
+                events_add(&events, event);
+
+                if(w_param == VK_SHIFT)   { shift_pressed = true; }
+            }
+
+        } break;
+
         default:{
             result = DefWindowProcW(hwnd, message, w_param, l_param);
         } break;
@@ -462,12 +477,12 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         console_update();
 
-        if(controller.button[MOUSE_BUTTON_MIDDLE].held &&
-           controller.button[MOUSE_BUTTON_MIDDLE].pressed){
+        if(controller.button[MOUSE_BUTTON_RIGHT].held &&
+           controller.button[MOUSE_BUTTON_RIGHT].pressed){
             world_camera_record = camera;
             world_mouse_record = v2_world_from_screen(controller.mouse.pos);
         }
-        if(controller.button[MOUSE_BUTTON_MIDDLE].held){
+        if(controller.button[MOUSE_BUTTON_RIGHT].held){
             v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
             v2 world_rel_pos = world_mouse_record - world_mouse_current;
 
@@ -528,14 +543,94 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         console_draw();
 
         debug_draw_render_batches();
+        debug_draw_mouse_cell_pos();
 
-        set_font(state->font);
-        v2 pos = v2_world_from_screen(controller.mouse.pos);
-        pos.x = pos.x / GRID_SIZE;
-        pos.y = pos.y / GRID_SIZE;
-        String8 cell = str8_format(ts->frame_arena, "(%i, %i)", (s32)pos.x, (s32)pos.y);
-        draw_text(cell, controller.mouse.pos, RED);
+        // draw selected texture
+        if(state->selected_texture){
+            set_texture(&r_assets->textures[state->selected_texture]);
+            draw_texture(controller.mouse.pos, make_v2(50, 50));
+            draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 2, RED);
+        }
 
+        ui_begin(ts->ui_arena);
+
+        ui_push_pos_x(20);
+        ui_push_pos_y(20);
+        ui_push_size_w(ui_size_children(0));
+        ui_push_size_h(ui_size_children(0));
+
+        ui_push_border_thickness(10);
+        ui_push_background_color(DEFAULT);
+        UI_Box* box1 = ui_box(str8_literal("box1##2"),
+                              UI_BoxFlag_DrawBackground|
+                              UI_BoxFlag_Draggable|
+                              UI_BoxFlag_Clickable);
+        ui_push_parent(box1);
+        ui_pop_pos_x();
+        ui_pop_pos_y();
+
+        ui_push_size_w(ui_size_pixel(100, 0));
+        ui_push_size_h(ui_size_pixel(50, 0));
+        ui_push_background_color(DARK_GRAY);
+        if(ui_button(str8_literal("none")).pressed_left){
+            state->selected_texture = 0;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("grass1")).pressed_left){
+            state->selected_texture = 1;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("grass2")).pressed_left){
+            state->selected_texture = 2;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("grass3")).pressed_left){
+            state->selected_texture = 3;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("grass4")).pressed_left){
+            state->selected_texture = 4;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("grass5")).pressed_left){
+            state->selected_texture = 5;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("grass6")).pressed_left){
+            state->selected_texture = 6;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("grass7")).pressed_left){
+            state->selected_texture = 7;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("grass8")).pressed_left){
+            state->selected_texture = 8;
+        }
+
+        //ui_push_text_color(LIGHT_GRAY);
+
+
+        //String8 zoom = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
+        //ui_label(zoom);
+        //String8 pos = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
+        //ui_label(pos);
+
+        //String8 title = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
+        //ui_label(title);
+
+        //s32 count = 0;
+        //for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+        //    if(count < 25){
+        //        String8 batch_str = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->count, batch->cap, batch->id);
+        //        ui_label(batch_str);
+        //    }
+        //    count++;
+        //}
+
+        ui_layout();
+        ui_draw(ui_root());
+        ui_end();
 
 
         {

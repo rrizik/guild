@@ -1,6 +1,26 @@
 #ifndef DRAW_C
 #define DRAW_C
 
+static RGBA
+brighten_color(RGBA color, float factor){
+    RGBA result;
+    result.r = MIN(color.r + factor, 1);
+    result.g = MIN(color.g + factor, 1);
+    result.b = MIN(color.b + factor, 1);
+    result.a = color.a;
+    return(result);
+}
+
+static RGBA
+darken_color(RGBA color, float factor){
+    RGBA result;
+    result.r = MAX(color.r - factor, 0);
+    result.g = MAX(color.g - factor, 0);
+    result.b = MAX(color.b - factor, 0);
+    result.a = color.a;
+    return(result);
+}
+
 static v2
 v2_world_from_screen(v2 screen_pos, Camera2D* camera){
     v2 result = {0};
@@ -400,10 +420,10 @@ get_render_batch(u64 vertex_count){
 
 static void draw_render_batches(){
     // todo: Its ok for d3d to understand the concept of a Renderbatch, you can move this straight to d3d and pass in the batches all together.
+    //d3d_draw(render_batches);
     for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
         d3d_draw(batch->buffer, batch->count, batch->texture);
     }
-    //d3d_draw(render_batches);
 }
 
 static void

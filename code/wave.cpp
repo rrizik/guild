@@ -22,20 +22,20 @@ wave_file_read(Arena* arena, String8 dir, String8 filename){
 
     // todo: improve this somewhat. check for RIFF and WAVE, otherwise something is wrong.
     while(!data_found || !fmt_found){
-        ChunkInfo* c = (ChunkInfo*)(chunks + chunk_inc);
-        if(str8_compare(str8(c->chunk_id, 4), chunk_ids[ChunkId_RIFF])){
+        WaveChunkInfo* c = (WaveChunkInfo*)(chunks + chunk_inc);
+        if(str8_compare(str8(c->chunk_id, 4), wave_chunk_ids[WaveChunkId_RIFF])){
         }
-        else if(str8_compare(str8(c->chunk_id, 4), chunk_ids[ChunkId_WAVE])){
+        else if(str8_compare(str8(c->chunk_id, 4), wave_chunk_ids[WaveChunkId_WAVE])){
         }
-        else if(str8_compare(str8(c->chunk_id, 3), chunk_ids[ChunkId_FMT])){
-            WaveFormat* format = (WaveFormat*)((u8*)c + sizeof(ChunkInfo));
+        else if(str8_compare(str8(c->chunk_id, 3), wave_chunk_ids[WaveChunkId_FMT])){
+            WaveFormat* format = (WaveFormat*)((u8*)c + sizeof(WaveChunkInfo));
             result.format = *format;
             fmt_found = true;
         }
-        else if(str8_compare(str8(c->chunk_id, 4), chunk_ids[ChunkId_DATA])){
+        else if(str8_compare(str8(c->chunk_id, 4), wave_chunk_ids[WaveChunkId_DATA])){
             result.sample_count = c->chunk_size / result.format.block_align; // convert size from bytes to samples
             result.base = push_array(arena, u16, c->chunk_size);
-            memcpy(result.base, (u16*)((u8*)c + sizeof(ChunkInfo)), c->chunk_size);
+            memcpy(result.base, (u16*)((u8*)c + sizeof(WaveChunkInfo)), c->chunk_size);
             data_found = true;
         }
         // todo: this doesn't really make sense I don't think
@@ -46,7 +46,7 @@ wave_file_read(Arena* arena, String8 dir, String8 filename){
             os_file_close(file);
             return(result);
         }
-        chunk_inc += c->chunk_size + sizeof(ChunkInfo);
+        chunk_inc += c->chunk_size + sizeof(WaveChunkInfo);
     }
     end_scratch(scratch);
     os_file_close(file);

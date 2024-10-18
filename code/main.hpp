@@ -112,8 +112,11 @@ typedef struct State{
     u32 world_grid[WORLD_SIZE * WORLD_SIZE];
     Entity* castle;
 
+    u32 selected_texture;
+
 } State, PermanentMemory;
 global State* state;
+bool game_in_focus = true;
 
 typedef struct TransientMemory{
     Arena arena;
@@ -194,14 +197,14 @@ debug_draw_render_batches(){
 
     ui_begin(ts->ui_arena);
 
-    ui_push_pos_x(100);
-    ui_push_pos_y(300);
+    ui_push_pos_x(SCREEN_WIDTH - 200);
+    ui_push_pos_y(10);
     ui_push_size_w(ui_size_children(0));
     ui_push_size_h(ui_size_children(0));
 
     ui_push_border_thickness(10);
     ui_push_background_color(DEFAULT);
-    UI_Box* box1 = ui_box(str8_literal("box1##4"),
+    UI_Box* box1 = ui_box(str8_literal("box1##1"),
                           UI_BoxFlag_DrawBackground|
                           UI_BoxFlag_Draggable|
                           UI_BoxFlag_Clickable);
@@ -235,6 +238,17 @@ debug_draw_render_batches(){
     ui_layout();
     ui_draw(ui_root());
     ui_end();
+}
+
+static void
+debug_draw_mouse_cell_pos(){
+    set_font(state->font);
+    v2 pos = v2_world_from_screen(controller.mouse.pos);
+    pos.x = pos.x / GRID_SIZE;
+    pos.y = pos.y / GRID_SIZE;
+    String8 cell = str8_format(ts->frame_arena, "(%i, %i)", (s32)pos.x, (s32)pos.y);
+    draw_text(cell, controller.mouse.pos, RED);
+
 }
 
 

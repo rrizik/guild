@@ -407,12 +407,12 @@ ui_draw(UI_Box* box){
     if(has_flags(box->flags, UI_BoxFlag_DrawBackground)){
         if(ui_state->hot == box->key && ui_state->active == box->key){
             if(has_flags(box->flags, UI_BoxFlag_ActiveAnimation)){
-                box->background_color = BLACK;
+                box->background_color = darken_color(box->background_color, 0.2f);
             }
         }
         if(ui_state->hot == box->key && ui_state->active == 0){
             if(has_flags(box->flags, UI_BoxFlag_HotAnimation)){
-                box->background_color = PINK;
+                box->background_color = brighten_color(box->background_color, 0.2f);
             }
         }
         draw_quad(box->rect, box->background_color);

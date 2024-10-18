@@ -62,7 +62,7 @@ d3d_resize_window(f32 width, f32 height){
     d3d_framebuffer->Release();
 
     // resize swapchain buffer
-    d3d_swapchain->ResizeBuffers(0, (u32)width, (u32)height, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, 0);
+    d3d_swapchain->ResizeBuffers(0, (u32)width, (u32)height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, 0);
 
     // update render target view with new buffer size
     hr = d3d_swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&d3d_framebuffer);
@@ -116,7 +116,7 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
     swapChainDesc.Width              = 0; // use window width
     swapChainDesc.Height             = 0; // use window height
-    swapChainDesc.Format             = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+    swapChainDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
     swapChainDesc.Stereo             = FALSE;
     swapChainDesc.SampleDesc.Count   = 1;
     swapChainDesc.SampleDesc.Quality = 0;
@@ -264,7 +264,7 @@ init_d3d(HWND window_handle, u32 width, u32 height){
             .Height = (u32)1,
             .MipLevels = 1,
             .ArraySize = 1,
-            .Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
+            .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
             .SampleDesc = {1, 0},
             .Usage = D3D11_USAGE_IMMUTABLE,
             .BindFlags = D3D11_BIND_SHADER_RESOURCE,
@@ -298,7 +298,7 @@ d3d_init_texture_resource(ID3D11ShaderResourceView** shader_resource, Bitmap* bi
         .Height = (u32)bitmap->height,
         .MipLevels = 1,
         .ArraySize = 1,
-        .Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
+        .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
         .SampleDesc = {1, 0},
         .Usage = D3D11_USAGE_IMMUTABLE,
         .BindFlags = D3D11_BIND_SHADER_RESOURCE,
@@ -323,8 +323,6 @@ d3d_clear_color(RGBA color){
     d3d_context->ClearRenderTargetView(d3d_framebuffer_view, color.e);
 }
 
-//static void
-//d3d_draw(Vertex3* buffer, s32 count, Texture* texture){
 static void
 d3d_draw(Vertex3* buffer, s32 count, Texture* texture){
     {

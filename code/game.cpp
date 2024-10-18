@@ -499,16 +499,10 @@ static void update_game(void){
         }
     }
 
-        //v2 pos = v2_world_from_screen(controller.mouse.pos);
-        //pos.x = pos.x / GRID_SIZE;
-        //pos.y = pos.y / GRID_SIZE;
-        //String8 cell = str8_format(ts->frame_arena, "(%i, %i)", (s32)pos.x, (s32)pos.y);
-
     if(controller.button[MOUSE_BUTTON_LEFT].pressed || controller.button[MOUSE_BUTTON_LEFT].held){
-        print("POOP\n");
         v2s32 cell = mouse_cell();
         s32 idx = (s32)((cell.y * 100) + cell.x);
-        state->world_grid[idx] = 0;
+        state->world_grid[idx] = state->selected_texture;
     }
 
     // resolve entity motion

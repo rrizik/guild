@@ -1,15 +1,15 @@
 #ifndef WAVE_H
 #define WAVE_H
 
-typedef enum ChunkId{
-    ChunkId_RIFF,
-    ChunkId_WAVE,
-    ChunkId_FMT,
-    ChunkId_DATA,
-    ChunkId_COUNT,
-} ChunkId;
+typedef enum WaveChunkId{
+    WaveChunkId_RIFF,
+    WaveChunkId_WAVE,
+    WaveChunkId_FMT,
+    WaveChunkId_DATA,
+    WaveChunkId_COUNT,
+} WaveChunkId;
 
-String8 chunk_ids[ChunkId_COUNT] = {
+String8 wave_chunk_ids[WaveChunkId_COUNT] = {
     str8_literal("RIFF"),
     str8_literal("WAVE"),
     str8_literal("fmt"), // IMPORTANT: TODO: This might have to be "fmt " with a space
@@ -22,10 +22,10 @@ typedef struct WaveHeader{
     u8 format[4];
 } WaveHeader;
 
-typedef struct ChunkInfo{
+typedef struct WaveChunkInfo{
     u8 chunk_id[4];
     u32 chunk_size;
-} ChunkInfo;
+} WaveChunkInfo;
 
 typedef struct WaveFormat{
     u16 audio_format;
