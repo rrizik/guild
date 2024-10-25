@@ -5,12 +5,15 @@ static void
 init_console_commands(void){
     //add_command(str8_literal("saves"), 1, 1, command_save);
     add_command(str8_literal("add"),  str8_literal("add: mathematicall add"), 2, 2, command_add);
-    add_command(str8_literal("save"), str8_literal("save: save level"), 1, 1, command_save);
-    add_command(str8_literal("load"), str8_literal("load: load level"), 1, 1, command_load);
+    //add_command(str8_literal("save"), str8_literal("save: save level"), 1, 1, command_save);
+    //add_command(str8_literal("load"), str8_literal("load: load level"), 1, 1, command_load);
     add_command(str8_literal("exit"), str8_literal("exit: quit/exit game"), 0, 0, command_exit);
     add_command(str8_literal("quit"), str8_literal("quit: quit/exit game"), 0, 0, command_exit);
     add_command(str8_literal("help"), str8_literal("help: lists all commands"), 0, 1, command_help);
     add_command(str8_literal("goto"), str8_literal("goto: set camera position"), 2, 2, command_go_to);
+    add_command(str8_literal("new_world"), str8_literal("new_world: generate new world"), 3, 3, command_new_world);
+    add_command(str8_literal("save_world"), str8_literal("save_world: saves the world to a file"), 0, 1, command_save_world);
+    add_command(str8_literal("load_world"), str8_literal("new_world: generate new world"), 1, 1, command_load_world);
 }
 
 static void
@@ -52,6 +55,58 @@ command_exit(String8* args){
 }
 
 static void
+command_new_world(String8* args){
+    s32 width  = atoi((char const*)(args->str));
+    s32 height = atoi((char const*)(args + 1)->str);
+    String8 name = *(args + 2);
+    bool bad_input = false;
+    if(width > WORLD_WIDTH_MAX){
+        String8 str = str8_formatted(console.arena, "width(%i) must be <= WORLD_WIDTH_MAX(%i)", width, WORLD_WIDTH_MAX);
+        console.output_history[console.output_history_count++] = str;
+        bad_input = true;
+    }
+    if(height > WORLD_HEIGHT_MAX){
+        String8 str = str8_formatted(console.arena, "height(%i) must be <= WORLD_HEIGHT_MAX(%i)", height, WORLD_WIDTH_MAX);
+        console.output_history[console.output_history_count++] = str;
+        bad_input = true;
+    }
+    if(bad_input){
+        return;
+    }
+
+    state->world_width = (f32)width;
+    state->world_height = (f32)height;
+    state->current_world = name;
+    generate_new_world(state->world_width, state->world_height);
+}
+
+static void
+command_save_world(String8* args){
+    if(command_args_count == 0){
+        if(state->current_world.size){
+            serialize_world(state->current_world);
+            console.output_history[console.output_history_count++] = str8_formatted(console.arena, "saving to file: %s", state->current_world.str);
+        }
+        else{
+            console.output_history[console.output_history_count++] = str8_formatted(console.arena, "no state->current_world set: %s", state->current_world.str);
+            return;
+        }
+    }
+    else{
+        state->current_world = *args;
+        serialize_world(state->current_world);
+        console.output_history[console.output_history_count++] = str8_formatted(console.arena, "saving to file: %s", args->str);
+    }
+}
+
+static void
+command_load_world(String8* args){
+    state->current_world = *args;
+    deserialize_world(state->current_world);
+    console.output_history[console.output_history_count++] = str8_formatted(console.arena, "loading from file: %s", args->str);
+}
+
+static void
 command_go_to(String8* args){
     s32 x = atoi((char const*)(args->str));
     s32 y = atoi((char const*)(args + 1)->str);
@@ -62,18 +117,18 @@ command_go_to(String8* args){
     console.output_history[console.output_history_count++] = str;
 }
 
-static void
-command_load(String8* args){
-    console.output_history[console.output_history_count++] = str8_formatted(console.arena, "loading from file: %s", args->str);
-    deserialize_data(*args);
-}
-
-static void
-command_save(String8* args){
-    console.output_history[console.output_history_count++] = str8_formatted(console.arena, "saving to file: %s", args->str);
-    serialize_data(*args);
-    //console_store_output(str8_formatted(console.arena, "saving to file: %s", args->str));
-}
+//static void
+//command_load(String8* args){
+//    console.output_history[console.output_history_count++] = str8_formatted(console.arena, "loading from file: %s", args->str);
+//    //deserialize_data(*args);
+//}
+//
+//static void
+//command_save(String8* args){
+//    console.output_history[console.output_history_count++] = str8_formatted(console.arena, "saving to file: %s", args->str);
+//    //serialize_data(*args);
+//    //console_store_output(str8_formatted(console.arena, "saving to file: %s", args->str));
+//}
 
 static void
 command_add(String8* args){
@@ -84,7 +139,7 @@ command_add(String8* args){
     console.output_history[console.output_history_count++] = result;
 }
 
-// todo: redo this entire function and reconsider how to are passing scratch arena
+// todo: redo this entire function and reconsider how you are passing scratch arena
 static void
 command_saves(String8* args){
     ScratchArena scratch = begin_scratch();
@@ -162,7 +217,9 @@ run_command(String8 command){
 
     // output unkown command
     if(!found){
-        console.output_history[console.output_history_count++] = str8_formatted(console.arena, "Unkown command: %s", command.str);
+        char buffer[1024];
+        snprintf(buffer, command.size + 1, "%s", command.str);
+        console.output_history[console.output_history_count++] = str8_formatted(console.arena, "Unkown command: %s", buffer);
     }
 }
 

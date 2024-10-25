@@ -23,10 +23,13 @@ global s32     command_args_count = 0;
 static void add_command(String8 name, String8 desc, u32 min, u32 max, Proc* proc);
 static void command_help(String8* args);
 static void command_exit(String8* args);
-static void command_load(String8* args);
-static void command_save(String8* args);
+static void command_new_world(String8* args);
+static void command_save_world(String8* args);
+static void command_load_world(String8* args);
+//static void command_load(String8* args);
+//static void command_save(String8* args);
 static void command_add(String8* args);
-static void command_saves(String8* args);
+//static void command_saves(String8* args);
 static void command_go_to(String8* args);
 
 static void init_console_commands(void);

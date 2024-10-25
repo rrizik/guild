@@ -185,15 +185,19 @@ handle_console_events(Event event){
                 }
             }
             if(event.keycode == KeyCode_ENTER){
+                String8 view = console.input;
 
-                String8 remaining = console.input;
-				s64 index = byte_index_from_left(remaining, ' ');
-                String8 command = str8_split_left(remaining, (u64)index);
-                str8_trim_left(&remaining, (u64)index);
+				s64 index = byte_index_from_left(view, ' ');
+                String8 command = str8_split_left(view, (u64)index);
+                str8_trim_left(&view, (u64)index);
+                s32 args_count = command_parse_args(view);
 
-                s32 args_count = command_parse_args(remaining);
+                String8 input = {0};
+                input.str = (u8*)push_array(console.arena, u8, console.input.count);
+                input.count = console.input.count;
+                memcpy(input.str, console.input.str, console.input.count);
 
-                console.input_history[console.input_history_count++] = console.input;
+                console.input_history[console.input_history_count++] = input;
                 run_command(command);
 
                 // clear_input

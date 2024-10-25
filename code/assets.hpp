@@ -37,13 +37,17 @@ typedef enum TextureAsset{
     TextureAsset_None,
 
     TextureAsset_Grass1,
-    TextureAsset_Grass2,
-    TextureAsset_Grass3,
-    TextureAsset_Grass4,
-    TextureAsset_Grass5,
-    TextureAsset_Grass6,
-    TextureAsset_Grass7,
-    TextureAsset_Grass8,
+    //TextureAsset_Grass2,
+    //TextureAsset_Grass3,
+    //TextureAsset_Grass4,
+    //TextureAsset_Grass5,
+    //TextureAsset_Grass6,
+    //TextureAsset_Grass7,
+    //TextureAsset_Grass8,
+
+    TextureAsset_Water1,
+    TextureAsset_Lava1,
+    TextureAsset_Wood1,
 
     TextureAsset_Castle1,
 

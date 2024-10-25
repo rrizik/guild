@@ -1,5 +1,615 @@
 #include "main.hpp"
 
+static void sim_game(void){
+
+    // camera
+    {
+        // movement
+        if(controller.button[KeyCode_UP].held || controller.mouse.edge_top){
+            camera.y += ((camera.size) + 50) * (f32)clock.dt;
+        }
+        if(controller.button[KeyCode_DOWN].held || controller.mouse.edge_bottom){
+            camera.y -= ((camera.size) + 50) * (f32)clock.dt;
+        }
+        if(controller.button[KeyCode_LEFT].held || controller.mouse.edge_left){
+            camera.x -= ((camera.size) + 50) * (f32)clock.dt;
+        }
+        if(controller.button[KeyCode_RIGHT].held || controller.mouse.edge_right){
+            camera.x += ((camera.size) + 50) * (f32)clock.dt;
+        }
+    }
+
+    if(controller.button[MOUSE_BUTTON_LEFT].pressed || controller.button[MOUSE_BUTTON_LEFT].held){
+        if(state->terrain_selected){
+            v2 pos = v2_world_from_screen(controller.mouse.pos);
+            v2 cell = make_v2(floor_f32(pos.x/grid_size), floor_f32(pos.y/grid_size));
+            if((cell.x < state->world_width && cell.x >= 0)){
+                s32 idx = (s32)((cell.y * state->world_width) + cell.x);
+                state->world_grid[idx] = state->selected_terrain;
+            }
+        }
+    }
+
+    // resolve entity motion
+    for(s32 i = 0; i < array_count(state->entities); ++i){
+        Entity *e = state->entities + i;
+        if(!has_flags(e->flags, EntityFlag_Active)){
+            continue;
+        }
+
+        // todo(rr): this will be different
+        if(has_flags(e->flags, EntityFlag_MoveWithPhys)){
+            //e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
+            //e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
+        }
+    }
+
+    // resolve death todo(rr): this will be different
+    for(s32 i = 0; i < array_count(state->entities); ++i){
+        Entity *e = state->entities + i;
+        if(!has_flags(e->flags, EntityFlag_Active)){
+            continue;
+        }
+    }
+
+    // type loop
+    for(s32 i = 0; i < array_count(state->entities); ++i){
+        Entity *e = state->entities + i;
+        Rect e_rect = rect_from_entity(e);
+
+        //switch(e->type){
+        //}
+    }
+}
+
+// todo(rr): Move these to entity once you move PermanentMemory further up in the tool chain
+static Entity*
+entity_from_handle(EntityHandle handle){
+    Entity *result = 0;
+    if(handle.index < (s32)array_count(state->entities)){
+        Entity *e = state->entities + handle.index;
+        if(e->generation == handle.generation){
+            result = e;
+        }
+    }
+    return(result);
+}
+
+static EntityHandle
+handle_from_entity(Entity *e){
+    assert(e != 0);
+    EntityHandle result = {0};
+    if((e >= state->entities) && (e < (state->entities + array_count(state->entities)))){
+        result.index = e->index;
+        result.generation = e->generation;
+    }
+    return(result);
+}
+
+static void
+remove_entity(Entity* e){
+    e->type = EntityType_None;
+    clear_flags(&e->flags, EntityFlag_Active);
+    state->free_entities[++state->free_entities_at] = e->index;
+    state->entities_count--;
+    *e = {0};
+}
+
+static Entity*
+add_entity(EntityType type){
+    if(state->free_entities_at < ENTITIES_MAX){
+        u32 free_entity_index = state->free_entities[state->free_entities_at--];
+        Entity *e = state->entities + free_entity_index;
+        e->index = free_entity_index;
+        set_flags(&e->flags, EntityFlag_Active);
+        state->generation[e->index]++;
+        state->entities_count++;
+        e->generation = state->generation[e->index]; // CONSIDER: this might not be necessary
+        e->type = type;
+
+        return(e);
+    }
+    return(0);
+}
+
+static Entity*
+add_quad(v2 pos, v2 dim, RGBA color){
+    Entity* e = add_entity(EntityType_Quad);
+    if(e){
+        e->dir = make_v2(1, 1);
+        e->color = color;
+        e->pos = pos;
+        e->dim = dim;
+        e->dir = make_v2(0, 1);
+        e->deg = 90;
+    }
+    else{
+        print("Failed to add entity: Quad\n");
+    }
+    return(e);
+}
+
+static Entity*
+add_texture(u32 texture, v2 pos, v2 dim, RGBA color, u32 flags){
+    Entity* e = add_entity(EntityType_Texture);
+    if(e){
+        e->dir = make_v2(1, 1);
+        e->color = color;
+        e->pos = pos;
+        e->dim = dim;
+        e->dir = make_v2(0, 1);
+        e->deg = 90;
+        e->texture = texture;
+    }
+    else{
+        print("Failed to add entity: Quad\n");
+    }
+    return(e);
+}
+
+static Entity*
+add_castle(u32 texture, v2 pos, v2 dim, RGBA color, u32 flags){
+    Entity* e = add_entity(EntityType_Texture);
+    if(e){
+        e->color = color;
+        e->pos = pos;
+        e->dim = dim;
+        e->texture = texture;
+        e->deg = 180;
+        e->dir = dir_from_deg(e->deg);
+
+    }
+    else{
+        print("Failed to add entity: Quad\n");
+    }
+    return(e);
+}
+
+static void
+entities_clear(void){
+    state->free_entities_at = ENTITIES_MAX - 1;
+    for(u32 i = state->free_entities_at; i <= state->free_entities_at; --i){
+        Entity* e = state->entities + i;
+        e->type = EntityType_None;
+        clear_flags(&e->flags, EntityFlag_Active);
+        state->free_entities[i] = state->free_entities_at - i;
+        state->generation[i] = 0;
+    }
+    state->entities_count = 0;
+}
+
+
+static bool
+handle_global_events(Event event){
+    if(event.keycode == KeyCode_ESCAPE){
+        should_quit = true;
+    }
+    if(event.type == QUIT){
+        should_quit = true;
+        return(true);
+    }
+    if(event.type == KEYBOARD){
+        if(event.key_pressed){
+            if(event.keycode == MOUSE_BUTTON_RIGHT && event.key_pressed){
+                state->terrain_selected = false;
+            }
+            if(event.keycode == KeyCode_TILDE && !event.repeat){
+                if(event.shift_pressed){
+                    if(console.state == OPEN_BIG){
+                        console_set_state(CLOSED);
+                    }
+                    else{
+                        console_set_state(OPEN_BIG);
+                    }
+                }
+                else{
+                    if(console.state == OPEN || console.state == OPEN_BIG){
+                        console_set_state(CLOSED);
+                    }
+                    else{
+                        console_set_state(OPEN);
+                    }
+
+                }
+                return(true);
+            }
+        }
+    }
+    return(false);
+}
+
+static bool
+handle_camera_events(Event event){
+    if(event.type == KEYBOARD){
+        if(event.key_pressed){
+        }
+    }
+    return(false);
+}
+
+static bool
+handle_controller_events(Event event){
+    if(event.type == MOUSE){
+        controller.mouse.x  = event.mouse_x;
+        controller.mouse.y  = event.mouse_y;
+        controller.mouse.dx = event.mouse_dx;
+        controller.mouse.dy = event.mouse_dy;
+        controller.mouse.edge_left   = event.mouse_edge_left;
+        controller.mouse.edge_right  = event.mouse_edge_right;
+        controller.mouse.edge_top    = event.mouse_edge_top;
+        controller.mouse.edge_bottom = event.mouse_edge_bottom;
+    }
+    if(event.type == KEYBOARD){
+        controller.mouse.wheel_dir = event.mouse_wheel_dir;
+        if(event.key_pressed){
+            if(!event.repeat){
+                controller.button[event.keycode].pressed = true;
+            }
+            controller.button[event.keycode].held = true;
+        }
+        else{
+            controller.button[event.keycode].held = false;
+        }
+    }
+    return(false);
+}
+
+static bool
+handle_game_events(Event event){
+    if(event.type == KEYBOARD){
+        if(event.key_pressed){
+            if(event.keycode == KeyCode_ESCAPE){
+                //if(state->scene_state == SceneState_Game){
+                //    if(state->game_state == GameState_Running){
+                //        state->game_state = GameState_Paused;
+                //        return(true);
+                //    }
+                //    if(state->game_state == GameState_Paused){
+                //        state->game_state = GameState_Running;
+                //        return(true);
+                //    }
+                //    return(false);
+                //}
+            }
+        }
+    }
+    return(false);
+}
+
+static void
+generate_new_world(f32 width, f32 height){
+    f32 y = 0;
+    while(y < width){
+        f32 x = 0;
+        while(x < height){
+            s32 idx = (s32)((y * height) + x);
+            state->world_grid[idx] = 1;
+
+            x += 1;
+        }
+        y += 1;
+    }
+}
+
+static void draw_entities(State* state){
+    // todo(rr): later change to screen space in shader with matrix multiplication (identify matrix)
+    for(s32 index = 0; index < array_count(state->entities); ++index){
+        Entity *e = state->entities + index;
+
+        Quad quad = quad_from_entity(e);
+        if(has_flags(e->flags, EntityFlag_Active)){
+
+            switch(e->type){
+                case EntityType_Quad:{
+                    quad = rotate_quad(quad, e->deg, e->pos);
+                    quad = quad_screen_from_world(quad);
+
+                    draw_quad(quad, e->color);
+                } break;
+            }
+        }
+    }
+    for(s32 index = 0; index < array_count(state->entities); ++index){
+        Entity *e = state->entities + index;
+
+        Quad quad = quad_from_entity(e);
+        if(has_flags(e->flags, EntityFlag_Active)){
+
+            switch(e->type){
+                case EntityType_Texture:{
+                    quad = rotate_quad(quad, e->deg, e->pos);
+                    quad = quad_screen_from_world(quad);
+
+                    set_texture(&r_assets->textures[e->texture]);
+                    draw_texture(quad, e->color);
+                } break;
+            }
+        }
+    }
+    for(s32 index = 0; index < array_count(state->entities); ++index){
+        Entity *e = state->entities + index;
+
+        Quad quad = quad_from_entity(e);
+        if(has_flags(e->flags, EntityFlag_Active)){
+
+            switch(e->type){
+                case EntityType_Castle:{
+                    //quad = rotate_quad(quad, e->deg, e->pos);
+                    quad = quad_screen_from_world(quad);
+
+                    set_texture(&r_assets->textures[e->texture]);
+                    draw_texture(quad, e->color);
+                } break;
+            }
+        }
+    }
+}
+
+static void
+debug_draw_render_batches(){
+
+    ui_begin(ts->ui_arena);
+
+    ui_push_pos_x(SCREEN_WIDTH - 200);
+    ui_push_pos_y(10);
+    ui_push_size_w(ui_size_children(0));
+    ui_push_size_h(ui_size_children(0));
+    ui_push_border_thickness(10);
+    ui_push_background_color(DEFAULT);
+    UI_Box* box1 = ui_box(str8_literal("box1##1"),
+                          UI_BoxFlag_DrawBackground|
+                          UI_BoxFlag_Draggable|
+                          UI_BoxFlag_Clickable);
+    ui_push_parent(box1);
+    ui_pop_pos_x();
+    ui_pop_pos_y();
+
+    ui_push_size_w(ui_size_text(0));
+    ui_push_size_h(ui_size_text(0));
+    ui_push_text_color(LIGHT_GRAY);
+    String8 zoom = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
+    ui_label(zoom);
+    String8 pos = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
+    ui_label(pos);
+
+    String8 title = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
+    ui_label(title);
+
+    s32 count = 0;
+    for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+        if(count < 25){
+            String8 batch_str = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->count, batch->cap, batch->id);
+            ui_label(batch_str);
+        }
+        count++;
+    }
+
+    ui_layout();
+    ui_draw(ui_root());
+    ui_end();
+}
+
+static void
+debug_draw_mouse_cell_pos(){
+    set_font(state->font);
+    v2 pos = v2_world_from_screen(controller.mouse.pos);
+    v2 cell = make_v2(floor_f32(pos.x/grid_size), floor_f32(pos.y/grid_size));
+    String8 cell_str = str8_format(ts->frame_arena, "(%i, %i)", (s32)cell.x, (s32)cell.y);
+    draw_text(cell_str, controller.mouse.pos, RED);
+}
+
+static void
+draw_level_editor(){
+        ui_begin(ts->ui_arena);
+
+        ui_push_pos_x(20);
+        ui_push_pos_y(20);
+        ui_push_size_w(ui_size_children(0));
+        ui_push_size_h(ui_size_children(0));
+
+        ui_push_border_thickness(10);
+        ui_push_background_color(DEFAULT);
+        UI_Box* box1 = ui_box(str8_literal("box1##2"),
+                              UI_BoxFlag_DrawBackground|
+                              UI_BoxFlag_Draggable|
+                              UI_BoxFlag_Clickable);
+        ui_push_parent(box1);
+        ui_pop_pos_x();
+        ui_pop_pos_y();
+
+        ui_push_size_w(ui_size_pixel(100, 0));
+        ui_push_size_h(ui_size_pixel(50, 0));
+        ui_push_background_color(DARK_GRAY);
+        if(ui_button(str8_literal("none")).pressed_left){
+            state->selected_terrain = 0;
+            state->terrain_selected = true;
+        }
+    //TextureAsset_Grass1,
+    //TextureAsset_Grass2,
+    //TextureAsset_Grass3,
+    //TextureAsset_Grass4,
+    //TextureAsset_Grass5,
+    //TextureAsset_Grass6,
+    //TextureAsset_Grass7,
+    //TextureAsset_Grass8,
+
+    //TextureAsset_Water1,
+    //TextureAsset_Lava1,
+    //TextureAsset_Wood1,
+        ui_spacer(10);
+        if(ui_button(str8_literal("grass")).pressed_left){
+            state->selected_terrain = TextureAsset_Grass1;
+            state->terrain_selected = true;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("water")).pressed_left){
+            state->selected_terrain = TextureAsset_Water1;
+            state->terrain_selected = true;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("wood")).pressed_left){
+            state->selected_terrain = TextureAsset_Wood1;
+            state->terrain_selected = true;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("lava")).pressed_left){
+            state->selected_terrain = TextureAsset_Lava1;
+            state->terrain_selected = true;
+        }
+
+        ui_layout();
+        ui_draw(ui_root());
+        ui_end();
+
+        // draw selected texture
+        if(state->terrain_selected){
+            set_texture(&r_assets->textures[state->selected_terrain]);
+            draw_texture(controller.mouse.pos, make_v2(50, 50));
+            draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 2, RED);
+        }
+
+}
+
+static void
+draw_world_grid(void){
+    v2 low  = make_v2(floor_f32(camera.p3.x/grid_size) * grid_size, floor_f32(camera.p3.y/grid_size) * grid_size);
+    v2 high = make_v2( ceil_f32(camera.p1.x/grid_size) * grid_size,  ceil_f32(camera.p1.y/grid_size) * grid_size);
+
+    f32 x = low.x;
+    while(x < high.x){
+        v2 p0 = make_v2(x, low.y);
+        v2 p1 = make_v2(x, high.y);
+
+        p0 = v2_screen_from_world(p0);
+        p1 = v2_screen_from_world(p1);
+        draw_line(p0, p1, 1, RED);
+        x += grid_size;
+    }
+
+    f32 y = low.y;
+    while(y < high.y){
+        v2 p0 = make_v2(low.x, y);
+        v2 p1 = make_v2(high.x, y);
+
+        p0 = v2_screen_from_world(p0);
+        p1 = v2_screen_from_world(p1);
+        draw_line(p0, p1, 1, RED);
+        y += grid_size;
+    }
+}
+
+static void
+draw_world_terrain(void){
+    v2 low  = make_v2(floor_f32(camera.p3.x/grid_size) * grid_size, floor_f32(camera.p3.y/grid_size) * grid_size);
+    v2 high = make_v2( ceil_f32(camera.p1.x/grid_size) * grid_size,  ceil_f32(camera.p1.y/grid_size) * grid_size);
+    Rect rect = make_rect(low, high);
+
+    for(s32 i=1; i < 9; ++i){
+        f32 y = 0;
+        while(y < state->world_height){
+
+            f32 x = 0;
+            while(x < state->world_width){
+                v2 cell = make_v2(x * grid_size, y * grid_size);
+                if(rect_contains_point(rect, cell)){
+                    s32 idx = (s32)((y * state->world_width) + x);
+                    s32 cell_tex = state->world_grid[idx];
+                    if(cell_tex == i){
+                        set_texture(&r_assets->textures[cell_tex]);
+                        Rect tex_rect = make_rect_size(cell, make_v2(10, 10));
+                        tex_rect = rect_screen_from_world(tex_rect);
+                        draw_texture(tex_rect);
+                    }
+                }
+
+                x += 1;
+            }
+            y += 1;
+        }
+    }
+
+    set_font(state->font);
+    f32 y = 0;
+    while(y < state->world_height){
+
+        f32 x = 0;
+        while(x < state->world_width){
+            v2 cell = make_v2(x * grid_size, y * grid_size);
+            if(rect_contains_point(rect, cell)){
+                v2 screen_cell = v2_screen_from_world(cell);
+                String8 coord = str8_formatted(ts->frame_arena, "(%i, %i)", (s32)x, (s32)y);
+                draw_text(coord, screen_cell, RED);
+            }
+
+            x += 1;
+        }
+
+        y += 1;
+    }
+
+    //f32 y = low.y;
+    //while(y < high.y){
+
+    //    f32 x = low.x;
+    //    while(x < high.x){
+
+    //        v2 cell = make_v2(x, y);
+
+
+    //        //s32 offset = abs_s32((-world_height/2 * grid_size));
+    //        //s32 idx = (((s32)y + offset) * (s32)high.y) + ((s32)x + offset);
+    //        //u32 cell_tex = state->world_grid[idx];
+    //        //if(cell_tex == 0){
+    //        //    cell_tex = random_range_u32(2) + 1; // todo: hard coded for now, 5 rails 6 offset
+    //        //    state->world_grid[idx] = cell_tex;
+    //        //}
+
+    //        v2 screen_cell = v2_screen_from_world(cell);
+
+
+    //        //set_texture(&r_assets->textures[1]);
+    //        //Rect rect = make_rect_size(make_v2(x, y), make_v2(10, 10));
+    //        //rect = rect_screen_from_world(rect);
+    //        //draw_texture(rect);
+    //        if(x >= 0 && x < world_width){
+    //            set_font(state->font);
+    //            String8 coord = str8_formatted(ts->frame_arena, "(%i, %i)", (s32)x, (s32)y);
+    //            draw_text(coord, screen_cell, YELLOW);
+    //        }
+
+
+    //        x += grid_size;
+    //    }
+
+    //    y += grid_size;
+    //}
+}
+
+static v2
+grid_pos_from_cell(f32 x, f32 y){
+    v2 result = {0};
+    result.x = x * grid_size;
+    result.y = y * grid_size;
+    return(result);
+}
+
+static v2
+grid_cell_from_pos(f32 x, f32 y){
+    v2 result = {0};
+    result.x = floor_f32(x / grid_size);
+    result.y = floor_f32(y / grid_size);
+    return(result);
+}
+
+// todo(rr): maybe I don't need this and I can calculate in place
+static v2
+grid_cell_center(f32 x, f32 y){
+    v2 result = {0};
+    result.x = x + grid_size/2;
+    result.y = x + grid_size/2;
+    return(result);
+}
+
 WINDOWPLACEMENT window_info = { sizeof(WINDOWPLACEMENT) };
 static void
 os_fullscreen_mode(Window* window){
@@ -124,6 +734,122 @@ show_cursor(bool show){
     else{
         while(ShowCursor(0) >= 0);
     }
+}
+
+static void
+serialize_world(String8 world){
+    Arena* arena = ts->data_arena;
+
+    for(s32 y=0; y<(s32)state->world_height; ++y){
+        for(s32 x=0; x<(s32)state->world_width; ++x){
+            s32 cell = (y * (s32)state->world_width) + x;
+            s32 cell_tex = state->world_grid[cell];
+
+            arena->at += snprintf((char*)arena->base + arena->at,
+                                  arena->size - arena->at,
+                                  "%i", cell_tex);
+        }
+        arena->at += snprintf((char*)arena->base + arena->at,
+                              arena->size - arena->at,
+                              "\n");
+    }
+
+    ScratchArena scratch = begin_scratch();
+    String8 full_path = str8_path_append(scratch.arena, saves_path, world);
+    File file = os_file_open(full_path, GENERIC_WRITE, CREATE_ALWAYS);
+    os_file_write(file, arena->base, arena->at);
+
+    os_file_close(file);
+    end_scratch(scratch);
+    arena_free(ts->data_arena);
+}
+
+static void
+deserialize_world(String8 world){
+    ScratchArena scratch = begin_scratch();
+    String8 full_path = str8_path_append(scratch.arena, saves_path, world);
+    File file = os_file_open(full_path, GENERIC_READ, OPEN_EXISTING);
+    if(!file.size){
+        os_file_close(file);
+        return;
+    }
+
+    String8 data = os_file_read(ts->data_arena, file);
+    String8* ptr = &data;
+
+    f32 y = 0;
+    s32 count = 0;
+    while(ptr->count){
+        char c = *(char*)ptr->str;
+        str8_advance(ptr, 1);
+        if(c != '\n'){
+            s32 cell_tex = atoi(&c);
+            state->world_grid[count] = cell_tex;
+            count++;
+        }
+
+        if(c == '\n'){
+            ++y;
+        }
+    }
+    state->world_width = (f32)count / y;
+    state->world_height = y;
+
+    arena_free(ts->data_arena);
+    os_file_close(file);
+    end_scratch(scratch);
+}
+
+static void
+load_state(){
+    ScratchArena scratch = begin_scratch();
+    String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
+    File file = os_file_open(full_path, GENERIC_READ, OPEN_EXISTING);
+    if(!file.size){
+        os_file_close(file);
+        return;
+    }
+
+    String8 data = os_file_read(ts->data_arena, file);
+    String8* ptr = &data;
+
+    s32 count = 0;
+    while(ptr->count){
+        String8 line = str8_eat_line(ptr);
+        while(line.size){
+            String8 word = str8_eat_word(&line);
+            if(str8_contains(word, str8_literal("current_world"))){
+                String8Node str8_node = {0};
+                str8_node = str8_split(scratch.arena, word, ':');
+                memcpy(state->current_world.str, str8_node.prev->str.str, str8_node.prev->str.count);
+                state->current_world.count = str8_node.prev->str.count;
+            }
+        }
+    }
+
+    arena_free(ts->data_arena);
+    os_file_close(file);
+    end_scratch(scratch);
+}
+
+static void
+save_state(){
+    serialize_world(state->current_world);
+
+    Arena* arena = ts->data_arena;
+
+    arena->at += snprintf((char*)arena->base + arena->at,
+                          arena->size - arena->at,
+                          "current_world:%s\n", state->current_world.str);
+
+    ScratchArena scratch = begin_scratch();
+    String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
+    File file = os_file_open(full_path, GENERIC_WRITE, CREATE_ALWAYS);
+    os_file_write(file, arena->base, arena->at);
+
+    arena_free(ts->data_arena);
+    os_file_close(file);
+    end_scratch(scratch);
 }
 
 static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
@@ -410,7 +1136,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
     init_wasapi(2, 48000, 32);
     init_events(&events);
 
-
     // note: sim measurements
 	u32 simulations = 0;
     f64 time_elapsed = 0;
@@ -430,6 +1155,48 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
     state = (PermanentMemory*)memory.permanent_base;
     ts    = (TransientMemory*)memory.transient_base;
 
+    //if(!memory.initialized){
+        // consider: maybe move this memory stuff to init_memory()
+        init_arena(&state->arena, (u8*)memory.permanent_base + sizeof(PermanentMemory), memory.permanent_size - sizeof(PermanentMemory));
+        init_arena(&ts->arena, (u8*)memory.transient_base + sizeof(TransientMemory), memory.transient_size - sizeof(TransientMemory));
+
+        ts->frame_arena = push_arena(&ts->arena, MB(100));
+        ts->asset_arena = push_arena(&ts->arena, MB(100));
+        ts->ui_arena = push_arena(&ts->arena, MB(100));
+        ts->hash_arena = push_arena(&ts->arena, MB(100));
+        ts->batch_arena = push_arena(&ts->arena, GB(1));
+        ts->data_arena = push_arena(&ts->arena, KB(1024));
+
+        show_cursor(true);
+        load_assets(ts->asset_arena, &assets);
+
+        state->world_width = 10;
+        state->world_height = 10;
+        init_camera_2d(&camera, make_v2((state->world_width/2) * grid_size, (state->world_height/2) * grid_size), 30);
+
+        init_console(global_arena, &camera, &window, &assets);
+        init_ui(ts->hash_arena, &window, &controller, &assets);
+        init_draw(ts->batch_arena, &assets);
+
+        state->font = &assets.fonts[FontAsset_Arial];
+
+        // setup free entities array in reverse order
+        entities_clear();
+
+        // load default level
+        state->current_world.str = push_array(global_arena, u8, 1024);
+        load_state();
+        deserialize_world(state->current_world);
+
+        // load castle
+        v2 pos = grid_pos_from_cell(5, 5);
+        pos = grid_cell_center(pos.x, pos.y);
+        state->castle = add_castle(TextureAsset_Castle1, pos, make_v2(10, 10));
+
+        memory.initialized = true;
+    //}
+
+
     should_quit = false;
     while(!should_quit){
         begin_timed_scope("while(!should_quit)");
@@ -444,8 +1211,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             TranslateMessage(&message);
             DispatchMessage(&message);
         }
-
-        do_one_frame();
 
         // handle events
         bool handled;
@@ -508,7 +1273,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         simulations = 0;
         accumulator += frame_time;
         while(accumulator >= clock.dt){
-            update_game();
+            sim_game();
 
             accumulator -= clock.dt;
             time_elapsed += clock.dt;
@@ -518,121 +1283,29 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         camera_2d_update(&camera, window.aspect_ratio);
 
+        if(controller.button[KeyCode_T].pressed){
+            serialize_world(state->current_world);
+        }
+        if(controller.button[KeyCode_Y].pressed){
+            deserialize_world(state->current_world);
+        }
 
-        //Rect rect = make_rect_size(make_v2(0, 0), make_v2(10, 10));
-        //rect = rect_screen_from_world(rect);
-        //draw_quad(rect, BLACK);
         draw_world_terrain();
         draw_world_grid();
         draw_entities(state);
-
-        //v2 cell = {0};
-        //String8 cell_str = {0};
-        //set_font(state->font);
-
-        //cell = grid_pos_from_cell(0, 0);
-        //cell = v2_screen_from_world(cell);
-        //cell_str = str8_formatted(ts->frame_arena, "(%i, %i)", (s32)0, (s32)0);
-        //draw_text(cell_str, cell, YELLOW);
 
         set_font(state->font);
         String8 fps = str8_formatted(ts->frame_arena, "FPS: %.2f", FPS);
         draw_text(fps, make_v2(window.width - text_padding - font_string_width(state->font, fps), window.height - text_padding), ORANGE);
 
         wasapi_play_cursors();
-        console_draw();
 
         debug_draw_render_batches();
         debug_draw_mouse_cell_pos();
 
-        // draw selected texture
-        if(state->selected_texture){
-            set_texture(&r_assets->textures[state->selected_texture]);
-            draw_texture(controller.mouse.pos, make_v2(50, 50));
-            draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 2, RED);
-        }
+        draw_level_editor();
 
-        ui_begin(ts->ui_arena);
-
-        ui_push_pos_x(20);
-        ui_push_pos_y(20);
-        ui_push_size_w(ui_size_children(0));
-        ui_push_size_h(ui_size_children(0));
-
-        ui_push_border_thickness(10);
-        ui_push_background_color(DEFAULT);
-        UI_Box* box1 = ui_box(str8_literal("box1##2"),
-                              UI_BoxFlag_DrawBackground|
-                              UI_BoxFlag_Draggable|
-                              UI_BoxFlag_Clickable);
-        ui_push_parent(box1);
-        ui_pop_pos_x();
-        ui_pop_pos_y();
-
-        ui_push_size_w(ui_size_pixel(100, 0));
-        ui_push_size_h(ui_size_pixel(50, 0));
-        ui_push_background_color(DARK_GRAY);
-        if(ui_button(str8_literal("none")).pressed_left){
-            state->selected_texture = 0;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("grass1")).pressed_left){
-            state->selected_texture = 1;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("grass2")).pressed_left){
-            state->selected_texture = 2;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("grass3")).pressed_left){
-            state->selected_texture = 3;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("grass4")).pressed_left){
-            state->selected_texture = 4;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("grass5")).pressed_left){
-            state->selected_texture = 5;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("grass6")).pressed_left){
-            state->selected_texture = 6;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("grass7")).pressed_left){
-            state->selected_texture = 7;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("grass8")).pressed_left){
-            state->selected_texture = 8;
-        }
-
-        //ui_push_text_color(LIGHT_GRAY);
-
-
-        //String8 zoom = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
-        //ui_label(zoom);
-        //String8 pos = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
-        //ui_label(pos);
-
-        //String8 title = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
-        //ui_label(title);
-
-        //s32 count = 0;
-        //for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-        //    if(count < 25){
-        //        String8 batch_str = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->count, batch->cap, batch->id);
-        //        ui_label(batch_str);
-        //    }
-        //    count++;
-        //}
-
-        ui_layout();
-        ui_draw(ui_root());
-        ui_end();
-
-
+        console_draw();
         {
             d3d_clear_color(BACKGROUND_COLOR);
             draw_render_batches();
@@ -654,8 +1327,10 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         clear_controller_pressed();
         // todo(rr): why is this here?
         //end_profiler();
+        ++frame_count;
     }
 
+    save_state();
     d3d_release();
     end_profiler();
     wasapi_release();

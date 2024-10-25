@@ -9,24 +9,32 @@ load_assets(Arena* arena, Assets* assets){
     String8 build_path = os_application_path(scratch.arena);
 
     Bitmap bm;
-    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass1.bmp"));
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass1.png"));
     d3d_init_texture_resource(&assets->textures[TextureAsset_Grass1].view, &bm);
-    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass2.bmp"));
-    d3d_init_texture_resource(&assets->textures[TextureAsset_Grass2].view, &bm);
-    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass3.bmp"));
-    d3d_init_texture_resource(&assets->textures[TextureAsset_Grass3].view, &bm);
-    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass4.bmp"));
-    d3d_init_texture_resource(&assets->textures[TextureAsset_Grass4].view, &bm);
-    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass5.bmp"));
-    d3d_init_texture_resource(&assets->textures[TextureAsset_Grass5].view, &bm);
-    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass6.bmp"));
-    d3d_init_texture_resource(&assets->textures[TextureAsset_Grass6].view, &bm);
-    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass7.bmp"));
-    d3d_init_texture_resource(&assets->textures[TextureAsset_Grass7].view, &bm);
-    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass8.bmp"));
-    d3d_init_texture_resource(&assets->textures[TextureAsset_Grass8].view, &bm);
-    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/castle1.bmp"));
-    d3d_init_texture_resource(&assets->textures[TextureAsset_Castle1].view, &bm);
+    //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass2.bmp"));
+    //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass2].view, &bm);
+    //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass3.bmp"));
+    //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass3].view, &bm);
+    //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass4.bmp"));
+    //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass4].view, &bm);
+    //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass5.bmp"));
+    //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass5].view, &bm);
+    //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass6.bmp"));
+    //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass6].view, &bm);
+    //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass7.bmp"));
+    //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass7].view, &bm);
+    //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass8.bmp"));
+    //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass8].view, &bm);
+    //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/castle1.bmp"));
+    //d3d_init_texture_resource(&assets->textures[TextureAsset_Castle1].view, &bm);
+
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/water1.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Water1].view, &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/lava1.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Lava1].view, &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/wood1.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Wood1].view, &bm);
+
     Texture texture = {white_shader_resource};
     assets->textures[TextureAsset_White] = texture;
 
