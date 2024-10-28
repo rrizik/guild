@@ -59,6 +59,7 @@ enum {
   UI_BoxFlag_HotAnimation    = (1<<7),
   UI_BoxFlag_ActiveAnimation = (1<<8),
   UI_BoxFlag_Draggable       = (1<<9),
+  UI_BoxFlag_Independent     = (1<<10),
 };
 
 // todo: not even using this
@@ -84,13 +85,12 @@ typedef struct UI_Box{
     UI_BoxFlags flags;
     String8 string;
 
-
     // cached data
     f32 size[Axis_Count];
     f32 pos[Axis_Count];
     Rect rect;
-    //bool hot;
-    //bool active;
+    //bool hot_dt;
+    //bool active_dt;
 
     // stack parameters
     f32 rel_pos[Axis_Count];

@@ -1,6 +1,10 @@
 #ifndef UI_C
 #define UI_C
 
+// TODO IMPORTANT(rr): do more loops rather than recursive calls in layout building
+// TODO IMPORTANT(rr): do more loops rather than recursive calls in layout building
+// TODO IMPORTANT(rr): do more loops rather than recursive calls in layout building
+
 static void
 init_ui(Arena* arena, Window* window, Controller* controller, Assets* assets){
     ui_state = push_struct(arena, UI_State);
@@ -47,6 +51,9 @@ ui_layout(void){
 
 static void
 ui_end(void){
+    ui_layout();
+    ui_draw(ui_root());
+
     ui_parent_top = 0;
     ui_pos_x_top = 0;
     ui_pos_y_top = 0;
@@ -60,6 +67,8 @@ ui_end(void){
     ui_background_color_top = 0;
     ui_border_thickness_top = 0;
     ui_font_top = 0;
+
+    arena_free(ui_arena());
 }
 
 static Arena*
@@ -84,9 +93,7 @@ ui_table(void){
 
 static v2
 ui_mouse_pos(void){
-    // todo(rr): ui_state->controller->mouse.pos?
-    v2 mouse_pos = make_v2(ui_state->controller->mouse.x, ui_state->controller->mouse.y);
-    return(mouse_pos);
+    return(ui_state->controller->mouse.pos);
 }
 
 static Mouse
@@ -135,7 +142,7 @@ static BoxCache cache_from_box(UI_Box* box) {
 
 static UI_Box*
 ui_make_box(String8 string, UI_BoxFlags flags){
-    UI_Box* result = push_struct_zero(ui_state->arena, UI_Box);
+    UI_Box* result = push_struct_zero(ui_arena(), UI_Box);
 
     if(ui_parent_top != 0){
         UI_Box* top_parent = ui_top_parent();
@@ -227,10 +234,7 @@ static UI_Signal
 ui_signal_from_box(UI_Box* box){
     UI_Signal signal = {0};
 
-    Controller* controller = ui_state->controller;
-    v2 mouse_pos = make_v2(controller->mouse.x, controller->mouse.y);
-
-
+    v2 mouse_pos = ui_mouse_pos();
     if(has_flags(box->flags, UI_BoxFlag_Clickable)){
 
         if(rect_contains_point(box->rect, mouse_pos)){
@@ -238,19 +242,18 @@ ui_signal_from_box(UI_Box* box){
         }
 
         if(ui_state->active == box->key){
-            if(!controller->button[MOUSE_BUTTON_LEFT].held){
+            if(!controller_button_held(MOUSE_BUTTON_LEFT)){
                 if(rect_contains_point(box->rect, mouse_pos)){
                     signal.pressed_left = true;
                 }
                 ui_state->active = 0;
                 ui_state->hot = 0;
-                // todo(rr): wtf is this
                 ui_state->mouse_pos_record = {0};
             }
         }
         else if(ui_state->hot == box->key){
-            if(controller->button[MOUSE_BUTTON_LEFT].held &&
-               controller->button[MOUSE_BUTTON_LEFT].pressed){
+            if(controller_button_held(MOUSE_BUTTON_LEFT) &&
+               controller_button_pressed(MOUSE_BUTTON_LEFT)){
                 ui_state->active = box->key;
                 ui_state->mouse_pos_record = mouse_pos;
                 ui_state->mouse_pos_record.x -= box->rel_pos[Axis_X];
@@ -260,7 +263,8 @@ ui_signal_from_box(UI_Box* box){
     }
 
     if(has_flags(box->flags, UI_BoxFlag_Draggable)){
-        if(ui_state->active == box->key && controller->button[MOUSE_BUTTON_LEFT].held){
+        if(ui_state->active == box->key && controller_button_held(MOUSE_BUTTON_LEFT)){
+            print("my(%f), myr(%f)\n", mouse_pos.y, ui_state->mouse_pos_record.y);
             box->rel_pos[Axis_X] = (f32)(mouse_pos.x - ui_state->mouse_pos_record.x);
             box->rel_pos[Axis_Y] = (f32)(mouse_pos.y - ui_state->mouse_pos_record.y);
         }
@@ -336,8 +340,15 @@ ui_traverse_positions(UI_Box* box, Axis axis){
         return;
     }
 
-    if(!box->prev){
-        if(box->layout_axis == axis){
+    // TODO(rr): why do I have this here?
+    //if(!box->prev){
+    if(box->layout_axis == axis){
+        if(has_flags(box->flags, UI_BoxFlag_Independent)){
+            if(box->parent){
+                box->pos[axis] = box->parent->pos[axis] + box->rel_pos[axis] + box->border_thickness;
+            }
+        }
+        else{
             f32 position = box->rel_pos[axis];
             for(UI_Box* sibling = box; sibling != 0; sibling = sibling->next){
                 sibling->rel_pos[axis] = position;
@@ -345,6 +356,13 @@ ui_traverse_positions(UI_Box* box, Axis axis){
                     sibling->pos[axis] = sibling->parent->pos[axis] + sibling->rel_pos[axis] + sibling->border_thickness;
                 }
                 position += sibling->size[axis];
+            }
+        }
+    }
+    else{
+        if(has_flags(box->flags, UI_BoxFlag_Independent)){
+            if(box->parent){
+                box->pos[axis] = box->parent->pos[axis] + box->rel_pos[axis] + box->border_thickness;
             }
         }
         else{
@@ -355,6 +373,7 @@ ui_traverse_positions(UI_Box* box, Axis axis){
             }
         }
     }
+    //}
 
     if(box->first){
         ui_traverse_positions(box->first, axis);
@@ -370,9 +389,9 @@ ui_traverse_rects(UI_Box* box){
 
     if(box->parent){
         box->rect.min = make_v2(box->parent->pos[Axis_X] + box->rel_pos[Axis_X],
-                                 box->parent->pos[Axis_Y] + box->rel_pos[Axis_Y]);
+                                box->parent->pos[Axis_Y] + box->rel_pos[Axis_Y]);
         box->rect.max = make_v2(box->parent->pos[Axis_X] + box->rel_pos[Axis_X] + box->size[Axis_X],
-                                 box->parent->pos[Axis_Y] + box->rel_pos[Axis_Y] + box->size[Axis_Y]);
+                                box->parent->pos[Axis_Y] + box->rel_pos[Axis_Y] + box->size[Axis_Y]);
     }
     else{
         box->rect.min = make_v2(box->pos[Axis_X], box->pos[Axis_Y]);

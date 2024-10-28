@@ -48,7 +48,7 @@ command_help(String8* args){
 
 static void
 command_exit(String8* args){
-    console.output_history[console.output_history_count++] = str8_literal("Existing!");
+    console.output_history[console.output_history_count++] = str8_literal("Exiting!");
     Event event = {0};
     event.type = QUIT;
     events_add(&events, event);

@@ -156,6 +156,8 @@ global Controller controller;
 
 static void clear_controller_pressed(void);
 static void clear_controller_held(void);
+static bool controller_button_pressed(KeyCode key, bool consume = false);
+static bool controller_button_held(KeyCode key, bool consume = false);
 
 // NOTE: EVENTS:
 global bool alt_pressed;

@@ -23,6 +23,26 @@ clear_controller_pressed(void){
     controller.mouse.edge_bottom = false;
 }
 
+static bool
+controller_button_pressed(KeyCode key, bool consume){
+    bool result = controller.button[key].pressed;
+    if(consume){
+        controller.button[key].pressed = false;
+    }
+
+    return(result);
+}
+
+static bool
+controller_button_held(KeyCode key, bool consume){
+    bool result = controller.button[key].held;
+    if(consume){
+        controller.button[key].held = false;
+    }
+
+    return(result);
+}
+
 static void
 init_events(Events* events){
     events->size = array_count(events->e);

@@ -5,21 +5,21 @@ static void sim_game(void){
     // camera
     {
         // movement
-        if(controller.button[KeyCode_UP].held || controller.mouse.edge_top){
+        if(controller_button_held(KeyCode_UP) || controller.mouse.edge_top){
             camera.y += ((camera.size) + 50) * (f32)clock.dt;
         }
-        if(controller.button[KeyCode_DOWN].held || controller.mouse.edge_bottom){
+        if(controller_button_held(KeyCode_DOWN) || controller.mouse.edge_bottom){
             camera.y -= ((camera.size) + 50) * (f32)clock.dt;
         }
-        if(controller.button[KeyCode_LEFT].held || controller.mouse.edge_left){
+        if(controller_button_held(KeyCode_LEFT) || controller.mouse.edge_left){
             camera.x -= ((camera.size) + 50) * (f32)clock.dt;
         }
-        if(controller.button[KeyCode_RIGHT].held || controller.mouse.edge_right){
+        if(controller_button_held(KeyCode_RIGHT) || controller.mouse.edge_right){
             camera.x += ((camera.size) + 50) * (f32)clock.dt;
         }
     }
 
-    if(controller.button[MOUSE_BUTTON_LEFT].pressed || controller.button[MOUSE_BUTTON_LEFT].held){
+    if(controller_button_pressed(MOUSE_BUTTON_LEFT) || controller_button_held(MOUSE_BUTTON_LEFT)){
         if(state->terrain_selected){
             v2 pos = v2_world_from_screen(controller.mouse.pos);
             v2 cell = make_v2(floor_f32(pos.x/grid_size), floor_f32(pos.y/grid_size));
@@ -190,9 +190,6 @@ handle_global_events(Event event){
     }
     if(event.type == KEYBOARD){
         if(event.key_pressed){
-            if(event.keycode == MOUSE_BUTTON_RIGHT && event.key_pressed){
-                state->terrain_selected = false;
-            }
             if(event.keycode == KeyCode_TILDE && !event.repeat){
                 if(event.shift_pressed){
                     if(console.state == OPEN_BIG){
@@ -242,9 +239,9 @@ handle_controller_events(Event event){
     if(event.type == KEYBOARD){
         controller.mouse.wheel_dir = event.mouse_wheel_dir;
         if(event.key_pressed){
-            if(!event.repeat){
+            //if(!event.repeat){
                 controller.button[event.keycode].pressed = true;
-            }
+            //}
             controller.button[event.keycode].held = true;
         }
         else{
@@ -346,9 +343,18 @@ static void draw_entities(State* state){
 }
 
 static void
+debug_draw_mouse_cell_pos(){
+    set_font(state->font);
+    v2 pos = v2_world_from_screen(controller.mouse.pos);
+    v2 cell = make_v2(floor_f32(pos.x/grid_size), floor_f32(pos.y/grid_size));
+    String8 cell_str = str8_format(ts->frame_arena, "(%i, %i)", (s32)cell.x, (s32)cell.y);
+    draw_text(cell_str, controller.mouse.pos, RED);
+}
+
+static void
 debug_draw_render_batches(){
 
-    ui_begin(ts->ui_arena);
+    //ui_begin(ts->ui_arena);
 
     ui_push_pos_x(SCREEN_WIDTH - 200);
     ui_push_pos_y(10);
@@ -359,7 +365,8 @@ debug_draw_render_batches(){
     UI_Box* box1 = ui_box(str8_literal("box1##1"),
                           UI_BoxFlag_DrawBackground|
                           UI_BoxFlag_Draggable|
-                          UI_BoxFlag_Clickable);
+                          UI_BoxFlag_Clickable|
+                          UI_BoxFlag_Independent);
     ui_push_parent(box1);
     ui_pop_pos_x();
     ui_pop_pos_y();
@@ -384,89 +391,70 @@ debug_draw_render_batches(){
         count++;
     }
 
-    ui_layout();
-    ui_draw(ui_root());
-    ui_end();
-}
+    ui_pop_parent();
 
-static void
-debug_draw_mouse_cell_pos(){
-    set_font(state->font);
-    v2 pos = v2_world_from_screen(controller.mouse.pos);
-    v2 cell = make_v2(floor_f32(pos.x/grid_size), floor_f32(pos.y/grid_size));
-    String8 cell_str = str8_format(ts->frame_arena, "(%i, %i)", (s32)cell.x, (s32)cell.y);
-    draw_text(cell_str, controller.mouse.pos, RED);
+    //ui_layout();
+    //ui_draw(ui_root());
+    //ui_end();
 }
 
 static void
 draw_level_editor(){
-        ui_begin(ts->ui_arena);
+    //ui_begin(ts->ui_arena);
 
-        ui_push_pos_x(20);
-        ui_push_pos_y(20);
-        ui_push_size_w(ui_size_children(0));
-        ui_push_size_h(ui_size_children(0));
+    ui_push_pos_x(20);
+    ui_push_pos_y(20);
+    ui_push_size_w(ui_size_children(0));
+    ui_push_size_h(ui_size_children(0));
 
-        ui_push_border_thickness(10);
-        ui_push_background_color(DEFAULT);
-        UI_Box* box1 = ui_box(str8_literal("box1##2"),
-                              UI_BoxFlag_DrawBackground|
-                              UI_BoxFlag_Draggable|
-                              UI_BoxFlag_Clickable);
-        ui_push_parent(box1);
-        ui_pop_pos_x();
-        ui_pop_pos_y();
+    ui_push_border_thickness(10);
+    ui_push_background_color(DEFAULT);
+    UI_Box* box1 = ui_box(str8_literal("box1##2"),
+                          UI_BoxFlag_DrawBackground|
+                          UI_BoxFlag_Draggable|
+                          UI_BoxFlag_Clickable|
+                          UI_BoxFlag_Independent);
+    ui_push_parent(box1);
+    ui_pop_pos_x();
+    ui_pop_pos_y();
 
-        ui_push_size_w(ui_size_pixel(100, 0));
-        ui_push_size_h(ui_size_pixel(50, 0));
-        ui_push_background_color(DARK_GRAY);
-        if(ui_button(str8_literal("none")).pressed_left){
-            state->selected_terrain = 0;
-            state->terrain_selected = true;
-        }
-    //TextureAsset_Grass1,
-    //TextureAsset_Grass2,
-    //TextureAsset_Grass3,
-    //TextureAsset_Grass4,
-    //TextureAsset_Grass5,
-    //TextureAsset_Grass6,
-    //TextureAsset_Grass7,
-    //TextureAsset_Grass8,
+    ui_push_size_w(ui_size_pixel(100, 0));
+    ui_push_size_h(ui_size_pixel(50, 0));
+    ui_push_background_color(DARK_GRAY);
+    if(ui_button(str8_literal("none")).pressed_left){
+        state->selected_terrain = 0;
+        state->terrain_selected = false;
+    }
+    ui_spacer(10);
+    if(ui_button(str8_literal("erase")).pressed_left){
+        state->selected_terrain = 0;
+        state->terrain_selected = true;
+    }
+    ui_spacer(10);
+    if(ui_button(str8_literal("grass")).pressed_left){
+        state->selected_terrain = TextureAsset_Grass1;
+        state->terrain_selected = true;
+    }
+    ui_spacer(10);
+    if(ui_button(str8_literal("water")).pressed_left){
+        state->selected_terrain = TextureAsset_Water1;
+        state->terrain_selected = true;
+    }
+    ui_spacer(10);
+    if(ui_button(str8_literal("wood")).pressed_left){
+        state->selected_terrain = TextureAsset_Wood1;
+        state->terrain_selected = true;
+    }
+    ui_spacer(10);
+    if(ui_button(str8_literal("lava")).pressed_left){
+        state->selected_terrain = TextureAsset_Lava1;
+        state->terrain_selected = true;
+    }
+    ui_pop_parent();
 
-    //TextureAsset_Water1,
-    //TextureAsset_Lava1,
-    //TextureAsset_Wood1,
-        ui_spacer(10);
-        if(ui_button(str8_literal("grass")).pressed_left){
-            state->selected_terrain = TextureAsset_Grass1;
-            state->terrain_selected = true;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("water")).pressed_left){
-            state->selected_terrain = TextureAsset_Water1;
-            state->terrain_selected = true;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("wood")).pressed_left){
-            state->selected_terrain = TextureAsset_Wood1;
-            state->terrain_selected = true;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("lava")).pressed_left){
-            state->selected_terrain = TextureAsset_Lava1;
-            state->terrain_selected = true;
-        }
-
-        ui_layout();
-        ui_draw(ui_root());
-        ui_end();
-
-        // draw selected texture
-        if(state->terrain_selected){
-            set_texture(&r_assets->textures[state->selected_terrain]);
-            draw_texture(controller.mouse.pos, make_v2(50, 50));
-            draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 2, RED);
-        }
+    //ui_layout();
+    //ui_draw(ui_root());
+    //ui_end();
 
 }
 
@@ -496,93 +484,68 @@ draw_world_grid(void){
         draw_line(p0, p1, 1, RED);
         y += grid_size;
     }
+
+    // draw coordinates
+#if 0
+    f32 y = low.y;
+    while(y < high.y){
+
+        f32 x = low.x;
+        while(x < high.x){
+
+            if(x >= 0 && (x/grid_size) < state->world_width){
+                if(y >= 0 && (y/grid_size) < state->world_height){
+                    v2 cell = make_v2(x, y);
+                    v2 screen_cell = v2_screen_from_world(cell);
+
+                    set_font(state->font);
+                    String8 coord = str8_formatted(ts->frame_arena, "(%i, %i)", (s32)x/(s32)grid_size, (s32)y/(s32)grid_size);
+                    draw_text(coord, screen_cell, YELLOW);
+                }
+            }
+
+            x += grid_size;
+        }
+
+        y += grid_size;
+    }
+#endif
 }
 
 static void
 draw_world_terrain(void){
     v2 low  = make_v2(floor_f32(camera.p3.x/grid_size) * grid_size, floor_f32(camera.p3.y/grid_size) * grid_size);
     v2 high = make_v2( ceil_f32(camera.p1.x/grid_size) * grid_size,  ceil_f32(camera.p1.y/grid_size) * grid_size);
-    Rect rect = make_rect(low, high);
 
-    for(s32 i=1; i < 9; ++i){
-        f32 y = 0;
-        while(y < state->world_height){
+    for(s32 i=1; i < TextureAsset_Count; ++i){
+        f32 y = low.y;
+        while(y < high.y){
 
-            f32 x = 0;
-            while(x < state->world_width){
-                v2 cell = make_v2(x * grid_size, y * grid_size);
-                if(rect_contains_point(rect, cell)){
-                    s32 idx = (s32)((y * state->world_width) + x);
-                    s32 cell_tex = state->world_grid[idx];
-                    if(cell_tex == i){
-                        set_texture(&r_assets->textures[cell_tex]);
-                        Rect tex_rect = make_rect_size(cell, make_v2(10, 10));
-                        tex_rect = rect_screen_from_world(tex_rect);
-                        draw_texture(tex_rect);
+            f32 x = low.x;
+            while(x < high.x){
+
+                if(x >= 0 && (x/grid_size) < state->world_width){
+                    if(y >= 0 && (y/grid_size) < state->world_height){
+                        v2 cell = make_v2(x, y);
+                        v2 screen_cell = v2_screen_from_world(cell);
+
+                        s32 idx = (s32)(((y/grid_size) * state->world_width) + (x/grid_size));
+                        s32 cell_tex = state->world_grid[idx];
+                        if(cell_tex == i){
+                            set_texture(&r_assets->textures[cell_tex]);
+                            Rect tex_rect = make_rect_size(cell, make_v2(10, 10));
+                            tex_rect = rect_screen_from_world(tex_rect);
+                            draw_texture(tex_rect);
+                        }
                     }
                 }
 
-                x += 1;
-            }
-            y += 1;
-        }
-    }
-
-    set_font(state->font);
-    f32 y = 0;
-    while(y < state->world_height){
-
-        f32 x = 0;
-        while(x < state->world_width){
-            v2 cell = make_v2(x * grid_size, y * grid_size);
-            if(rect_contains_point(rect, cell)){
-                v2 screen_cell = v2_screen_from_world(cell);
-                String8 coord = str8_formatted(ts->frame_arena, "(%i, %i)", (s32)x, (s32)y);
-                draw_text(coord, screen_cell, RED);
+                x += grid_size;
             }
 
-            x += 1;
+            y += grid_size;
         }
-
-        y += 1;
     }
-
-    //f32 y = low.y;
-    //while(y < high.y){
-
-    //    f32 x = low.x;
-    //    while(x < high.x){
-
-    //        v2 cell = make_v2(x, y);
-
-
-    //        //s32 offset = abs_s32((-world_height/2 * grid_size));
-    //        //s32 idx = (((s32)y + offset) * (s32)high.y) + ((s32)x + offset);
-    //        //u32 cell_tex = state->world_grid[idx];
-    //        //if(cell_tex == 0){
-    //        //    cell_tex = random_range_u32(2) + 1; // todo: hard coded for now, 5 rails 6 offset
-    //        //    state->world_grid[idx] = cell_tex;
-    //        //}
-
-    //        v2 screen_cell = v2_screen_from_world(cell);
-
-
-    //        //set_texture(&r_assets->textures[1]);
-    //        //Rect rect = make_rect_size(make_v2(x, y), make_v2(10, 10));
-    //        //rect = rect_screen_from_world(rect);
-    //        //draw_texture(rect);
-    //        if(x >= 0 && x < world_width){
-    //            set_font(state->font);
-    //            String8 coord = str8_formatted(ts->frame_arena, "(%i, %i)", (s32)x, (s32)y);
-    //            draw_text(coord, screen_cell, YELLOW);
-    //        }
-
-
-    //        x += grid_size;
-    //    }
-
-    //    y += grid_size;
-    //}
 }
 
 static v2
@@ -821,8 +784,10 @@ load_state(){
             if(str8_contains(word, str8_literal("current_world"))){
                 String8Node str8_node = {0};
                 str8_node = str8_split(scratch.arena, word, ':');
-                memcpy(state->current_world.str, str8_node.prev->str.str, str8_node.prev->str.count);
-                state->current_world.count = str8_node.prev->str.count;
+                if(str8_ends_with(str8_node.prev->str, str8_literal(".g"))){
+                    memcpy(state->current_world.str, str8_node.prev->str.str, str8_node.prev->str.count);
+                    state->current_world.count = str8_node.prev->str.count;
+                }
             }
         }
     }
@@ -996,6 +961,7 @@ static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param,
             Event event = {0};
             event.type = KEYBOARD;
             event.keycode = MOUSE_BUTTON_LEFT;
+            event.repeat = ((s32)l_param) & 0x40000000;
 
             bool pressed = false;
             if(message == WM_LBUTTONDOWN){ pressed = true; }
@@ -1016,6 +982,7 @@ static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param,
             Event event = {0};
             event.type = KEYBOARD;
             event.keycode = MOUSE_BUTTON_RIGHT;
+            event.repeat = ((s32)l_param) & 0x40000000;
 
             bool pressed = false;
             if(message == WM_RBUTTONDOWN){ pressed = true; }
@@ -1172,7 +1139,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         state->world_width = 10;
         state->world_height = 10;
-        init_camera_2d(&camera, make_v2((state->world_width/2) * grid_size, (state->world_height/2) * grid_size), 30);
+        //init_camera_2d(&camera, make_v2((state->world_width/2) * grid_size, (state->world_height/2) * grid_size), 30);
+        init_camera_2d(&camera, make_v2(0, 0), 30);
 
         init_console(global_arena, &camera, &window, &assets);
         init_ui(ts->hash_arena, &window, &controller, &assets);
@@ -1199,6 +1167,10 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
     should_quit = false;
     while(!should_quit){
+        ui_begin(ts->ui_arena);
+
+
+
         begin_timed_scope("while(!should_quit)");
 
         u64 now_ticks = clock.get_os_timer();
@@ -1233,6 +1205,9 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             handled = handle_game_events(event);
         }
 
+        draw_level_editor();
+        debug_draw_render_batches();
+
         //----constant buffer----
         D3D11_MAPPED_SUBRESOURCE mapped_subresource;
         d3d_context->Map(d3d_constant_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_subresource);
@@ -1242,12 +1217,12 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         console_update();
 
-        if(controller.button[MOUSE_BUTTON_RIGHT].held &&
-           controller.button[MOUSE_BUTTON_RIGHT].pressed){
+        if(controller_button_held(MOUSE_BUTTON_RIGHT) &&
+           controller_button_pressed(MOUSE_BUTTON_RIGHT)){
             world_camera_record = camera;
             world_mouse_record = v2_world_from_screen(controller.mouse.pos);
         }
-        if(controller.button[MOUSE_BUTTON_RIGHT].held){
+        if(controller_button_held(MOUSE_BUTTON_RIGHT)){
             v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
             v2 world_rel_pos = world_mouse_record - world_mouse_current;
 
@@ -1282,52 +1257,60 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         }
 
         camera_2d_update(&camera, window.aspect_ratio);
-
-        if(controller.button[KeyCode_T].pressed){
-            serialize_world(state->current_world);
-        }
-        if(controller.button[KeyCode_Y].pressed){
-            deserialize_world(state->current_world);
-        }
-
-        draw_world_terrain();
-        draw_world_grid();
-        draw_entities(state);
-
-        set_font(state->font);
-        String8 fps = str8_formatted(ts->frame_arena, "FPS: %.2f", FPS);
-        draw_text(fps, make_v2(window.width - text_padding - font_string_width(state->font, fps), window.height - text_padding), ORANGE);
-
         wasapi_play_cursors();
 
-        debug_draw_render_batches();
-        debug_draw_mouse_cell_pos();
-
-        draw_level_editor();
-
-        console_draw();
+        // rendering
         {
-            d3d_clear_color(BACKGROUND_COLOR);
-            draw_render_batches();
-            d3d_present();
-
             render_batches_reset();
             arena_free(ts->batch_arena);
-            arena_free(ts->frame_arena);
-            arena_free(ts->ui_arena);
+            draw_world_terrain();
+            draw_world_grid();
+            draw_entities(state);
 
-            frame_inc++;
-            f64 second_elapsed = clock.get_seconds_elapsed(clock.get_os_timer(), frame_tick_start);
-            if(second_elapsed > 1){
-                FPS = ((f64)frame_inc / second_elapsed);
-                frame_tick_start = clock.get_os_timer();
-                frame_inc = 0;
+            // draw selected texture
+            if(state->terrain_selected){
+                set_texture(&r_assets->textures[state->selected_terrain]);
+                draw_texture(controller.mouse.pos, make_v2(50, 50));
+                draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 2, RED);
+            }
+
+            //debug_draw_mouse_cell_pos();
+
+            //ui_layout();
+            //ui_draw(ui_root());
+            ui_end();
+
+            set_font(state->font);
+            String8 fps = str8_formatted(ts->frame_arena, "FPS: %.2f", FPS);
+            draw_text(fps, make_v2(window.width - text_padding - font_string_width(state->font, fps), window.height - text_padding), ORANGE);
+
+            console_draw();
+
+            {
+                d3d_clear_color(BACKGROUND_COLOR);
+                draw_render_batches();
+                d3d_present();
+
+                //render_batches_reset();
+                //arena_free(ts->batch_arena);
+                arena_free(ts->frame_arena);
+                //arena_free(ts->ui_arena);
+
             }
         }
         clear_controller_pressed();
+
+        frame_inc++;
+        f64 second_elapsed = clock.get_seconds_elapsed(clock.get_os_timer(), frame_tick_start);
+        if(second_elapsed > 1){
+            FPS = ((f64)frame_inc / second_elapsed);
+            frame_tick_start = clock.get_os_timer();
+            frame_inc = 0;
+        }
+        ++frame_count;
+
         // todo(rr): why is this here?
         //end_profiler();
-        ++frame_count;
     }
 
     save_state();
