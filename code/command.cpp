@@ -50,34 +50,33 @@ static void
 command_exit(String8* args){
     console.output_history[console.output_history_count++] = str8_literal("Exiting!");
     Event event = {0};
-    event.type = QUIT;
+    event.type = EventType_QUIT;
     events_add(&events, event);
 }
 
 static void
 command_new_world(String8* args){
-    s32 width  = atoi((char const*)(args->str));
-    s32 height = atoi((char const*)(args + 1)->str);
+    s32 width_in_tiles  = atoi((char const*)(args->str));
+    s32 height_in_tiles = atoi((char const*)(args + 1)->str);
     String8 name = *(args + 2);
-    bool bad_input = false;
-    if(width > WORLD_WIDTH_MAX){
-        String8 str = str8_formatted(console.arena, "width(%i) must be <= WORLD_WIDTH_MAX(%i)", width, WORLD_WIDTH_MAX);
+    if(width_in_tiles > WORLD_WIDTH_IN_TILES_MAX){
+        String8 str = str8_formatted(console.arena, "tile_count_x(%i) must be <= WORLD_WIDTH_IN_TILES_MAX(%i)", width_in_tiles, WORLD_WIDTH_IN_TILES_MAX);
         console.output_history[console.output_history_count++] = str;
-        bad_input = true;
+        return;
     }
-    if(height > WORLD_HEIGHT_MAX){
-        String8 str = str8_formatted(console.arena, "height(%i) must be <= WORLD_HEIGHT_MAX(%i)", height, WORLD_WIDTH_MAX);
+    if(height_in_tiles > WORLD_HEIGHT_IN_TILES_MAX){
+        String8 str = str8_formatted(console.arena, "tile_count_y(%i) must be <= WORLD_HEIGHT_IN_TILES_MAX(%i)", height_in_tiles, WORLD_HEIGHT_IN_TILES_MAX);
         console.output_history[console.output_history_count++] = str;
-        bad_input = true;
-    }
-    if(bad_input){
         return;
     }
 
-    state->world_width = (f32)width;
-    state->world_height = (f32)height;
+    state->world_width_in_tiles  = (f32)width_in_tiles;
+    state->world_height_in_tiles = (f32)height_in_tiles;
+    state->world_width  = state->world_width_in_tiles * state->tile_size;
+    state->world_height = state->world_height_in_tiles * state->tile_size;
+
     state->current_world = name;
-    generate_new_world(state->world_width, state->world_height);
+    generate_new_world(state->world_width_in_tiles, state->world_height_in_tiles);
 }
 
 static void

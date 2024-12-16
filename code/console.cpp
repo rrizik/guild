@@ -115,7 +115,7 @@ console_set_state(ConsoleState state){
 
 static bool
 handle_console_events(Event event){
-    if(event.type == TEXT_INPUT){
+    if(event.type == EventType_TEXT_INPUT){
         if(event.keycode != '`' && event.keycode != '~'){
             u8 c = (u8)event.keycode;
             input_add_char(c);
@@ -123,7 +123,7 @@ handle_console_events(Event event){
             return(true);
         }
     }
-    if(event.type == KEYBOARD){
+    if(event.type == EventType_KEYBOARD){
         if(event.key_pressed){
             if(event.keycode == KeyCode_HOME){
                 console.cursor_index = 0;

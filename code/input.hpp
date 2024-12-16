@@ -126,6 +126,7 @@ typedef enum KeyCode{
 
 // NOTE: Controller
 typedef struct Button{
+    bool released;
     bool pressed;
     bool held;
 } Button;
@@ -157,7 +158,8 @@ global Controller controller;
 static void clear_controller_pressed(void);
 static void clear_controller_held(void);
 static bool controller_button_pressed(KeyCode key, bool consume = false);
-static bool controller_button_held(KeyCode key, bool consume = false);
+static bool controller_button_released(KeyCode key, bool consume = false);
+static bool controller_button_held(KeyCode key);
 
 // NOTE: EVENTS:
 global bool alt_pressed;
@@ -165,11 +167,13 @@ global bool shift_pressed;
 global bool ctrl_pressed;
 
 typedef enum EventType{
-    QUIT,
-    KEYBOARD,
-    MOUSE,
-    TEXT_INPUT,
-    NO_CLIENT,
+    EventType_NONE,
+    EventType_QUIT,
+    EventType_KEYBOARD,
+    EventType_MOUSE,
+    EventType_TEXT_INPUT,
+    EventType_NO_CLIENT,
+    EventType_COUNT,
 } EventType;
 
 typedef struct Event{
@@ -178,6 +182,7 @@ typedef struct Event{
 
     bool repeat;
     bool key_pressed;
+    bool key_released;
     bool shift_pressed;
     bool ctrl_pressed;
     bool alt_pressed;

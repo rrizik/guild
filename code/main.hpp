@@ -79,14 +79,23 @@ global Camera2D world_camera_record;
 
 global bool game_in_focus = true;
 global bool tracking_mouse = false;
+
+typedef enum SceneState{
+    SceneState_None,
+    //SceneState_Menu,
+    SceneState_Game,
+    SceneState_Editor,
+} SceneState;
+
 #define ENTITIES_MAX 4096
 
-#define WORLD_WIDTH_MAX 1000
-#define WORLD_HEIGHT_MAX 1000
+#define WORLD_WIDTH_IN_TILES_MAX 1000
+#define WORLD_HEIGHT_IN_TILES_MAX 1000
 f32 grid_size = 10;
 typedef struct State{
     Arena arena;
-    bool editor;
+    SceneState scene_state;
+    //bool editor;
 
     Entity entities[ENTITIES_MAX];
     u32 entities_count;
@@ -97,16 +106,32 @@ typedef struct State{
 
     Font* font;
 
-    s32 world_grid[WORLD_WIDTH_MAX * WORLD_HEIGHT_MAX];
+    s32 world_grid[WORLD_WIDTH_IN_TILES_MAX * WORLD_HEIGHT_IN_TILES_MAX];
     Entity* castle;
+    v2 castle_cell;
+
+    bool building_selected;
+    s32 building_selected_id;
 
     bool terrain_selected;
-    s32 selected_terrain;
+    s32 terrain_selected_id;
 
-    f32 world_width;
+    f32 tile_size;
+    f32 world_width_in_tiles;
+    f32 world_height_in_tiles;
+    union{
+        struct{
+            f32 world_pos_x;
+            f32 world_pos_y;
+        };
+        v2 world_pos;
+    };
     f32 world_height;
+    f32 world_width;
+    bool dragging_world;
 
     String8 current_world;
+    bool draw_terrain;
 
 } State, PermanentMemory;
 global State* state;
@@ -116,11 +141,16 @@ typedef struct TransientMemory{
     Arena *frame_arena;
     Arena *asset_arena;
     Arena *ui_arena;
-    Arena *hash_arena;
+    Arena *ui_state_arena;
     Arena *batch_arena;
     Arena *data_arena;
 } TransientMemory, TState;
 global TState* ts;
+
+typedef struct Cell_Info{
+    u32 tex_bottom;
+    u32 tex_top;
+} Cell_Info;
 
 static void show_cursor(bool show);
 static void os_fullscreen_mode(Window* window);
@@ -128,9 +158,6 @@ static void os_windowed_mode(Window* window);
 static void change_resolution(Window* window, f32 width, f32 height);
 
 static void sim_game(void);
-static v2 grid_pos_from_cell(f32 x, f32 y);
-static v2 grid_cell_from_pos(f32 x, f32 y);
-static v2 grid_cell_center(f32 x, f32 y);
 
 // todo(rr): get rid of this
 global f32 text_padding = 20;
@@ -152,14 +179,21 @@ static void generate_new_world(f32 width, f32 height);
 static void draw_world_grid(void);
 static void draw_world_terrain(void);
 static void draw_entities(State* state);
-static void debug_draw_render_batches();
-static void debug_draw_mouse_cell_pos();
-static void draw_level_editor();
+static void debug_ui_render_batches(void);
+static void debug_draw_mouse_cell_pos(void);
+static void ui_level_editor(void);
+static void ui_building_castle(void);
+
+static bool mouse_in_cell(v2 cell);
+static v2 grid_pos_from_cell(v2 cell);
+static v2 grid_cell_from_pos(v2 pos);
+static v2 grid_cell_center(v2 pos);
+static s32 world_gird_idx_from_cell(v2 cell);
 
 static void serialize_world(String8 world);
 static void deserialize_world(String8 world);
-static void save_state();
-static void load_state();
+static void save_state(void);
+static void load_state(void);
 
 // how can command know about any variables in the game if its imported above the entire game? Like show all entities of type or something like that
 #include "console.hpp"

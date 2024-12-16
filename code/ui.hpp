@@ -47,19 +47,21 @@ static UI_Size ui_make_size(UI_SizeType type, f32 value, f32 strictness);
 #define ui_size_percent(v, s) ui_make_size(UI_SizeType_PercentOfParent, (v), (s))
 #define ui_size_children(s)   ui_make_size(UI_SizeType_ChildrenSum, (0), (s))
 
+// note consider(rr): Clickable/Draggable are pretty much the same thing. Its about whether you want to use the dragging information or not.
 typedef u32 UI_BoxFlags;
 enum {
-  UI_BoxFlag_Clickable       = (1<<0),
-  UI_BoxFlag_ViewScroll      = (1<<1),
-  UI_BoxFlag_DrawText        = (1<<2),
-  UI_BoxFlag_DrawBorder      = (1<<3),
-  UI_BoxFlag_DrawBackground  = (1<<4),
-  UI_BoxFlag_DrawDropShadow  = (1<<5),
-  UI_BoxFlag_Clip            = (1<<6),
-  UI_BoxFlag_HotAnimation    = (1<<7),
-  UI_BoxFlag_ActiveAnimation = (1<<8),
-  UI_BoxFlag_Draggable       = (1<<9),
-  UI_BoxFlag_Independent     = (1<<10),
+  UI_BoxFlag_None            = (1<<0),
+  UI_BoxFlag_Clickable       = (1<<1),
+  UI_BoxFlag_ViewScroll      = (1<<2),
+  UI_BoxFlag_DrawText        = (1<<3),
+  UI_BoxFlag_DrawBorder      = (1<<4),
+  UI_BoxFlag_DrawBackground  = (1<<5),
+  UI_BoxFlag_DrawDropShadow  = (1<<6),
+  UI_BoxFlag_Clip            = (1<<7),
+  UI_BoxFlag_HotAnimation    = (1<<8),
+  UI_BoxFlag_ActiveAnimation = (1<<9),
+  UI_BoxFlag_Draggable       = (1<<10),
+  UI_BoxFlag_NoSiblings      = (1<<11),
 };
 
 // todo: not even using this
@@ -134,17 +136,20 @@ typedef struct UI_State{
 } UI_State;
 global UI_State* ui_state;
 
-static void init_ui(Arena* parena, Window* window, Controller* controller, Assets* assets);
-static void ui_begin(Arena* arena);
+static void ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets);
+static void ui_begin(void);
 static void ui_end(void);
 static void ui_layout(void);
 static void ui_draw(UI_Box* box);
 
 static UI_Box*   ui_make_box(String8 str, UI_BoxFlags flags);
-static UI_Box*   ui_box(String8 str, UI_BoxFlags flags = 0);
-static UI_Signal ui_button(String8 string, UI_BoxFlags flags_in = 0);
+static UI_Box*   ui_box(String8 str, UI_BoxFlags flags=0);
+static UI_Signal ui_button(String8 string, UI_BoxFlags flags_in=0);
 static void      ui_label(String8 string);
 static void      ui_spacer(f32 size);
+static void      ui_begin_panel(String8 string, UI_BoxFlags flags=0);
+static void      ui_end_panel(void);
+
 static Arena*    ui_arena(void);
 static Window*   ui_window(void);
 static UI_Box*   ui_root(void);

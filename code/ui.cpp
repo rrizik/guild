@@ -6,19 +6,19 @@
 // TODO IMPORTANT(rr): do more loops rather than recursive calls in layout building
 
 static void
-init_ui(Arena* arena, Window* window, Controller* controller, Assets* assets){
+ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
     ui_state = push_struct(arena, UI_State);
     ui_state->window = window;
     ui_state->controller = controller;
     ui_state->default_font = &assets->fonts[FontAsset_Arial];
     //ui_state->generation = 0;
     init_table(arena, &ui_state->table);
+    ui_state->arena = make_arena(MB(100));
 }
 
 static void
-ui_begin(Arena* ui_arena){
+ui_begin(void){
     //ui_state->generation += 1;
-    ui_state->arena = ui_arena;
     ui_state->hot = 0;
     ui_state->closed = false;
 
@@ -32,7 +32,7 @@ ui_begin(Arena* ui_arena){
     ui_push_text_color(BLACK);
 
     ui_push_background_color(CLEAR);
-    ui_push_border_thickness(0);
+    ui_push_border_thickness(10);
     ui_push_font(ui_state->default_font);
 
     ui_state->root = ui_make_box(str8_literal(""), 0);
@@ -189,13 +189,22 @@ ui_make_box(String8 string, UI_BoxFlags flags){
     return(result);
 }
 
-static UI_Box*
-ui_box(String8 string, UI_BoxFlags flags){
-    UI_Box* box = ui_make_box(string, flags);
+static void
+ui_begin_panel(String8 string, UI_BoxFlags flags){
+    if(flags == 0){
+        flags = UI_BoxFlag_DrawBackground|
+                UI_BoxFlag_Draggable|
+                UI_BoxFlag_Clickable|
+                UI_BoxFlag_NoSiblings;
+    }
+    UI_Box* box1 = ui_make_box(string, flags);
+    ui_push_parent(box1);
+}
 
+static void
+ui_end_panel(void){
+    UI_Box* box = ui_pop_parent();
     UI_Signal signal = ui_signal_from_box(box);
-
-    return(box);
 }
 
 static UI_Signal
@@ -238,10 +247,20 @@ ui_signal_from_box(UI_Box* box){
     if(has_flags(box->flags, UI_BoxFlag_Clickable)){
 
         if(rect_contains_point(box->rect, mouse_pos)){
-            ui_state->hot = box->key;
+            if(ui_state->hot == 0){
+                ui_state->hot = box->key;
+            }
         }
 
-        if(ui_state->active == box->key){
+        if(ui_state->hot == box->key && ui_state->active == 0){
+            if(controller_button_pressed(MOUSE_BUTTON_LEFT, true) && controller_button_held(MOUSE_BUTTON_LEFT)){
+                ui_state->active = box->key;
+                ui_state->mouse_pos_record = mouse_pos;
+                ui_state->mouse_pos_record.x -= box->rel_pos[Axis_X];
+                ui_state->mouse_pos_record.y -= box->rel_pos[Axis_Y];
+            }
+        }
+        else if(ui_state->active == box->key){
             if(!controller_button_held(MOUSE_BUTTON_LEFT)){
                 if(rect_contains_point(box->rect, mouse_pos)){
                     signal.pressed_left = true;
@@ -251,20 +270,10 @@ ui_signal_from_box(UI_Box* box){
                 ui_state->mouse_pos_record = {0};
             }
         }
-        else if(ui_state->hot == box->key){
-            if(controller_button_held(MOUSE_BUTTON_LEFT) &&
-               controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                ui_state->active = box->key;
-                ui_state->mouse_pos_record = mouse_pos;
-                ui_state->mouse_pos_record.x -= box->rel_pos[Axis_X];
-                ui_state->mouse_pos_record.y -= box->rel_pos[Axis_Y];
-            }
-        }
     }
 
     if(has_flags(box->flags, UI_BoxFlag_Draggable)){
         if(ui_state->active == box->key && controller_button_held(MOUSE_BUTTON_LEFT)){
-            print("my(%f), myr(%f)\n", mouse_pos.y, ui_state->mouse_pos_record.y);
             box->rel_pos[Axis_X] = (f32)(mouse_pos.x - ui_state->mouse_pos_record.x);
             box->rel_pos[Axis_Y] = (f32)(mouse_pos.y - ui_state->mouse_pos_record.y);
         }
@@ -343,7 +352,7 @@ ui_traverse_positions(UI_Box* box, Axis axis){
     // TODO(rr): why do I have this here?
     //if(!box->prev){
     if(box->layout_axis == axis){
-        if(has_flags(box->flags, UI_BoxFlag_Independent)){
+        if(has_flags(box->flags, UI_BoxFlag_NoSiblings)){
             if(box->parent){
                 box->pos[axis] = box->parent->pos[axis] + box->rel_pos[axis] + box->border_thickness;
             }
@@ -360,7 +369,7 @@ ui_traverse_positions(UI_Box* box, Axis axis){
         }
     }
     else{
-        if(has_flags(box->flags, UI_BoxFlag_Independent)){
+        if(has_flags(box->flags, UI_BoxFlag_NoSiblings)){
             if(box->parent){
                 box->pos[axis] = box->parent->pos[axis] + box->rel_pos[axis] + box->border_thickness;
             }

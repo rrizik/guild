@@ -12,6 +12,7 @@ static void
 clear_controller_pressed(void){
     for(s32 i=0; i < KeyCode_Count; ++i){
         controller.button[i].pressed = false;
+        controller.button[i].released = false;
     }
     controller.mouse.dx = 0;
     controller.mouse.dy = 0;
@@ -34,18 +35,26 @@ controller_button_pressed(KeyCode key, bool consume){
 }
 
 static bool
-controller_button_held(KeyCode key, bool consume){
-    bool result = controller.button[key].held;
+controller_button_released(KeyCode key, bool consume){
+    bool result = controller.button[key].released;
     if(consume){
-        controller.button[key].held = false;
+        controller.button[key].released = false;
     }
 
+    return(result);
+}
+
+static bool
+controller_button_held(KeyCode key){
+    bool result = controller.button[key].held;
     return(result);
 }
 
 static void
 init_events(Events* events){
     events->size = array_count(events->e);
+    events->read = 0;
+    events->write = 0;
 }
 
 static u32
@@ -62,7 +71,13 @@ events_full(Events* events){
 
 static bool
 events_empty(Events* events){
-    bool result = (events->write == events->read);
+    bool result = (events->read == events->write);
+    return(result);
+}
+
+static bool
+events_available(Events* events){
+    bool result = (events->read < events->write);
     return(result);
 }
 
@@ -92,7 +107,7 @@ events_next(Events* events){
 static void
 events_quit(Events* events){
     Event event = {0};
-    event.type = QUIT;
+    event.type = EventType_QUIT;
     events_add(events, event);
 }
 

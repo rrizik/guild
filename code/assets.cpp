@@ -25,8 +25,8 @@ load_assets(Arena* arena, Assets* assets){
     //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass7].view, &bm);
     //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass8.bmp"));
     //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass8].view, &bm);
-    //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/castle1.bmp"));
-    //d3d_init_texture_resource(&assets->textures[TextureAsset_Castle1].view, &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/castle1.bmp"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Castle1].view, &bm);
 
     bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/water1.png"));
     d3d_init_texture_resource(&assets->textures[TextureAsset_Water1].view, &bm);
