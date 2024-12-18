@@ -273,10 +273,10 @@ static Font*   ui_top_font(void)                { ui_stack_top_impl(font) }
 // set sets only for the next item and none after
 
 // Push/Pop/Top/Set Compositions
-static void ui_push_pos(v2 pos)                 { ui_push_pos_x(pos.x); ui_push_pos_y(pos.y); }
-static void ui_pop_pos()                        { ui_pop_pos_x(); ui_pop_pos_y(); }
-static void ui_push_size(v2 pos);
-static void ui_pop_size();
+static void ui_push_pos(f32 x, f32 y)           { ui_push_pos_x(x); ui_push_pos_y(y); }
+static void ui_pop_pos(void)                    { ui_pop_pos_x(); ui_pop_pos_y(); }
+static void ui_push_size(UI_Size w, UI_Size h)  { ui_push_size_w(w); ui_push_size_h(h); }
+static void ui_pop_size(void)                   { ui_pop_size_w(); ui_pop_size_h(); }
 
 //------------------------------------------------------------
 
@@ -294,7 +294,8 @@ static void ui_pop_size();
 #define ui_font(v)             defer_loop(ui_push_font(v), ui_pop_font())
 
 // DeferLoops Compositions
-#define ui_pos(v) defer_loop(ui_push_pos(v), ui_pop_pos())
+#define ui_pos(v_1, v_2)       defer_loop(ui_push_pos(v_1, v_2), ui_pop_pos())
+#define ui_size(v_1, v_2)      defer_loop(ui_push_size(v_1, v_2), ui_pop_size())
 
 #endif
 
