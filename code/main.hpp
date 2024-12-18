@@ -195,7 +195,6 @@ static void deserialize_world(String8 world);
 static void save_state(void);
 static void load_state(void);
 
-// how can command know about any variables in the game if its imported above the entire game? Like show all entities of type or something like that
 #include "console.hpp"
 #include "command.hpp"
 #include "console.cpp"

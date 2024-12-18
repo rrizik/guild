@@ -195,8 +195,8 @@ typedef struct UI_BorderThicknessNode { UI_BorderThicknessNode* next; f32 v;    
 typedef struct UI_FontNode            { UI_FontNode*            next; Font* v;   } UI_FontNode;
 
 // todo:
-// figure what the defaults should be.
-// nill structs. used as the base for all the structs
+// figure out what the defaults should be.
+// null structs. used as the base for all the structs
 // some mechanism that prevents you from popping the nill struct
 
 // set sets only for the next item and none after
@@ -248,7 +248,8 @@ static RGBA    ui_top_background_color(void)    { ui_stack_top_impl(background_c
 static f32     ui_top_border_thickness(void)    { ui_stack_top_impl(border_thickness) }
 static Font*   ui_top_font(void)                { ui_stack_top_impl(font) }
 
-static void ui_rest_stacks(void);
+#define ui_pos_x(v) defer_loop(ui_push_pos_x(v), ui_pop_pos_x())
+#define ui_pos_y(v) defer_loop(ui_push_pos_y(v), ui_pop_pos_y())
 
 #endif
 

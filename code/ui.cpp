@@ -31,9 +31,11 @@ ui_begin(void){
     ui_push_text_padding(0);
     ui_push_text_color(BLACK);
 
-    ui_push_background_color(CLEAR);
     ui_push_border_thickness(10);
+
     ui_push_font(ui_state->default_font);
+
+    ui_push_background_color(CLEAR);
 
     ui_state->root = ui_make_box(str8_literal(""), 0);
     ui_push_parent(ui_state->root);

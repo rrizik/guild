@@ -462,17 +462,23 @@ ui_level_editor(void){
 
 static void
 ui_building_castle(void){
-    ui_push_pos_x(20);
-    ui_push_pos_y(window.height - 100);
     ui_push_size_w(ui_size_children(0));
     ui_push_size_h(ui_size_children(0));
     ui_push_layout_axis(Axis_X);
 
     ui_push_border_thickness(10);
     ui_push_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##3"));
-    ui_pop_pos_x();
-    ui_pop_pos_y();
+    //ui_push_pos_x(20);
+    //ui_push_pos_y(window.height - 100);
+    ui_pos_x(20);
+    ui_pos_y(window.height - 100);
+    {
+        ui_begin_panel(str8_literal("box1##3"), UI_BoxFlag_DrawBackground|
+                                                UI_BoxFlag_Clickable|
+                                                UI_BoxFlag_NoSiblings);
+    }
+    //ui_pop_pos_x();
+    //ui_pop_pos_y();
 
     ui_push_size_w(ui_size_pixel(100, 0));
     ui_push_size_h(ui_size_pixel(50, 0));
@@ -1294,17 +1300,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             state->building_selected_id = TextureAsset_Castle1;
             state->building_selected = true;
         }
-        if(!mouse_in_cell(state->castle_cell) && controller_button_pressed(MOUSE_BUTTON_LEFT, true)){
-            state->building_selected_id = TextureAsset_None;
-            state->building_selected = false;
-        }
-
-        //----constant buffer----
-        D3D11_MAPPED_SUBRESOURCE mapped_subresource;
-        d3d_context->Map(d3d_constant_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_subresource);
-        ConstantBuffer2D* constants = (ConstantBuffer2D*)mapped_subresource.pData;
-        constants->screen_res = make_v2s32((s32)window.width, (s32)window.height);
-        d3d_context->Unmap(d3d_constant_buffer, 0);
 
         console_update();
 
@@ -1372,6 +1367,13 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         // rendering
         {
+            //----constant buffer----
+            D3D11_MAPPED_SUBRESOURCE mapped_subresource;
+            d3d_context->Map(d3d_constant_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_subresource);
+            ConstantBuffer2D* constants = (ConstantBuffer2D*)mapped_subresource.pData;
+            constants->screen_res = make_v2s32((s32)window.width, (s32)window.height);
+            d3d_context->Unmap(d3d_constant_buffer, 0);
+
             render_batches_reset();
             arena_free(ts->batch_arena);
             draw_world_terrain();
