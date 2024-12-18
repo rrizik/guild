@@ -191,14 +191,9 @@ ui_make_box(String8 string, UI_BoxFlags flags){
     return(result);
 }
 
+// Basic Widgets
 static void
 ui_begin_panel(String8 string, UI_BoxFlags flags){
-    if(flags == 0){
-        flags = UI_BoxFlag_DrawBackground|
-                UI_BoxFlag_Draggable|
-                UI_BoxFlag_Clickable|
-                UI_BoxFlag_NoSiblings;
-    }
     UI_Box* box1 = ui_make_box(string, flags);
     ui_push_parent(box1);
 }

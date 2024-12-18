@@ -373,7 +373,7 @@ debug_ui_render_batches(void){
     ui_push_size_h(ui_size_children(0));
     ui_push_border_thickness(10);
     ui_push_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##1"));
+    ui_begin_panel(str8_literal("box1##1"), ui_floating_panel);
     ui_pop_pos_x();
     ui_pop_pos_y();
 
@@ -420,7 +420,7 @@ ui_level_editor(void){
 
     ui_push_border_thickness(10);
     ui_push_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##2"));
+    ui_begin_panel(str8_literal("box1##2"), ui_floating_panel);
     ui_pop_pos_x();
     ui_pop_pos_y();
 
@@ -462,35 +462,30 @@ ui_level_editor(void){
 
 static void
 ui_building_castle(void){
-    ui_push_size_w(ui_size_children(0));
-    ui_push_size_h(ui_size_children(0));
     ui_push_layout_axis(Axis_X);
 
-    ui_push_border_thickness(10);
-    ui_push_background_color(DEFAULT);
-    //ui_push_pos_x(20);
-    //ui_push_pos_y(window.height - 100);
-    ui_pos_x(20);
-    ui_pos_y(window.height - 100);
+    ui_size_w(ui_size_children(0))
+    ui_size_h(ui_size_children(0))
+    ui_border_thickness(10)
+    ui_background_color(DEFAULT)
+    ui_pos(make_v2(20, window.height - 100))
     {
-        ui_begin_panel(str8_literal("box1##3"), UI_BoxFlag_DrawBackground|
-                                                UI_BoxFlag_Clickable|
-                                                UI_BoxFlag_NoSiblings);
+        ui_begin_panel(str8_literal("box1##3"), ui_fixed_panel);
     }
-    //ui_pop_pos_x();
-    //ui_pop_pos_y();
 
-    ui_push_size_w(ui_size_pixel(100, 0));
-    ui_push_size_h(ui_size_pixel(50, 0));
-    ui_push_background_color(DARK_GRAY);
-    if(ui_button(str8_literal("unit 1")).pressed_left){
-    }
-    ui_spacer(10);
-    if(ui_button(str8_literal("unit 2")).pressed_left){
-    }
-    ui_spacer(10);
-    if(ui_button(str8_literal("unit 3")).pressed_left){
-    }
+    ui_size_w(ui_size_pixel(100, 0))
+    ui_size_h(ui_size_pixel(50, 0))
+    ui_background_color(DARK_GRAY)
+	{
+		if(ui_button(str8_literal("unit 1")).pressed_left){
+		}
+		ui_spacer(10);
+		if(ui_button(str8_literal("unit 2")).pressed_left){
+		}
+		ui_spacer(10);
+		if(ui_button(str8_literal("unit 3")).pressed_left){
+		}
+	}
 
     ui_end_panel();
 }
@@ -1219,7 +1214,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         deserialize_world(state->current_world);
 
         // load castle
-        state->castle_cell = make_v2(5, 5);
+        state->castle_cell = make_v2(0, 0);
         v2 castle_pos = grid_pos_from_cell(state->castle_cell);
         v2 cell_center = grid_cell_center(castle_pos);
         state->castle = add_castle(TextureAsset_Castle1, cell_center, make_v2(10, 10));

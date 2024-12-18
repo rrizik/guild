@@ -27,7 +27,8 @@ if "%1" == "" (
 
 set cl_includes=-I ..\..\base\code
 set cl_flags=-Zi -nologo -std:c++latest -Wall -WX 
-set cl_ignore_warnings=-wd4201 -wd4189 -wd4101 -wd4505 -wd4820 -wd5045 -wd4996 -wd4100 -wd4668 -wd4711 -wd4062 -wd4388 -wd4018 -wd4459 -wd4626 -wd4200 -wd4710
+set cl_ignore_warnings=-wd4201 -wd4189 -wd4101 -wd4505 -wd4820 -wd5045 -wd4996 -wd4100 -wd4668 -wd4711 -wd4062 -wd4388 -wd4018 -wd4459 -wd4626 -wd4200 -wd4710 -wd4456
+
 
 IF NOT EXIST ..\build mkdir ..\build
 pushd ..\build
@@ -52,5 +53,6 @@ popd
 :: C4459: declaration of <variable> hides global declaration
 :: C4200: empty [] initialization
 :: C4710: function not inlined
+:: C4456: declaration of '_i_' hides previous local declaration
 ::
 :: C4626: remove and understand (something to do with defer)
