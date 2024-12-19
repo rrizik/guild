@@ -229,11 +229,10 @@ ui_label(String8 string){
 static void
 ui_spacer(f32 size){
     u32 flags = 0;
-    ui_push_size_w(ui_size_pixel(size, 0));
-    ui_push_size_h(ui_size_pixel(size, 0));
-    UI_Box* box = ui_make_box(str8_literal(""), flags);
-    ui_pop_size_w();
-    ui_pop_size_h();
+    ui_size(ui_size_pixel(size, 0), ui_size_pixel(size, 0))
+    {
+        UI_Box* box = ui_make_box(str8_literal(""), flags);
+    }
 }
 
 static UI_Signal

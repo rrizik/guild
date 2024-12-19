@@ -160,12 +160,11 @@ static void      ui_close(void);
 static String8   ui_text_part_from_key(String8 string);
 
 static UI_Box*   ui_make_box(String8 str, UI_BoxFlags flags);
-static UI_Box*   ui_box(String8 str, UI_BoxFlags flags=0);
+static void      ui_begin_panel(String8 string, UI_BoxFlags flags=0);
+static void      ui_end_panel(void);
 static UI_Signal ui_button(String8 string, UI_BoxFlags flags_in=0);
 static void      ui_label(String8 string);
 static void      ui_spacer(f32 size);
-static void      ui_begin_panel(String8 string, UI_BoxFlags flags=0);
-static void      ui_end_panel(void);
 
 static BoxCache cache_from_box(UI_Box* box);
 static UI_Signal ui_signal_from_box(UI_Box* box);

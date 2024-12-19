@@ -367,44 +367,43 @@ debug_draw_mouse_cell_pos(void){
 static void
 debug_ui_render_batches(void){
 
-    ui_push_pos_x(SCREEN_WIDTH - 200);
-    ui_push_pos_y(10);
-    ui_push_size_w(ui_size_children(0));
-    ui_push_size_h(ui_size_children(0));
-    ui_push_border_thickness(10);
-    ui_push_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##1"), ui_floating_panel);
-    ui_pop_pos_x();
-    ui_pop_pos_y();
+    ui_pos(SCREEN_WIDTH - 200, 10)
+    ui_size(ui_size_children(0), ui_size_children(0))
+    ui_border_thickness(10)
+    ui_background_color(DEFAULT)
+    {
+        ui_begin_panel(str8_literal("box1##1"), ui_floating_panel);
+    }
 
-    ui_push_size_w(ui_size_text(0));
-    ui_push_size_h(ui_size_text(0));
-    ui_push_text_color(LIGHT_GRAY);
+    ui_size(ui_size_text(0), ui_size_text(0))
+    ui_text_color(LIGHT_GRAY)
+    {
 
-    v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
-    String8 mouse_pos = str8_format(ts->frame_arena, "mouse pos: %f, %f", controller.mouse.x, controller.mouse.y);
-    ui_label(mouse_pos);
+        v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
+        String8 mouse_pos = str8_format(ts->frame_arena, "mouse pos: %f, %f", controller.mouse.x, controller.mouse.y);
+        ui_label(mouse_pos);
 
-    v2 cell = grid_cell_from_pos(world_mouse);
-    String8 mouse_cell = str8_format(ts->frame_arena, "mouse cell: %f, %f", cell.x, cell.y);
-    ui_label(mouse_cell);
+        v2 cell = grid_cell_from_pos(world_mouse);
+        String8 mouse_cell = str8_format(ts->frame_arena, "mouse cell: %f, %f", cell.x, cell.y);
+        ui_label(mouse_cell);
 
-    String8 zoom = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
-    ui_label(zoom);
-    String8 pos = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
-    ui_label(pos);
-    ui_spacer(10);
+        String8 zoom = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
+        ui_label(zoom);
+        String8 pos = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
+        ui_label(pos);
+        ui_spacer(10);
 
-    String8 title = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
-    ui_label(title);
+        String8 title = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
+        ui_label(title);
 
-    s32 count = 0;
-    for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-        if(count < 25){
-            String8 batch_str = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->count, batch->cap, batch->id);
-            ui_label(batch_str);
+        s32 count = 0;
+        for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+            if(count < 25){
+                String8 batch_str = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->count, batch->cap, batch->id);
+                ui_label(batch_str);
+            }
+            count++;
         }
-        count++;
     }
 
     ui_end_panel();
@@ -413,48 +412,46 @@ debug_ui_render_batches(void){
 static void
 ui_level_editor(void){
 
-    ui_push_pos_x(20);
-    ui_push_pos_y(20);
-    ui_push_size_w(ui_size_children(0));
-    ui_push_size_h(ui_size_children(0));
+    ui_pos(20, 20)
+    ui_size(ui_size_children(0), ui_size_children(0))
+    ui_border_thickness(10)
+    ui_background_color(DEFAULT)
+    {
+        ui_begin_panel(str8_literal("box1##2"), ui_floating_panel);
+    }
 
-    ui_push_border_thickness(10);
-    ui_push_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##2"), ui_floating_panel);
-    ui_pop_pos_x();
-    ui_pop_pos_y();
-
-    ui_push_size_w(ui_size_pixel(100, 0));
-    ui_push_size_h(ui_size_pixel(50, 0));
-    ui_push_background_color(DARK_GRAY);
-    if(ui_button(str8_literal("none")).pressed_left){
-        state->terrain_selected_id = 0;
-        state->terrain_selected = false;
-    }
-    ui_spacer(10);
-    if(ui_button(str8_literal("erase")).pressed_left){
-        state->terrain_selected_id = 0;
-        state->terrain_selected = true;
-    }
-    ui_spacer(10);
-    if(ui_button(str8_literal("grass")).pressed_left){
-        state->terrain_selected_id = TextureAsset_Grass1;
-        state->terrain_selected = true;
-    }
-    ui_spacer(10);
-    if(ui_button(str8_literal("water")).pressed_left){
-        state->terrain_selected_id = TextureAsset_Water1;
-        state->terrain_selected = true;
-    }
-    ui_spacer(10);
-    if(ui_button(str8_literal("wood")).pressed_left){
-        state->terrain_selected_id = TextureAsset_Wood1;
-        state->terrain_selected = true;
-    }
-    ui_spacer(10);
-    if(ui_button(str8_literal("lava")).pressed_left){
-        state->terrain_selected_id = TextureAsset_Lava1;
-        state->terrain_selected = true;
+    ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
+    ui_background_color(DARK_GRAY)
+    {
+        if(ui_button(str8_literal("none")).pressed_left){
+            state->terrain_selected_id = 0;
+            state->terrain_selected = false;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("erase")).pressed_left){
+            state->terrain_selected_id = 0;
+            state->terrain_selected = true;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("grass")).pressed_left){
+            state->terrain_selected_id = TextureAsset_Grass1;
+            state->terrain_selected = true;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("water")).pressed_left){
+            state->terrain_selected_id = TextureAsset_Water1;
+            state->terrain_selected = true;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("wood")).pressed_left){
+            state->terrain_selected_id = TextureAsset_Wood1;
+            state->terrain_selected = true;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("lava")).pressed_left){
+            state->terrain_selected_id = TextureAsset_Lava1;
+            state->terrain_selected = true;
+        }
     }
 
     ui_end_panel();
