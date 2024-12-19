@@ -300,9 +300,9 @@ static void ui_pop_size(void)                   { ui_pop_size_w(); ui_pop_size_h
 #endif
 
 /*
-root_function UI_BoxFlags           UI_TopFlags(void);
-root_function F32                   UI_TopOpacity(void);
-root_function Vec4F32               UI_TopBorderColor(void);
+root_function UI_BoxFlags           UI_TopFlags(void);*
+root_function F32                   UI_TopOpacity(void);*
+root_function Vec4F32               UI_TopBorderColor(void);*
 root_function Vec4F32               UI_TopOverlayColor(void);
 root_function Vec4F32               UI_TopFillColor(void);
 root_function Vec4F32               UI_TopCursorColor(void);
@@ -310,7 +310,7 @@ root_function F32                   UI_TopCornerRadius00(void);
 root_function F32                   UI_TopCornerRadius01(void);
 root_function F32                   UI_TopCornerRadius10(void);
 root_function F32                   UI_TopCornerRadius11(void);
-root_function F32                   UI_TopFontSize(void);
+root_function F32                   UI_TopFontSize(void);*
 root_function OS_CursorKind         UI_TopHoverCursor(void);
 root_function UI_TextAlignment      UI_TopTextAlign(void);
 root_function UI_Key                UI_TopSeedKey(void);
