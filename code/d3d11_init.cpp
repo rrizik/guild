@@ -27,7 +27,7 @@ d3d_load_shader(String8 shader_path, D3D11_INPUT_ELEMENT_DESC* il, u32 layout_co
     String16 utf16_shader_path = os_utf16_from_utf8(scratch.arena, shader_path);
 
     ID3DBlob* vs_blob, *ps_blob, *error;
-    hr = D3DCompileFromFile((wchar*)utf16_shader_path.str, 0, 0, "vs_main", "vs_5_0", shader_compile_flags, 0, &vs_blob, &error);
+    hr = D3DCompileFromFile((wchar*)utf16_shader_path.str, 0, 0, "vs_main", "vs_4_0", shader_compile_flags, 0, &vs_blob, &error);
     if(FAILED(hr)) {
         print("Error: failed D3DCompileFromFile()\n");
         print("\tMessage: %s\n", (char*)error->GetBufferPointer());
@@ -36,7 +36,7 @@ d3d_load_shader(String8 shader_path, D3D11_INPUT_ELEMENT_DESC* il, u32 layout_co
     hr = d3d_device->CreateVertexShader(vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), 0, d3d_vs);
     assert_hr(hr);
 
-    hr = D3DCompileFromFile((wchar*)utf16_shader_path.str, 0, 0, "ps_main", "ps_5_0", shader_compile_flags, 0, &ps_blob, &error);
+    hr = D3DCompileFromFile((wchar*)utf16_shader_path.str, 0, 0, "ps_main", "ps_4_0", shader_compile_flags, 0, &ps_blob, &error);
     if(FAILED(hr)) {
         print("Error: failed D3DCompileFromFile()\n");
         print("\tMessage: %s\n", (char*)error->GetBufferPointer());
@@ -80,16 +80,18 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     // ---------------------------------------------------------------------------------
     // Device + Context
     // ---------------------------------------------------------------------------------
-    D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_0 };
+    D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0, // not used but simply here to list the feature levels.
+                                          D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_9_2, D3D_FEATURE_LEVEL_9_1 };  // instead we pass null to try all levels from highest to lowest
     u32 flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
 #if DEBUG
     flags |= D3D11_CREATE_DEVICE_DEBUG;
+    print("DEBUG\n");
 #endif
 
     ID3D11Device* base_device;
     ID3D11DeviceContext* base_device_context;
-    hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &base_device, nullptr, &base_device_context);
+    hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, 0, 0, D3D11_SDK_VERSION, &base_device, nullptr, &base_device_context);
     assert_hr(hr);
 
     hr = base_device->QueryInterface(__uuidof(ID3D11Device1), (void**)(&d3d_device));

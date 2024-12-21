@@ -1138,7 +1138,7 @@ win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
 s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 window_type){
     begin_profiler();
 
-    window = win32_window_create(L"Roids", SCREEN_WIDTH, SCREEN_HEIGHT);
+    window = win32_window_create(L"Guild", SCREEN_WIDTH, SCREEN_HEIGHT);
     if(!window.handle){
         print("Error: Could not create window\n");
         return(0);
