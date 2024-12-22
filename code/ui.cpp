@@ -14,13 +14,26 @@ ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
     //ui_state->generation = 0;
     init_table(arena, &ui_state->table);
     ui_state->arena = make_arena(MB(100));
+
+    ui_state->parent_stack.top = &ui_parent_nil;
+    ui_state->pos_x_stack.top = &ui_pos_x_nil;
+
+    ui_state->pos_y_stack.top = &ui_pos_y_nil;
+    ui_state->size_w_stack.top = &ui_size_w_nil;
+    ui_state->size_h_stack.top = &ui_size_h_nil;
+    ui_state->layout_axis_stack.top = &ui_layout_axis_nil;
+    ui_state->text_padding_stack.top = &ui_text_padding_nil;
+    ui_state->text_color_stack.top = &ui_text_color_nil;
+    ui_state->background_color_stack.top = &ui_background_color_nil;
+    ui_state->border_thickness_stack.top = &ui_border_thickness_nil;
+    ui_state->font_stack.top = &ui_font_nil;
 }
 
 static void
 ui_begin(void){
     //ui_state->generation += 1;
     ui_state->hot = 0;
-    ui_state->closed = false;
+    //ui_state->closed = false;
 
     ui_push_pos_x(0);
     ui_push_pos_y(0);
@@ -39,16 +52,6 @@ ui_begin(void){
 
     ui_state->root = ui_make_box(str8_literal(""), 0);
     ui_push_parent(ui_state->root);
-}
-
-static void
-ui_layout(void){
-    for(Axis axis=(Axis)0; axis < Axis_Count; axis = (Axis)(axis + 1)){
-        ui_traverse_independent(ui_root(), axis);
-        ui_traverse_children(ui_root(), axis);
-        ui_traverse_positions(ui_root(), axis);
-    }
-    ui_traverse_rects(ui_root());
 }
 
 static void
@@ -71,6 +74,90 @@ ui_end(void){
     ui_font_top = 0;
 
     arena_free(ui_arena());
+}
+
+static void
+ui_layout(void){
+    for(Axis axis=(Axis)0; axis < Axis_Count; axis = (Axis)(axis + 1)){
+        ui_traverse_independent(ui_root(), axis);
+        ui_traverse_children(ui_root(), axis);
+        ui_traverse_positions(ui_root(), axis);
+    }
+    ui_traverse_rects(ui_root());
+}
+
+static void
+ui_auto_pop(void){
+    if(ui_parent_top->auto_pop)           { ui_parent_top->auto_pop = false; ui_pop_parent(); }
+    if(ui_pos_x_top->auto_pop)            { ui_pos_x_top->auto_pop = false; ui_pop_pos_x(); }
+    if(ui_pos_y_top->auto_pop)            { ui_pos_y_top->auto_pop = false; ui_pop_pos_y(); }
+    if(ui_size_w_top->auto_pop)           { ui_size_w_top->auto_pop = false; ui_pop_size_w(); }
+    if(ui_size_h_top->auto_pop)           { ui_size_h_top->auto_pop = false; ui_pop_size_h(); }
+    if(ui_layout_axis_top->auto_pop)      { ui_layout_axis_top->auto_pop = false; ui_pop_layout_axis(); }
+    if(ui_text_padding_top->auto_pop)     { ui_text_padding_top->auto_pop = false; ui_pop_text_padding(); }
+    if(ui_text_color_top->auto_pop)       { ui_text_color_top->auto_pop = false; ui_pop_text_color(); }
+    if(ui_background_color_top->auto_pop) { ui_background_color_top->auto_pop = false; ui_pop_background_color(); }
+    if(ui_border_thickness_top->auto_pop) { ui_border_thickness_top->auto_pop = false; ui_pop_border_thickness(); }
+    if(ui_font_top->auto_pop)             { ui_font_top->auto_pop = false; ui_pop_font(); }
+
+    if(ui_state->parent_stack.auto_pop)           { ui_state->parent_stack.auto_pop = false; ui_pop_parent(); }
+    if(ui_state->pos_x_stack.auto_pop)            { ui_state->pos_x_stack.auto_pop = false; ui_pop_pos_x(); }
+    if(ui_state->pos_y_stack.auto_pop)            { ui_state->pos_y_stack.auto_pop = false; ui_pop_pos_y(); }
+    if(ui_state->size_w_stack.auto_pop)           { ui_state->size_w_stack.auto_pop = false; ui_pop_size_w(); }
+    if(ui_state->size_h_stack.auto_pop)           { ui_state->size_h_stack.auto_pop = false; ui_pop_size_h(); }
+    if(ui_state->layout_axis_stack.auto_pop)      { ui_state->layout_axis_stack.auto_pop = false; ui_pop_layout_axis(); }
+    if(ui_state->text_padding_stack.auto_pop)     { ui_state->text_padding_stack.auto_pop = false; ui_pop_text_padding(); }
+    if(ui_state->text_color_stack.auto_pop)       { ui_state->text_color_stack.auto_pop = false; ui_pop_text_color(); }
+    if(ui_state->background_color_stack.auto_pop) { ui_state->background_color_stack.auto_pop = false; ui_pop_background_color(); }
+    if(ui_state->border_thickness_stack.auto_pop) { ui_state->border_thickness_stack.auto_pop = false; ui_pop_border_thickness(); }
+    if(ui_state->font_stack.auto_pop)             { ui_state->font_stack.auto_pop = false; ui_pop_font(); }
+}
+
+// todo: ui_root() on first function call so that you don't have to pass it in.
+static void
+ui_draw(UI_Box* box){
+    // todo(rr): idk why this is needed anymore
+    //if(ui_closed()){
+    //    return;
+    //}
+
+    if(box == 0){
+        return;
+    }
+
+    set_font(box->font);
+
+    if(has_flags(box->flags, UI_BoxFlag_DrawBackground)){
+        if(ui_state->hot == box->key && ui_state->active == box->key){
+            if(has_flags(box->flags, UI_BoxFlag_ActiveAnimation)){
+                box->background_color = darken_color(box->background_color, 0.2f);
+            }
+        }
+        if(ui_state->hot == box->key && ui_state->active == 0){
+            if(has_flags(box->flags, UI_BoxFlag_HotAnimation)){
+                box->background_color = brighten_color(box->background_color, 0.2f);
+            }
+        }
+        draw_quad(box->rect, box->background_color);
+    }
+    if(has_flags(box->flags, UI_BoxFlag_DrawText)){
+        String8 text = ui_text_part_from_key(box->string);
+
+        f32 width = font_string_width(box->font, text);
+        f32 vertical_offset = font_vertical_offset(box->font);
+        f32 ascent = font_ascent(box->font);
+        f32 descent = font_descent(box->font);
+
+        f32 center = ascent - (ascent - descent)/2;
+        v2 pos = make_v2(box->rect.min.x + box->size[Axis_X]/2 - width/2,
+                         box->rect.min.y + box->size[Axis_Y]/2 + center);
+        draw_text(text, pos, box->text_color);
+    }
+
+    if(box->first){
+        ui_draw(box->first);
+    }
+    ui_draw(box->next);
 }
 
 static Arena*
@@ -103,15 +190,16 @@ ui_mouse(void){
     return(ui_state->controller->mouse);
 }
 
-static bool
-ui_closed(void){
-    return(ui_state->closed);
-}
-
-static void
-ui_close(void){
-    ui_state->closed = true;
-}
+// todo(rr): idk why this is needed anymore
+//static bool
+//ui_closed(void){
+//    return(ui_state->closed);
+//}
+//
+//static void
+//ui_close(void){
+//    ui_state->closed = true;
+//}
 
 static String8
 ui_text_part_from_key(String8 string){
@@ -187,6 +275,8 @@ ui_make_box(String8 string, UI_BoxFlags flags){
         result->rel_pos[Axis_X] = cache->rel_pos[Axis_X];
         result->rel_pos[Axis_Y] = cache->rel_pos[Axis_Y];
     }
+
+    //ui_auto_pop();
 
     return(result);
 }
@@ -413,52 +503,6 @@ ui_traverse_rects(UI_Box* box){
         ui_traverse_rects(box->first);
     }
     ui_traverse_rects(box->next);
-}
-
-// todo: ui_root() on first function call so that you don't have to pass it in.
-static void
-ui_draw(UI_Box* box){
-    if(ui_closed()){
-        return;
-    }
-
-    if(box == 0){
-        return;
-    }
-
-    set_font(box->font);
-
-    if(has_flags(box->flags, UI_BoxFlag_DrawBackground)){
-        if(ui_state->hot == box->key && ui_state->active == box->key){
-            if(has_flags(box->flags, UI_BoxFlag_ActiveAnimation)){
-                box->background_color = darken_color(box->background_color, 0.2f);
-            }
-        }
-        if(ui_state->hot == box->key && ui_state->active == 0){
-            if(has_flags(box->flags, UI_BoxFlag_HotAnimation)){
-                box->background_color = brighten_color(box->background_color, 0.2f);
-            }
-        }
-        draw_quad(box->rect, box->background_color);
-    }
-    if(has_flags(box->flags, UI_BoxFlag_DrawText)){
-        String8 text = ui_text_part_from_key(box->string);
-
-        f32 width = font_string_width(box->font, text);
-        f32 vertical_offset = font_vertical_offset(box->font);
-        f32 ascent = font_ascent(box->font);
-        f32 descent = font_descent(box->font);
-
-        f32 center = ascent - (ascent - descent)/2;
-        v2 pos = make_v2(box->rect.min.x + box->size[Axis_X]/2 - width/2,
-                         box->rect.min.y + box->size[Axis_Y]/2 + center);
-        draw_text(text, pos, box->text_color);
-    }
-
-    if(box->first){
-        ui_draw(box->first);
-    }
-    ui_draw(box->next);
 }
 
 #endif

@@ -36,6 +36,7 @@ cl %cl_flags% %cl_optimization% %cl_ignore_warnings% %cl_includes% ..\code\main.
 popd
 
 
+:: C5246: the initialization of a subobject should be wrapped in braces
 :: C4201: nonstandard extension used: nameless struct/union
 :: C4189: local variable is initialized but not referenced
 :: C4101: unreferenced local variable

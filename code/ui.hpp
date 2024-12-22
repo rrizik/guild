@@ -121,32 +121,11 @@ typedef struct BoxCache{
     f32 rel_pos[Axis_Count];
 } BoxCache;
 
-typedef struct UI_State{
-    Arena* arena;
-    Window* window;
-    Controller* controller;
-    Font* default_font;
-
-    UI_Box* root;
-
-    HashTable table;
-
-    u64 hot;
-    u64 active;
-
-    v2 mouse_pos_record;
-
-    bool closed;
-
-    //u64 generation;
-
-} UI_State;
-global UI_State* ui_state;
-
 static void ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets);
 static void ui_begin(void);
 static void ui_end(void);
 static void ui_layout(void);
+static void ui_auto_pop(void);
 static void ui_draw(UI_Box* box);
 
 static Arena*    ui_arena(void);
@@ -155,8 +134,9 @@ static UI_Box*   ui_root(void);
 static HashTable ui_table(void);
 static v2        ui_mouse_pos(void);
 static Mouse     ui_mouse(void);
-static bool      ui_closed(void);
-static void      ui_close(void);
+// todo(rr): idk why this is needed anymore
+//static bool      ui_closed(void);
+//static void      ui_close(void);
 static String8   ui_text_part_from_key(String8 string);
 
 static UI_Box*   ui_make_box(String8 str, UI_BoxFlags flags);
@@ -175,52 +155,71 @@ static void ui_traverse_positions(UI_Box* box, Axis axis);
 static void ui_traverse_rects(UI_Box* box);
 
 //------------------------------------------------------------
+// Node Definitions
 
-// Stack Macros
-#define ui_stack_push_impl(arena, type, name, v) \
-    UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
-    node->v = v; \
-    node->next = ui_##name##_top; \
-    ui_##name##_top = node; \
-    return(node->v); \
-
-#define ui_stack_pop_impl(type, name) \
-    UI_##type##Node* node = ui_##name##_top; \
-    ui_##name##_top = ui_##name##_top->next; \
-    return(node->v); \
-
-#define ui_stack_top_impl(name) return(ui_##name##_top->v);
-
-//#define UI_StackSetNextImpl(name_upper, name, type, v) \
-//	UI_##name_upper##Node *node = ui_##name##_top.free;\
-//	if(node != 0) {
-//		StackPop(ui_##name##_top.free);
-//    }\
-//	else {
-//		node = PushArray(UI_BuildArena(), UI_##name_upper##Node, 1);
-//	}\
-//	type old_value = ui_##name##_top.top->v;\
-//	node->v = v;\
-//	StackPush(ui_##name##_top.top, node);\
-//	ui_##name##_top.auto_pop = 1;\
-//	return old_value;
-
-//------------------------------------------------------------
+typedef struct UI_ParentNode          { UI_ParentNode*          next; UI_Box* v; bool auto_pop; } UI_ParentNode;
+typedef struct UI_PosXNode            { UI_PosXNode*            next; f32 v;     bool auto_pop; } UI_PosXNode;
+typedef struct UI_PosYNode            { UI_PosYNode*            next; f32 v;     bool auto_pop; } UI_PosYNode;
+typedef struct UI_SizeWNode           { UI_SizeWNode*           next; UI_Size v; bool auto_pop; } UI_SizeWNode;
+typedef struct UI_SizeHNode           { UI_SizeHNode*           next; UI_Size v; bool auto_pop; } UI_SizeHNode;
+typedef struct UI_LayoutAxisNode      { UI_LayoutAxisNode*      next; Axis v;    bool auto_pop; } UI_LayoutAxisNode;
+typedef struct UI_TextPaddingNode     { UI_TextPaddingNode*     next; f32 v;     bool auto_pop; } UI_TextPaddingNode;
+typedef struct UI_TextColorNode       { UI_TextColorNode*       next; RGBA v;    bool auto_pop; } UI_TextColorNode;
+typedef struct UI_BackgroundColorNode { UI_BackgroundColorNode* next; RGBA v;    bool auto_pop; } UI_BackgroundColorNode;
+typedef struct UI_BorderThicknessNode { UI_BorderThicknessNode* next; f32 v;     bool auto_pop; } UI_BorderThicknessNode;
+typedef struct UI_FontNode            { UI_FontNode*            next; Font* v;   bool auto_pop; } UI_FontNode;
 
 // Stack Definitions
-typedef struct UI_ParentNode          { UI_ParentNode*          next; UI_Box* v; } UI_ParentNode;
-typedef struct UI_PosXNode            { UI_PosXNode*            next; f32 v;     } UI_PosXNode;
-typedef struct UI_PosYNode            { UI_PosYNode*            next; f32 v;     } UI_PosYNode;
-typedef struct UI_SizeWNode           { UI_SizeWNode*           next; UI_Size v; } UI_SizeWNode;
-typedef struct UI_SizeHNode           { UI_SizeHNode*           next; UI_Size v; } UI_SizeHNode;
-typedef struct UI_LayoutAxisNode      { UI_LayoutAxisNode*      next; Axis v;    } UI_LayoutAxisNode;
-typedef struct UI_TextPaddingNode     { UI_TextPaddingNode*     next; f32 v;     } UI_TextPaddingNode;
-typedef struct UI_TextColorNode       { UI_TextColorNode*       next; RGBA v;    } UI_TextColorNode;
-typedef struct UI_BackgroundColorNode { UI_BackgroundColorNode* next; RGBA v;    } UI_BackgroundColorNode;
-typedef struct UI_BorderThicknessNode { UI_BorderThicknessNode* next; f32 v;     } UI_BorderThicknessNode;
-typedef struct UI_FontNode            { UI_FontNode*            next; Font* v;   } UI_FontNode;
+typedef struct UI_ParentStack          { UI_ParentNode*          top; bool auto_pop; } UI_ParentStack;
+typedef struct UI_PosXStack            { UI_PosXNode*            top; bool auto_pop; } UI_PosXStack;
+typedef struct UI_PosYStack            { UI_PosYNode*            top; bool auto_pop; } UI_PosYStack;
+typedef struct UI_SizeWStack           { UI_SizeWNode*           top; bool auto_pop; } UI_SizeWStack;
+typedef struct UI_SizeHStack           { UI_SizeHNode*           top; bool auto_pop; } UI_SizeHStack;
+typedef struct UI_LayoutAxisStack      { UI_LayoutAxisNode*      top; bool auto_pop; } UI_LayoutAxisStack;
+typedef struct UI_TextPaddingStack     { UI_TextPaddingNode*     top; bool auto_pop; } UI_TextPaddingStack;
+typedef struct UI_TextColorStack       { UI_TextColorNode*       top; bool auto_pop; } UI_TextColorStack;
+typedef struct UI_BackgroundColorStack { UI_BackgroundColorNode* top; bool auto_pop; } UI_BackgroundColorStack;
+typedef struct UI_BorderThicknessStack { UI_BorderThicknessNode* top; bool auto_pop; } UI_BorderThicknessStack;
+typedef struct UI_FontStack            { UI_FontNode*            top; bool auto_pop; } UI_FontStack;
 
-// Stacks
+typedef struct UI_State{
+    Arena* arena;
+    Window* window;
+    Controller* controller;
+    Font* default_font;
+
+    UI_Box* root;
+
+    HashTable table;
+
+    u64 hot;
+    u64 active;
+
+    v2 mouse_pos_record;
+
+    // todo(rr): idk why this is needed anymore
+    //bool closed;
+
+    //u64 generation;
+
+    UI_ParentStack          parent_stack;
+    UI_PosXStack            pos_x_stack;
+    UI_PosYStack            pos_y_stack;
+    UI_SizeWStack           size_w_stack;
+    UI_SizeHStack           size_h_stack;
+    UI_LayoutAxisStack      layout_axis_stack;
+    UI_TextPaddingStack     text_padding_stack;
+    UI_TextColorStack       text_color_stack;
+    UI_BackgroundColorStack background_color_stack;
+    UI_BorderThicknessStack border_thickness_stack;
+    UI_FontStack            font_stack;
+
+} UI_State;
+global UI_State* ui_state;
+
+//------------------------------------------------------------
+// Nodes
+
 UI_ParentNode*          ui_parent_top = 0;
 UI_PosXNode*            ui_pos_x_top = 0;
 UI_PosYNode*            ui_pos_y_top = 0;
@@ -233,7 +232,50 @@ UI_BackgroundColorNode* ui_background_color_top = 0;
 UI_BorderThicknessNode* ui_border_thickness_top = 0;
 UI_FontNode*            ui_font_top = 0;
 
+UI_ParentNode          ui_parent_nil = {0};
+UI_PosXNode            ui_pos_x_nil = {0, 0};
+UI_PosYNode            ui_pos_y_nil = {0};
+UI_SizeWNode           ui_size_w_nil = {0, ui_size_pixel(200, 0)};
+UI_SizeHNode           ui_size_h_nil = {0, ui_size_pixel(100, 0)};
+UI_LayoutAxisNode      ui_layout_axis_nil = {0, Axis_X};
+UI_TextPaddingNode     ui_text_padding_nil = {0, 0};
+UI_TextColorNode       ui_text_color_nil = {0, make_RGBA(1, 1, 1, 1)};
+UI_BackgroundColorNode ui_background_color_nil = {0, make_RGBA(0.2f, 0.2f, 0.2f, 1.0f)};
+UI_BorderThicknessNode ui_border_thickness_nil = {0, 10};
+UI_FontNode            ui_font_nil = {0}; // todo(rr): have default byte font
+
+//------------------------------------------------------------
+// Stack Macros
+
+#define ui_stack_push_impl(arena, type, name, v) \
+    UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
+    node->auto_pop = false; \
+    node->v = v; \
+    node->next = ui_##name##_top; \
+    ui_##name##_top = node; \
+    return(node->v); \
+
+#define ui_stack_set_impl(arena, type, name, v) \
+    UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
+    node->auto_pop = true; \
+    node->v = v; \
+    node->next = ui_##name##_top; \
+    ui_##name##_top = node; \
+    return(node->v); \
+
+#define ui_stack_pop_impl(type, name) \
+    UI_##type##Node* node = ui_##name##_top; \
+    ui_##name##_top = ui_##name##_top->next; \
+    return(node->v); \
+
+//#define ui_stack_top_impl(name) \
+//    return(ui_##name##_top->v);
+#define ui_stack_top_impl(name) \
+    return(ui_state->##name##_stack.top->v);
+
+//------------------------------------------------------------
 // Push/Pop/Top/Set
+
 static UI_Box* ui_push_parent(UI_Box* v)        { ui_stack_push_impl(ui_arena(), Parent, parent, v) }
 static f32     ui_push_pos_x(f32 v)             { ui_stack_push_impl(ui_arena(), PosX, pos_x, v) }
 static f32     ui_push_pos_y(f32 v)             { ui_stack_push_impl(ui_arena(), PosY, pos_y, v) }
@@ -245,6 +287,18 @@ static RGBA    ui_push_text_color(RGBA v)       { ui_stack_push_impl(ui_arena(),
 static RGBA    ui_push_background_color(RGBA v) { ui_stack_push_impl(ui_arena(), BackgroundColor, background_color, v) }
 static f32     ui_push_border_thickness(f32 v)  { ui_stack_push_impl(ui_arena(), BorderThickness, border_thickness, v) }
 static Font*   ui_push_font(Font* v)            { ui_stack_push_impl(ui_arena(), Font, font, v) }
+
+static UI_Box* ui_set_parent(UI_Box* v)         { ui_stack_set_impl(ui_arena(), Parent, parent, v) }
+static f32     ui_set_pos_x(f32 v)              { ui_stack_set_impl(ui_arena(), PosX, pos_x, v) }
+static f32     ui_set_pos_y(f32 v)              { ui_stack_set_impl(ui_arena(), PosY, pos_y, v) }
+static UI_Size ui_set_size_w(UI_Size v)         { ui_stack_set_impl(ui_arena(), SizeW, size_w, v) }
+static UI_Size ui_set_size_h(UI_Size v)         { ui_stack_set_impl(ui_arena(), SizeH, size_h, v) }
+static Axis    ui_set_layout_axis(Axis v)       { ui_stack_set_impl(ui_arena(), LayoutAxis, layout_axis, v) }
+static f32     ui_set_text_padding(f32 v)       { ui_stack_set_impl(ui_arena(), TextPadding, text_padding, v) }
+static RGBA    ui_set_text_color(RGBA v)        { ui_stack_set_impl(ui_arena(), TextColor, text_color, v) }
+static RGBA    ui_set_background_color(RGBA v)  { ui_stack_set_impl(ui_arena(), BackgroundColor, background_color, v) }
+static f32     ui_set_border_thickness(f32 v)   { ui_stack_set_impl(ui_arena(), BorderThickness, border_thickness, v) }
+static Font*   ui_set_font(Font* v)             { ui_stack_set_impl(ui_arena(), Font, font, v) }
 
 static UI_Box* ui_pop_parent(void)              { ui_stack_pop_impl(Parent, parent) }
 static f32     ui_pop_pos_x(void)               { ui_stack_pop_impl(PosX, pos_x) }
@@ -269,17 +323,20 @@ static RGBA    ui_top_text_color(void)          { ui_stack_top_impl(text_color) 
 static RGBA    ui_top_background_color(void)    { ui_stack_top_impl(background_color) }
 static f32     ui_top_border_thickness(void)    { ui_stack_top_impl(border_thickness) }
 static Font*   ui_top_font(void)                { ui_stack_top_impl(font) }
-// set sets only for the next item and none after
 
+//------------------------------------------------------------
 // Push/Pop/Top/Set Compositions
+
 static void ui_push_pos(f32 x, f32 y)           { ui_push_pos_x(x); ui_push_pos_y(y); }
+static void ui_set_pos(f32 x, f32 y)            { ui_set_pos_x(x); ui_set_pos_y(y); }
 static void ui_pop_pos(void)                    { ui_pop_pos_x(); ui_pop_pos_y(); }
 static void ui_push_size(UI_Size w, UI_Size h)  { ui_push_size_w(w); ui_push_size_h(h); }
+static void ui_set_size(UI_Size w, UI_Size h)   { ui_set_size_w(w); ui_set_size_h(h); }
 static void ui_pop_size(void)                   { ui_pop_size_w(); ui_pop_size_h(); }
 
 //------------------------------------------------------------
-
 // DeferLoops
+
 #define ui_parent(v)           defer_loop(ui_push_parent(v), ui_pop_parent())
 #define ui_pos_x(v) 		   defer_loop(ui_push_pos_x(v), ui_pop_pos_x())
 #define ui_pos_y(v) 		   defer_loop(ui_push_pos_y(v), ui_pop_pos_y())
@@ -292,12 +349,11 @@ static void ui_pop_size(void)                   { ui_pop_size_w(); ui_pop_size_h
 #define ui_border_thickness(v) defer_loop(ui_push_border_thickness(v), ui_pop_border_thickness())
 #define ui_font(v)             defer_loop(ui_push_font(v), ui_pop_font())
 
+//------------------------------------------------------------
 // DeferLoops Compositions
+
 #define ui_pos(v_1, v_2)       defer_loop(ui_push_pos(v_1, v_2), ui_pop_pos())
 #define ui_size(v_1, v_2)      defer_loop(ui_push_size(v_1, v_2), ui_pop_size())
-
-#endif
-
 /*
 root_function UI_BoxFlags           UI_TopFlags(void);*
 root_function F32                   UI_TopOpacity(void);*
@@ -316,3 +372,6 @@ root_function UI_Key                UI_TopSeedKey(void);
 root_function UI_FocusKind          UI_TopFocusHot(void);
 root_function UI_FocusKind          UI_TopFocusActive(void);
 */
+
+#endif
+
