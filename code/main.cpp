@@ -367,13 +367,11 @@ debug_draw_mouse_cell_pos(void){
 static void
 debug_ui_render_batches(void){
 
-    ui_pos(SCREEN_WIDTH - 200, 10)
-    ui_size(ui_size_children(0), ui_size_children(0))
-    ui_border_thickness(10)
-    ui_background_color(DEFAULT)
-    {
-        ui_begin_panel(str8_literal("box1##1"), ui_floating_panel);
-    }
+    ui_set_pos(SCREEN_WIDTH - 200, 10);
+    ui_set_size(ui_size_children(0), ui_size_children(0));
+    ui_set_border_thickness(10);
+    ui_set_background_color(DEFAULT);
+    ui_begin_panel(str8_literal("box1##1"), ui_floating_panel);
 
     ui_size(ui_size_text(0), ui_size_text(0))
     ui_text_color(LIGHT_GRAY)
@@ -412,13 +410,11 @@ debug_ui_render_batches(void){
 static void
 ui_level_editor(void){
 
-    ui_pos(20, 20)
-    ui_size(ui_size_children(0), ui_size_children(0))
-    ui_border_thickness(10)
-    ui_background_color(DEFAULT)
-    {
-        ui_begin_panel(str8_literal("box1##2"), ui_floating_panel);
-    }
+    ui_set_pos(20, 20);
+    ui_set_size(ui_size_children(0), ui_size_children(0));
+    ui_set_border_thickness(10);
+    ui_set_background_color(DEFAULT);
+    ui_begin_panel(str8_literal("box1##2"), ui_floating_panel);
 
     ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
     ui_background_color(DARK_GRAY)
@@ -461,13 +457,11 @@ static void
 ui_building_castle(void){
     ui_layout_axis(Axis_X)
     {
-        ui_border_thickness(10)
-        ui_background_color(DEFAULT)
-        ui_pos(20, window.height - 100)
-        ui_size(ui_size_children(0), ui_size_children(0))
-        {
-            ui_begin_panel(str8_literal("box1##3"), ui_fixed_panel);
-        }
+        ui_set_border_thickness(10);
+        ui_set_background_color(DEFAULT);
+        ui_set_pos(20, window.height - 100);
+        ui_set_size(ui_size_children(0), ui_size_children(0));
+        ui_begin_panel(str8_literal("box1##3"), ui_fixed_panel);
 
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)

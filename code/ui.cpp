@@ -15,18 +15,17 @@ ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
     init_table(arena, &ui_state->table);
     ui_state->arena = make_arena(MB(100));
 
-    ui_state->parent_stack.top = &ui_parent_nil;
-    ui_state->pos_x_stack.top = &ui_pos_x_nil;
-
-    ui_state->pos_y_stack.top = &ui_pos_y_nil;
-    ui_state->size_w_stack.top = &ui_size_w_nil;
-    ui_state->size_h_stack.top = &ui_size_h_nil;
-    ui_state->layout_axis_stack.top = &ui_layout_axis_nil;
-    ui_state->text_padding_stack.top = &ui_text_padding_nil;
-    ui_state->text_color_stack.top = &ui_text_color_nil;
-    ui_state->background_color_stack.top = &ui_background_color_nil;
-    ui_state->border_thickness_stack.top = &ui_border_thickness_nil;
-    ui_state->font_stack.top = &ui_font_nil;
+    ui_state->parent_stack.top = &ui_parent_null;
+    ui_state->pos_x_stack.top = &ui_pos_x_null;
+    ui_state->pos_y_stack.top = &ui_pos_y_null;
+    ui_state->size_w_stack.top = &ui_size_w_null;
+    ui_state->size_h_stack.top = &ui_size_h_null;
+    ui_state->layout_axis_stack.top = &ui_layout_axis_null;
+    ui_state->text_padding_stack.top = &ui_text_padding_null;
+    ui_state->text_color_stack.top = &ui_text_color_null;
+    ui_state->background_color_stack.top = &ui_background_color_null;
+    ui_state->border_thickness_stack.top = &ui_border_thickness_null;
+    ui_state->font_stack.top = &ui_font_null;
 }
 
 static void
@@ -59,19 +58,30 @@ ui_end(void){
     ui_layout();
     ui_draw(ui_root());
 
-    ui_parent_top = 0;
-    ui_pos_x_top = 0;
-    ui_pos_y_top = 0;
-    ui_size_w_top = 0;
-    ui_size_h_top = 0;
-    ui_layout_axis_top = 0;
+    //ui_parent_top = 0;
+    //ui_pos_x_top = 0;
+    //ui_pos_y_top = 0;
+    //ui_size_w_top = 0;
+    //ui_size_h_top = 0;
+    //ui_layout_axis_top = 0;
 
-    ui_text_padding_top = 0;
-    ui_text_color_top = 0;
+    //ui_text_padding_top = 0;
+    //ui_text_color_top = 0;
 
-    ui_background_color_top = 0;
-    ui_border_thickness_top = 0;
-    ui_font_top = 0;
+    //ui_background_color_top = 0;
+    //ui_border_thickness_top = 0;
+    //ui_font_top = 0;
+    ui_state->parent_stack.top = &ui_parent_null;
+    ui_state->pos_x_stack.top = &ui_pos_x_null;
+    ui_state->pos_y_stack.top = &ui_pos_y_null;
+    ui_state->size_w_stack.top = &ui_size_w_null;
+    ui_state->size_h_stack.top = &ui_size_h_null;
+    ui_state->layout_axis_stack.top = &ui_layout_axis_null;
+    ui_state->text_padding_stack.top = &ui_text_padding_null;
+    ui_state->text_color_stack.top = &ui_text_color_null;
+    ui_state->background_color_stack.top = &ui_background_color_null;
+    ui_state->border_thickness_stack.top = &ui_border_thickness_null;
+    ui_state->font_stack.top = &ui_font_null;
 
     arena_free(ui_arena());
 }
@@ -88,26 +98,14 @@ ui_layout(void){
 
 static void
 ui_auto_pop(void){
-    if(ui_parent_top->auto_pop)           { ui_parent_top->auto_pop = false; ui_pop_parent(); }
-    if(ui_pos_x_top->auto_pop)            { ui_pos_x_top->auto_pop = false; ui_pop_pos_x(); }
-    if(ui_pos_y_top->auto_pop)            { ui_pos_y_top->auto_pop = false; ui_pop_pos_y(); }
-    if(ui_size_w_top->auto_pop)           { ui_size_w_top->auto_pop = false; ui_pop_size_w(); }
-    if(ui_size_h_top->auto_pop)           { ui_size_h_top->auto_pop = false; ui_pop_size_h(); }
-    if(ui_layout_axis_top->auto_pop)      { ui_layout_axis_top->auto_pop = false; ui_pop_layout_axis(); }
-    if(ui_text_padding_top->auto_pop)     { ui_text_padding_top->auto_pop = false; ui_pop_text_padding(); }
-    if(ui_text_color_top->auto_pop)       { ui_text_color_top->auto_pop = false; ui_pop_text_color(); }
-    if(ui_background_color_top->auto_pop) { ui_background_color_top->auto_pop = false; ui_pop_background_color(); }
-    if(ui_border_thickness_top->auto_pop) { ui_border_thickness_top->auto_pop = false; ui_pop_border_thickness(); }
-    if(ui_font_top->auto_pop)             { ui_font_top->auto_pop = false; ui_pop_font(); }
-
     if(ui_state->parent_stack.auto_pop)           { ui_state->parent_stack.auto_pop = false; ui_pop_parent(); }
-    if(ui_state->pos_x_stack.auto_pop)            { ui_state->pos_x_stack.auto_pop = false; ui_pop_pos_x(); }
-    if(ui_state->pos_y_stack.auto_pop)            { ui_state->pos_y_stack.auto_pop = false; ui_pop_pos_y(); }
+    if(ui_state->pos_x_stack.auto_pop)            { ui_state->pos_x_stack.auto_pop  = false; ui_pop_pos_x(); }
+    if(ui_state->pos_y_stack.auto_pop)            { ui_state->pos_y_stack.auto_pop  = false; ui_pop_pos_y(); }
     if(ui_state->size_w_stack.auto_pop)           { ui_state->size_w_stack.auto_pop = false; ui_pop_size_w(); }
     if(ui_state->size_h_stack.auto_pop)           { ui_state->size_h_stack.auto_pop = false; ui_pop_size_h(); }
-    if(ui_state->layout_axis_stack.auto_pop)      { ui_state->layout_axis_stack.auto_pop = false; ui_pop_layout_axis(); }
+    if(ui_state->layout_axis_stack.auto_pop)      { ui_state->layout_axis_stack.auto_pop  = false; ui_pop_layout_axis(); }
     if(ui_state->text_padding_stack.auto_pop)     { ui_state->text_padding_stack.auto_pop = false; ui_pop_text_padding(); }
-    if(ui_state->text_color_stack.auto_pop)       { ui_state->text_color_stack.auto_pop = false; ui_pop_text_color(); }
+    if(ui_state->text_color_stack.auto_pop)       { ui_state->text_color_stack.auto_pop   = false; ui_pop_text_color(); }
     if(ui_state->background_color_stack.auto_pop) { ui_state->background_color_stack.auto_pop = false; ui_pop_background_color(); }
     if(ui_state->border_thickness_stack.auto_pop) { ui_state->border_thickness_stack.auto_pop = false; ui_pop_border_thickness(); }
     if(ui_state->font_stack.auto_pop)             { ui_state->font_stack.auto_pop = false; ui_pop_font(); }
@@ -234,7 +232,8 @@ static UI_Box*
 ui_make_box(String8 string, UI_BoxFlags flags){
     UI_Box* result = push_struct_zero(ui_arena(), UI_Box);
 
-    if(ui_parent_top != 0){
+    if(ui_state->parent_stack.top != &ui_parent_null){
+    //if(ui_parent_top != 0){
         UI_Box* top_parent = ui_top_parent();
         result->parent = top_parent;
         if(top_parent->first == 0){
@@ -276,7 +275,7 @@ ui_make_box(String8 string, UI_BoxFlags flags){
         result->rel_pos[Axis_Y] = cache->rel_pos[Axis_Y];
     }
 
-    //ui_auto_pop();
+    ui_auto_pop();
 
     return(result);
 }

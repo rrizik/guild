@@ -157,19 +157,21 @@ static void ui_traverse_rects(UI_Box* box);
 //------------------------------------------------------------
 // Node Definitions
 
-typedef struct UI_ParentNode          { UI_ParentNode*          next; UI_Box* v; bool auto_pop; } UI_ParentNode;
-typedef struct UI_PosXNode            { UI_PosXNode*            next; f32 v;     bool auto_pop; } UI_PosXNode;
-typedef struct UI_PosYNode            { UI_PosYNode*            next; f32 v;     bool auto_pop; } UI_PosYNode;
-typedef struct UI_SizeWNode           { UI_SizeWNode*           next; UI_Size v; bool auto_pop; } UI_SizeWNode;
-typedef struct UI_SizeHNode           { UI_SizeHNode*           next; UI_Size v; bool auto_pop; } UI_SizeHNode;
-typedef struct UI_LayoutAxisNode      { UI_LayoutAxisNode*      next; Axis v;    bool auto_pop; } UI_LayoutAxisNode;
-typedef struct UI_TextPaddingNode     { UI_TextPaddingNode*     next; f32 v;     bool auto_pop; } UI_TextPaddingNode;
-typedef struct UI_TextColorNode       { UI_TextColorNode*       next; RGBA v;    bool auto_pop; } UI_TextColorNode;
-typedef struct UI_BackgroundColorNode { UI_BackgroundColorNode* next; RGBA v;    bool auto_pop; } UI_BackgroundColorNode;
-typedef struct UI_BorderThicknessNode { UI_BorderThicknessNode* next; f32 v;     bool auto_pop; } UI_BorderThicknessNode;
-typedef struct UI_FontNode            { UI_FontNode*            next; Font* v;   bool auto_pop; } UI_FontNode;
+typedef struct UI_ParentNode          { UI_ParentNode*          next; UI_Box* v; } UI_ParentNode;
+typedef struct UI_PosXNode            { UI_PosXNode*            next; f32 v;     } UI_PosXNode;
+typedef struct UI_PosYNode            { UI_PosYNode*            next; f32 v;     } UI_PosYNode;
+typedef struct UI_SizeWNode           { UI_SizeWNode*           next; UI_Size v; } UI_SizeWNode;
+typedef struct UI_SizeHNode           { UI_SizeHNode*           next; UI_Size v; } UI_SizeHNode;
+typedef struct UI_LayoutAxisNode      { UI_LayoutAxisNode*      next; Axis v;    } UI_LayoutAxisNode;
+typedef struct UI_TextPaddingNode     { UI_TextPaddingNode*     next; f32 v;     } UI_TextPaddingNode;
+typedef struct UI_TextColorNode       { UI_TextColorNode*       next; RGBA v;    } UI_TextColorNode;
+typedef struct UI_BackgroundColorNode { UI_BackgroundColorNode* next; RGBA v;    } UI_BackgroundColorNode;
+typedef struct UI_BorderThicknessNode { UI_BorderThicknessNode* next; f32 v;     } UI_BorderThicknessNode;
+typedef struct UI_FontNode            { UI_FontNode*            next; Font* v;   } UI_FontNode;
 
+//------------------------------------------------------------
 // Stack Definitions
+
 typedef struct UI_ParentStack          { UI_ParentNode*          top; bool auto_pop; } UI_ParentStack;
 typedef struct UI_PosXStack            { UI_PosXNode*            top; bool auto_pop; } UI_PosXStack;
 typedef struct UI_PosYStack            { UI_PosYNode*            top; bool auto_pop; } UI_PosYStack;
@@ -181,6 +183,21 @@ typedef struct UI_TextColorStack       { UI_TextColorNode*       top; bool auto_
 typedef struct UI_BackgroundColorStack { UI_BackgroundColorNode* top; bool auto_pop; } UI_BackgroundColorStack;
 typedef struct UI_BorderThicknessStack { UI_BorderThicknessNode* top; bool auto_pop; } UI_BorderThicknessStack;
 typedef struct UI_FontStack            { UI_FontNode*            top; bool auto_pop; } UI_FontStack;
+
+//------------------------------------------------------------
+// Null Nodes
+
+UI_ParentNode          ui_parent_null = {0};
+UI_PosXNode            ui_pos_x_null = {0, 0};
+UI_PosYNode            ui_pos_y_null = {0};
+UI_SizeWNode           ui_size_w_null = {0, ui_size_pixel(200, 0)};
+UI_SizeHNode           ui_size_h_null = {0, ui_size_pixel(100, 0)};
+UI_LayoutAxisNode      ui_layout_axis_null = {0, Axis_X};
+UI_TextPaddingNode     ui_text_padding_null = {0, 0};
+UI_TextColorNode       ui_text_color_null = {0, make_RGBA(1, 1, 1, 1)};
+UI_BackgroundColorNode ui_background_color_null = {0, make_RGBA(0.2f, 0.2f, 0.2f, 1.0f)};
+UI_BorderThicknessNode ui_border_thickness_null = {0, 10};
+UI_FontNode            ui_font_null = {0}; // todo(rr): have default byte font
 
 typedef struct UI_State{
     Arena* arena;
@@ -220,61 +237,73 @@ global UI_State* ui_state;
 //------------------------------------------------------------
 // Nodes
 
-UI_ParentNode*          ui_parent_top = 0;
-UI_PosXNode*            ui_pos_x_top = 0;
-UI_PosYNode*            ui_pos_y_top = 0;
-UI_SizeWNode*           ui_size_w_top = 0;
-UI_SizeHNode*           ui_size_h_top = 0;
-UI_LayoutAxisNode*      ui_layout_axis_top = 0;
-UI_TextPaddingNode*     ui_text_padding_top = 0;
-UI_TextColorNode*       ui_text_color_top = 0;
-UI_BackgroundColorNode* ui_background_color_top = 0;
-UI_BorderThicknessNode* ui_border_thickness_top = 0;
-UI_FontNode*            ui_font_top = 0;
-
-UI_ParentNode          ui_parent_nil = {0};
-UI_PosXNode            ui_pos_x_nil = {0, 0};
-UI_PosYNode            ui_pos_y_nil = {0};
-UI_SizeWNode           ui_size_w_nil = {0, ui_size_pixel(200, 0)};
-UI_SizeHNode           ui_size_h_nil = {0, ui_size_pixel(100, 0)};
-UI_LayoutAxisNode      ui_layout_axis_nil = {0, Axis_X};
-UI_TextPaddingNode     ui_text_padding_nil = {0, 0};
-UI_TextColorNode       ui_text_color_nil = {0, make_RGBA(1, 1, 1, 1)};
-UI_BackgroundColorNode ui_background_color_nil = {0, make_RGBA(0.2f, 0.2f, 0.2f, 1.0f)};
-UI_BorderThicknessNode ui_border_thickness_nil = {0, 10};
-UI_FontNode            ui_font_nil = {0}; // todo(rr): have default byte font
+//UI_ParentNode*          ui_parent_top = 0;
+//UI_PosXNode*            ui_pos_x_top = 0;
+//UI_PosYNode*            ui_pos_y_top = 0;
+//UI_SizeWNode*           ui_size_w_top = 0;
+//UI_SizeHNode*           ui_size_h_top = 0;
+//UI_LayoutAxisNode*      ui_layout_axis_top = 0;
+//UI_TextPaddingNode*     ui_text_padding_top = 0;
+//UI_TextColorNode*       ui_text_color_top = 0;
+//UI_BackgroundColorNode* ui_background_color_top = 0;
+//UI_BorderThicknessNode* ui_border_thickness_top = 0;
+//UI_FontNode*            ui_font_top = 0;
 
 //------------------------------------------------------------
 // Stack Macros
 
+//#define ui_stack_push_impl(arena, type, name, v) \
+//    UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
+//    node->auto_pop = false; \
+//    node->v = v; \
+//    node->next = ui_##name##_top; \
+//    ui_##name##_top = node; \
+//    return(node->v); \
+
 #define ui_stack_push_impl(arena, type, name, v) \
     UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
-    node->auto_pop = false; \
     node->v = v; \
-    node->next = ui_##name##_top; \
-    ui_##name##_top = node; \
-    return(node->v); \
+    node->next = ui_state->##name##_stack.top; \
+    UI_##type##Node* old_node = ui_state->##name##_stack.top; \
+    ui_state->##name##_stack.top = node; \
+    ui_state->##name##_stack.auto_pop = false; \
+    return(old_node->v); \
+
+//#define ui_stack_set_impl(arena, type, name, v) \
+//    UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
+//    node->auto_pop = true; \
+//    node->v = v; \
+//    node->next = ui_##name##_top; \
+//    ui_##name##_top = node; \
+//    return(node->v); \
 
 #define ui_stack_set_impl(arena, type, name, v) \
     UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
-    node->auto_pop = true; \
     node->v = v; \
-    node->next = ui_##name##_top; \
-    ui_##name##_top = node; \
-    return(node->v); \
+    node->next = ui_state->##name##_stack.top; \
+    UI_##type##Node* old_node = ui_state->##name##_stack.top; \
+    ui_state->##name##_stack.top = node; \
+    ui_state->##name##_stack.auto_pop = true; \
+    return(old_node->v); \
+
+//#define ui_stack_pop_impl(type, name) \
+//    UI_##type##Node* node = ui_##name##_top; \
+//    ui_##name##_top = ui_##name##_top->next; \
+//    return(node->v); \
 
 #define ui_stack_pop_impl(type, name) \
-    UI_##type##Node* node = ui_##name##_top; \
-    ui_##name##_top = ui_##name##_top->next; \
+    UI_##type##Node* node = ui_state->##name##_stack.top; \
+    ui_state->##name##_stack.top = ui_state->##name##_stack.top->next; \
     return(node->v); \
 
 //#define ui_stack_top_impl(name) \
-//    return(ui_##name##_top->v);
+//    return(ui_##name##_top->v); \
+
 #define ui_stack_top_impl(name) \
-    return(ui_state->##name##_stack.top->v);
+    return(ui_state->##name##_stack.top->v); \
 
 //------------------------------------------------------------
-// Push/Pop/Top/Set
+// Push/Set/Pop/Top
 
 static UI_Box* ui_push_parent(UI_Box* v)        { ui_stack_push_impl(ui_arena(), Parent, parent, v) }
 static f32     ui_push_pos_x(f32 v)             { ui_stack_push_impl(ui_arena(), PosX, pos_x, v) }
@@ -354,6 +383,7 @@ static void ui_pop_size(void)                   { ui_pop_size_w(); ui_pop_size_h
 
 #define ui_pos(v_1, v_2)       defer_loop(ui_push_pos(v_1, v_2), ui_pop_pos())
 #define ui_size(v_1, v_2)      defer_loop(ui_push_size(v_1, v_2), ui_pop_size())
+
 /*
 root_function UI_BoxFlags           UI_TopFlags(void);*
 root_function F32                   UI_TopOpacity(void);*
