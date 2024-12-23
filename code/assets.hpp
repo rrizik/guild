@@ -48,6 +48,7 @@ typedef enum TextureAsset{
     TextureAsset_Water1,
     TextureAsset_Lava1,
     TextureAsset_Wood1,
+    TextureAsset_Skeleton1,
 
     TextureAsset_Castle1,
 

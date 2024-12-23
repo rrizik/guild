@@ -34,6 +34,8 @@ load_assets(Arena* arena, Assets* assets){
     d3d_init_texture_resource(&assets->textures[TextureAsset_Lava1].view, &bm);
     bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/wood1.png"));
     d3d_init_texture_resource(&assets->textures[TextureAsset_Wood1].view, &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/skeleton1-export.png"), true);
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Skeleton1].view, &bm);
 
     Texture texture = {white_shader_resource};
     assets->textures[TextureAsset_White] = texture;

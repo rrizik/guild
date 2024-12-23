@@ -233,7 +233,6 @@ ui_make_box(String8 string, UI_BoxFlags flags){
     UI_Box* result = push_struct_zero(ui_arena(), UI_Box);
 
     if(ui_state->parent_stack.top != &ui_parent_null){
-    //if(ui_parent_top != 0){
         UI_Box* top_parent = ui_top_parent();
         result->parent = top_parent;
         if(top_parent->first == 0){

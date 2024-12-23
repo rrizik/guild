@@ -167,6 +167,7 @@ static Entity* add_entity(EntityType type);
 static Entity* add_quad(v2 pos, v2 dim, RGBA color);
 static Entity* add_texture(u32 texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags = 0);
 static Entity* add_castle(u32 texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags = 0);
+static Entity* add_skeleton(u32 texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags = 0);
 static void entities_clear(void);
 
 static bool handle_global_events(Event event);

@@ -235,30 +235,7 @@ typedef struct UI_State{
 global UI_State* ui_state;
 
 //------------------------------------------------------------
-// Nodes
-
-//UI_ParentNode*          ui_parent_top = 0;
-//UI_PosXNode*            ui_pos_x_top = 0;
-//UI_PosYNode*            ui_pos_y_top = 0;
-//UI_SizeWNode*           ui_size_w_top = 0;
-//UI_SizeHNode*           ui_size_h_top = 0;
-//UI_LayoutAxisNode*      ui_layout_axis_top = 0;
-//UI_TextPaddingNode*     ui_text_padding_top = 0;
-//UI_TextColorNode*       ui_text_color_top = 0;
-//UI_BackgroundColorNode* ui_background_color_top = 0;
-//UI_BorderThicknessNode* ui_border_thickness_top = 0;
-//UI_FontNode*            ui_font_top = 0;
-
-//------------------------------------------------------------
 // Stack Macros
-
-//#define ui_stack_push_impl(arena, type, name, v) \
-//    UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
-//    node->auto_pop = false; \
-//    node->v = v; \
-//    node->next = ui_##name##_top; \
-//    ui_##name##_top = node; \
-//    return(node->v); \
 
 #define ui_stack_push_impl(arena, type, name, v) \
     UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
@@ -269,14 +246,6 @@ global UI_State* ui_state;
     ui_state->##name##_stack.auto_pop = false; \
     return(old_node->v); \
 
-//#define ui_stack_set_impl(arena, type, name, v) \
-//    UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
-//    node->auto_pop = true; \
-//    node->v = v; \
-//    node->next = ui_##name##_top; \
-//    ui_##name##_top = node; \
-//    return(node->v); \
-
 #define ui_stack_set_impl(arena, type, name, v) \
     UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
     node->v = v; \
@@ -286,18 +255,10 @@ global UI_State* ui_state;
     ui_state->##name##_stack.auto_pop = true; \
     return(old_node->v); \
 
-//#define ui_stack_pop_impl(type, name) \
-//    UI_##type##Node* node = ui_##name##_top; \
-//    ui_##name##_top = ui_##name##_top->next; \
-//    return(node->v); \
-
 #define ui_stack_pop_impl(type, name) \
     UI_##type##Node* node = ui_state->##name##_stack.top; \
     ui_state->##name##_stack.top = ui_state->##name##_stack.top->next; \
     return(node->v); \
-
-//#define ui_stack_top_impl(name) \
-//    return(ui_##name##_top->v); \
 
 #define ui_stack_top_impl(name) \
     return(ui_state->##name##_stack.top->v); \

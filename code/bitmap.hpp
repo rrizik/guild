@@ -37,6 +37,6 @@ typedef struct Bitmap{
 	s32  channels;
 } Bitmap;
 
-static Bitmap stb_load_image_bitmap(String8 dir, String8 file);
+static Bitmap stb_load_image(Arena* arena, String8 dir, String8 file, bool vertical_flip=false);
 
 #endif

@@ -178,6 +178,24 @@ add_castle(u32 texture, v2 pos, v2 dim, RGBA color, u32 flags){
     return(e);
 }
 
+static Entity*
+add_skeleton(u32 texture, v2 pos, v2 dim, RGBA color, u32 flags){
+    Entity* e = add_entity(EntityType_Texture);
+    if(e){
+        e->color = color;
+        e->pos = pos;
+        e->dim = dim;
+        e->texture = texture;
+        e->deg = 180;
+        e->dir = dir_from_deg(e->deg);
+
+    }
+    else{
+        print("Failed to add entity: Quad\n");
+    }
+    return(e);
+}
+
 static void
 entities_clear(void){
     state->free_entities_at = ENTITIES_MAX - 1;
@@ -466,7 +484,8 @@ ui_building_castle(void){
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)
         {
-            if(ui_button(str8_literal("unit 1")).pressed_left){
+            if(ui_button(str8_literal("skeleton1")).pressed_left){
+                add_skeleton(TextureAsset_Skeleton1, state->castle->pos, make_v2(3, 3));
             }
             ui_spacer(10);
             if(ui_button(str8_literal("unit 2")).pressed_left){
@@ -1314,8 +1333,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         }
         if(camera.size <= 10){
             camera.size -= (f32)controller.mouse.wheel_dir;
-            if(camera.size < 5){
-                camera.size = 5;
+            if(camera.size < 3){
+                camera.size = 3;
             }
         }
 
@@ -1382,6 +1401,12 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             set_font(state->font);
             String8 fps = str8_formatted(ts->frame_arena, "FPS: %.2f", FPS);
             draw_text(fps, make_v2(window.width - text_padding - font_string_width(state->font, fps), window.height - text_padding), ORANGE);
+
+            Quad quad = make_quad(make_v2(0, 0), make_v2(3, 3));
+            quad = quad_screen_from_world(quad);
+            set_texture(&assets.textures[TextureAsset_Skeleton1]);
+            draw_texture(quad);
+            draw_bounding_box(quad, 2, RED);
 
             console_draw();
 
