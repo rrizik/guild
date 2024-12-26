@@ -3,7 +3,7 @@
 
 
 static void
-load_assets(Arena* arena, Assets* assets){
+assets_load(Arena* arena, Assets* assets){
 
     ScratchArena scratch = begin_scratch();
     String8 build_path = os_application_path(scratch.arena);
@@ -25,7 +25,7 @@ load_assets(Arena* arena, Assets* assets){
     //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass7].view, &bm);
     //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass8.bmp"));
     //d3d_init_texture_resource(&assets->textures[TextureAsset_Grass8].view, &bm);
-    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/castle1.bmp"));
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/castle1.bmp"), true);
     d3d_init_texture_resource(&assets->textures[TextureAsset_Castle1].view, &bm);
 
     bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/water1.png"));

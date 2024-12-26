@@ -431,5 +431,6 @@ render_batches_reset(void){
     render_batches.first = 0;
     render_batches.last = 0;
     render_batches.count = 0;
+    arena_free(r_arena);
 }
 #endif

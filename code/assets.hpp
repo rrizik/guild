@@ -62,6 +62,6 @@ typedef struct Assets{
     Font    fonts[FontAsset_Count];
     Texture textures[TextureAsset_Count];
 } Assets;
-static void load_assets(Arena* arena, Assets* assets);
+static void assets_load(Arena* arena, Assets* assets);
 
 #endif

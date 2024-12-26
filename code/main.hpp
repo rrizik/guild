@@ -88,7 +88,6 @@ typedef enum SceneState{
 } SceneState;
 
 #define ENTITIES_MAX 4096
-
 #define WORLD_WIDTH_IN_TILES_MAX 1000
 #define WORLD_HEIGHT_IN_TILES_MAX 1000
 f32 grid_size = 10;
@@ -107,11 +106,14 @@ typedef struct State{
     Font* font;
 
     s32 world_grid[WORLD_WIDTH_IN_TILES_MAX * WORLD_HEIGHT_IN_TILES_MAX];
+    // todo(rr): remove this. We need to have some cell info that we can gather
+    // from having our mouse over cells, and we can do things on those cells based
+    // on user input
     Entity* castle;
     v2 castle_cell;
 
-    bool building_selected;
-    s32 building_selected_id;
+    bool is_entity_selected;
+    Entity* entity_selected;
 
     bool terrain_selected;
     s32 terrain_selected_id;
@@ -165,9 +167,9 @@ global f32 text_padding = 20;
 static    void remove_entity(Entity* e);
 static Entity* add_entity(EntityType type);
 static Entity* add_quad(v2 pos, v2 dim, RGBA color);
-static Entity* add_texture(u32 texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags = 0);
-static Entity* add_castle(u32 texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags = 0);
-static Entity* add_skeleton(u32 texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags = 0);
+static Entity* add_texture(TextureAsset texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags = 0);
+static Entity* add_castle(TextureAsset texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags = 0);
+static Entity* add_skeleton(TextureAsset texture, v2 pos, v2 dim, v2 dir, RGBA color=WHITE, u32 flags = 0);
 static void entities_clear(void);
 
 static bool handle_global_events(Event event);
@@ -183,7 +185,7 @@ static void draw_entities(State* state);
 static void debug_ui_render_batches(void);
 static void debug_draw_mouse_cell_pos(void);
 static void ui_level_editor(void);
-static void ui_building_castle(void);
+static void ui_structure_castle(void);
 
 static bool mouse_in_cell(v2 cell);
 static v2 grid_pos_from_cell(v2 cell);

@@ -7,38 +7,38 @@ sim_game(void){
     // camera
     {
         // movement
-        //if(controller_button_held(KeyCode_UP) || controller.mouse.edge_top){
         if(controller_button_held(KeyCode_UP)){
             camera.y += ((camera.size) + 50) * (f32)clock.dt;
         }
-        //if(controller_button_held(KeyCode_DOWN) || controller.mouse.edge_bottom){
         if(controller_button_held(KeyCode_DOWN)){
             camera.y -= ((camera.size) + 50) * (f32)clock.dt;
         }
-        //if(controller_button_held(KeyCode_LEFT) || controller.mouse.edge_left){
         if(controller_button_held(KeyCode_LEFT)){
             camera.x -= ((camera.size) + 50) * (f32)clock.dt;
         }
-        //if(controller_button_held(KeyCode_RIGHT) || controller.mouse.edge_right){
         if(controller_button_held(KeyCode_RIGHT)){
             camera.x += ((camera.size) + 50) * (f32)clock.dt;
         }
     }
 
-    if(controller_button_pressed(MOUSE_BUTTON_LEFT, true) && controller_button_held(MOUSE_BUTTON_LEFT)){
-        state->draw_terrain = true;
-    }
-    if(!controller_button_held(MOUSE_BUTTON_LEFT)){
-        state->draw_terrain = false;
-    }
+    // draw terrain
+    {
+        if(controller_button_held(MOUSE_BUTTON_LEFT) &&
+           controller_button_pressed(MOUSE_BUTTON_LEFT, true)){
+            state->draw_terrain = true;
+        }
+        if(!controller_button_held(MOUSE_BUTTON_LEFT)){
+            state->draw_terrain = false;
+        }
 
-    if(state->draw_terrain){
-        if(state->terrain_selected){
-            v2 pos = v2_world_from_screen(controller.mouse.pos);
-            v2 cell = make_v2(floor_f32(pos.x/state->tile_size), floor_f32(pos.y/state->tile_size));
-            if((cell.x < state->world_width_in_tiles && cell.x >= 0)){
-                s32 idx = (s32)((cell.y * state->world_width_in_tiles) + cell.x);
-                state->world_grid[idx] = state->terrain_selected_id;
+        if(state->draw_terrain){
+            if(state->terrain_selected){
+                v2 pos = v2_world_from_screen(controller.mouse.pos);
+                v2 cell = make_v2(floor_f32(pos.x/state->tile_size), floor_f32(pos.y/state->tile_size));
+                if((cell.x < state->world_width_in_tiles && cell.x >= 0)){
+                    s32 idx = (s32)((cell.y * state->world_width_in_tiles) + cell.x);
+                    state->world_grid[idx] = state->terrain_selected_id;
+                }
             }
         }
     }
@@ -50,10 +50,9 @@ sim_game(void){
             continue;
         }
 
-        // todo(rr): this will be different
         if(has_flags(e->flags, EntityFlag_MoveWithPhys)){
-            //e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
-            //e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
+            e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
+            e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
         }
     }
 
@@ -143,7 +142,7 @@ add_quad(v2 pos, v2 dim, RGBA color){
 }
 
 static Entity*
-add_texture(u32 texture, v2 pos, v2 dim, RGBA color, u32 flags){
+add_texture(TextureAsset texture, v2 pos, v2 dim, RGBA color, u32 flags){
     Entity* e = add_entity(EntityType_Texture);
     if(e){
         e->dir = make_v2(1, 1);
@@ -161,34 +160,39 @@ add_texture(u32 texture, v2 pos, v2 dim, RGBA color, u32 flags){
 }
 
 static Entity*
-add_castle(u32 texture, v2 pos, v2 dim, RGBA color, u32 flags){
-    Entity* e = add_entity(EntityType_Texture);
+add_castle(TextureAsset texture, v2 cell, v2 dim, RGBA color, u32 flags){
+    Entity* e = add_entity(EntityType_Structure);
     if(e){
         e->color = color;
-        e->pos = pos;
+        e->cell = cell;
+        e->pos = grid_cell_center(e->cell);
+        e->waypoint_cell = make_v2(e->cell.x, e->cell.y - 1);
+        e->waypoint = grid_cell_center(e->waypoint_cell);
         e->dim = dim;
         e->texture = texture;
-        e->deg = 180;
+        e->deg = 0;
         e->dir = dir_from_deg(e->deg);
-
+        e->structure_type = StructureType_Castle;
     }
     else{
-        print("Failed to add entity: Quad\n");
+        print("Failed to add entity: Castle\n");
     }
     return(e);
 }
 
 static Entity*
-add_skeleton(u32 texture, v2 pos, v2 dim, RGBA color, u32 flags){
+add_skeleton(TextureAsset texture, v2 pos, v2 dim, v2 dir, RGBA color, u32 flags){
     Entity* e = add_entity(EntityType_Texture);
     if(e){
         e->color = color;
         e->pos = pos;
         e->dim = dim;
         e->texture = texture;
-        e->deg = 180;
-        e->dir = dir_from_deg(e->deg);
-
+        e->velocity = 1;
+        e->speed = 5;
+        e->dir = dir;
+        e->deg = deg_from_dir(dir);
+        set_flags(&e->flags, EntityFlag_MoveWithPhys);
     }
     else{
         print("Failed to add entity: Quad\n");
@@ -269,6 +273,9 @@ handle_controller_events(Event event){
     }
     if(event.type == EventType_KEYBOARD){
         controller.mouse.wheel_dir = event.mouse_wheel_dir;
+        // todo(rr): change this to
+        // controller.button[event.keycode].pressed = event.key_pressed;
+        // and check for repeat for held.
         if(event.key_pressed){
             controller.button[event.keycode].pressed = true;
             controller.button[event.keycode].held = true;
@@ -277,6 +284,9 @@ handle_controller_events(Event event){
             controller.button[event.keycode].released = true;
             controller.button[event.keycode].held = false;
         }
+        controller.shift_pressed = event.shift_pressed;
+        controller.ctrl_pressed = event.ctrl_pressed;
+        controller.alt_pressed = event.alt_pressed;
     }
     return(false);
 }
@@ -344,12 +354,21 @@ draw_entities(State* state){
         if(has_flags(e->flags, EntityFlag_Active)){
 
             switch(e->type){
-                case EntityType_Texture:{
+                case EntityType_Structure:{
                     quad = rotate_quad(quad, e->deg, e->pos);
                     quad = quad_screen_from_world(quad);
+                    switch(e->structure_type){
+                        case StructureType_Castle:{
+                            set_texture(&r_assets->textures[e->texture]);
+                            draw_texture(quad, e->color);
 
-                    set_texture(&r_assets->textures[e->texture]);
-                    draw_texture(quad, e->color);
+                            v2 p1 = v2_screen_from_world(e->pos);
+                            v2 p2 = v2_screen_from_world(e->waypoint);
+                            draw_line(p1, p2, 2, RED);
+                            draw_line(make_v2(100, 100), make_v2(200, 200), 5, RED);
+                            draw_quad(make_rect_size(make_v2(100, 100), make_v2(20, 20)), BLUE);
+                        }
+                    }
                 } break;
             }
         }
@@ -361,8 +380,8 @@ draw_entities(State* state){
         if(has_flags(e->flags, EntityFlag_Active)){
 
             switch(e->type){
-                case EntityType_Castle:{
-                    //quad = rotate_quad(quad, e->deg, e->pos);
+                case EntityType_Texture:{
+                    quad = rotate_quad(quad, e->deg, e->pos);
                     quad = quad_screen_from_world(quad);
 
                     set_texture(&r_assets->textures[e->texture]);
@@ -400,7 +419,7 @@ debug_ui_render_batches(void){
         ui_label(mouse_pos);
 
         v2 cell = grid_cell_from_pos(world_mouse);
-        String8 mouse_cell = str8_format(ts->frame_arena, "mouse cell: %f, %f", cell.x, cell.y);
+        String8 mouse_cell = str8_format(ts->frame_arena, "mouse cell: %i, %i", (s32)cell.x, (s32)cell.y);
         ui_label(mouse_cell);
 
         String8 zoom = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
@@ -472,7 +491,7 @@ ui_level_editor(void){
 }
 
 static void
-ui_building_castle(void){
+ui_structure_castle(void){
     ui_layout_axis(Axis_X)
     {
         ui_set_border_thickness(10);
@@ -485,7 +504,11 @@ ui_building_castle(void){
         ui_background_color(DARK_GRAY)
         {
             if(ui_button(str8_literal("skeleton1")).pressed_left){
-                add_skeleton(TextureAsset_Skeleton1, state->castle->pos, make_v2(3, 3));
+                v2 dir = direction_v2(state->entity_selected->pos, state->entity_selected->waypoint);
+                Entity* e = add_skeleton(TextureAsset_Skeleton1, state->entity_selected->pos, make_v2(3, 3), dir);
+                e->origin = state->entity_selected;
+                e->waypoint = state->entity_selected->waypoint;
+                e->waypoint_cell = state->entity_selected->waypoint_cell;
             }
             ui_spacer(10);
             if(ui_button(str8_literal("unit 2")).pressed_left){
@@ -626,10 +649,12 @@ world_grid_idx_from_cell(v2 cell){
 
 // todo(rr): maybe I don't need this and I can calculate in place
 static v2
-grid_cell_center(v2 pos){
+grid_cell_center(v2 cell){
     v2 result = {0};
+
+    v2 pos = grid_pos_from_cell(cell);
     result.x = pos.x + state->tile_size/2;
-    result.y = pos.x + state->tile_size/2;
+    result.y = pos.y + state->tile_size/2;
     return(result);
 }
 
@@ -981,15 +1006,15 @@ win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
             //    }
             //}
 
-            event.alt_pressed   = alt_pressed;
             event.shift_pressed = shift_pressed;
             event.ctrl_pressed  = ctrl_pressed;
+            event.alt_pressed   = alt_pressed;
 
             events_add(&events, event);
 
-            if(w_param == VK_MENU)    { alt_pressed   = true; }
             if(w_param == VK_SHIFT)   { shift_pressed = true; }
             if(w_param == VK_CONTROL) { ctrl_pressed  = true; }
+            if(w_param == VK_MENU)    { alt_pressed   = true; }
         } break;
 
         case WM_MOUSEWHEEL:{
@@ -1004,15 +1029,15 @@ win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
             }
 
             event.key_pressed = true;
-            event.alt_pressed   = alt_pressed;
             event.shift_pressed = shift_pressed;
             event.ctrl_pressed  = ctrl_pressed;
+            event.alt_pressed   = alt_pressed;
 
             events_add(&events, event);
 
-            if(w_param == VK_MENU)    { alt_pressed   = true; }
             if(w_param == VK_SHIFT)   { shift_pressed = true; }
             if(w_param == VK_CONTROL) { ctrl_pressed  = true; }
+            if(w_param == VK_MENU)    { alt_pressed   = true; }
         } break;
 
         // TODO: IMPORTANT: These events likely pass in mouse positions, need to store them as part of the event
@@ -1034,15 +1059,15 @@ win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
             event.key_pressed  = message == WM_LBUTTONDOWN ? true : false;
             event.key_released = message == WM_LBUTTONUP   ? true : false;
 
-            event.alt_pressed   = alt_pressed;
             event.shift_pressed = shift_pressed;
             event.ctrl_pressed  = ctrl_pressed;
+            event.alt_pressed   = alt_pressed;
 
             events_add(&events, event);
 
-            if(w_param == VK_MENU)    { alt_pressed   = true; }
             if(w_param == VK_SHIFT)   { shift_pressed = true; }
             if(w_param == VK_CONTROL) { ctrl_pressed  = true; }
+            if(w_param == VK_MENU)    { alt_pressed   = true; }
         } break;
         case WM_RBUTTONDOWN:
         case WM_RBUTTONUP:{
@@ -1054,15 +1079,15 @@ win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
             event.key_pressed  = message == WM_RBUTTONDOWN ? true : false;
             event.key_released = message == WM_RBUTTONUP   ? true : false;
 
-            event.alt_pressed   = alt_pressed;
             event.shift_pressed = shift_pressed;
             event.ctrl_pressed  = ctrl_pressed;
+            event.alt_pressed   = alt_pressed;
 
             events_add(&events, event);
 
-            if(w_param == VK_MENU)    { alt_pressed   = true; }
             if(w_param == VK_SHIFT)   { shift_pressed = true; }
             if(w_param == VK_CONTROL) { ctrl_pressed  = true; }
+            if(w_param == VK_MENU)    { alt_pressed   = true; }
         } break;
         case WM_MBUTTONDOWN:
         case WM_MBUTTONUP:{
@@ -1074,15 +1099,15 @@ win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
             event.key_pressed  = message == WM_MBUTTONDOWN ? true : false;
             event.key_released = message == WM_MBUTTONUP   ? true : false;
 
-            event.alt_pressed   = alt_pressed;
             event.shift_pressed = shift_pressed;
             event.ctrl_pressed  = ctrl_pressed;
+            event.alt_pressed   = alt_pressed;
 
             events_add(&events, event);
 
-            if(w_param == VK_MENU)    { alt_pressed   = true; }
             if(w_param == VK_SHIFT)   { shift_pressed = true; }
             if(w_param == VK_CONTROL) { ctrl_pressed  = true; }
+            if(w_param == VK_MENU)    { alt_pressed   = true; }
         } break;
 
         case WM_SYSKEYDOWN:
@@ -1094,15 +1119,15 @@ win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
 
             event.key_pressed = true;
             event.key_released = false;
-            event.alt_pressed   = alt_pressed;
             event.shift_pressed = shift_pressed;
             event.ctrl_pressed  = ctrl_pressed;
+            event.alt_pressed   = alt_pressed;
 
             events_add(&events, event);
 
-            if(w_param == VK_MENU)    { alt_pressed   = true; }
             if(w_param == VK_SHIFT)   { shift_pressed = true; }
             if(w_param == VK_CONTROL) { ctrl_pressed  = true; }
+            if(w_param == VK_MENU)    { alt_pressed   = true; }
         } break;
         case WM_SYSKEYUP:
         case WM_KEYUP:{
@@ -1112,15 +1137,15 @@ win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
 
             event.key_pressed = false;
             event.key_released = true;
-            event.alt_pressed   = alt_pressed;
             event.shift_pressed = shift_pressed;
             event.ctrl_pressed  = ctrl_pressed;
+            event.alt_pressed   = alt_pressed;
 
             events_add(&events, event);
 
-            if(w_param == VK_MENU)    { alt_pressed   = false; }
             if(w_param == VK_SHIFT)   { shift_pressed = false; }
             if(w_param == VK_CONTROL) { ctrl_pressed  = false; }
+            if(w_param == VK_MENU)    { alt_pressed   = false; }
         } break;
 
         case WM_CHAR:{
@@ -1202,7 +1227,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         ts->data_arena     = push_arena(&ts->arena, KB(1024));
 
         show_cursor(true);
-        load_assets(ts->asset_arena, &assets);
+        assets_load(ts->asset_arena, &assets);
 
         state->world_width_in_tiles = 10;
         state->world_height_in_tiles = 10;
@@ -1223,10 +1248,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         deserialize_world(state->current_world);
 
         // load castle
-        state->castle_cell = make_v2(0, 0);
-        v2 castle_pos = grid_pos_from_cell(state->castle_cell);
-        v2 cell_center = grid_cell_center(castle_pos);
-        state->castle = add_castle(TextureAsset_Castle1, cell_center, make_v2(10, 10));
+        state->castle_cell = make_v2(1, 2);
+        state->castle = add_castle(TextureAsset_Castle1, make_v2(1, 2), make_v2(10, 10));
 
         state->scene_state = SceneState_Game;
         //init_camera_2d(&camera, make_v2((state->world_width_in_tiles/2) * state->tile_size, (state->world_height_in_tiles/2) * state->tile_size), 30);
@@ -1291,18 +1314,22 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             debug_ui_render_batches();
         }
 
-        if(state->building_selected){
-            switch(state->building_selected_id){
-                case TextureAsset_Castle1:{
-                    ui_building_castle();
+        if(state->is_entity_selected){
+            switch(state->entity_selected->structure_type){
+                case StructureType_Castle:{
+                    if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT, true)){
+                        v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
+                        state->entity_selected->waypoint = world_mouse;
+                        state->entity_selected->waypoint_cell = grid_cell_from_pos(world_mouse);
+                    }
+                    ui_structure_castle();
                 }
             }
         }
 
         if(mouse_in_cell(state->castle_cell) && controller_button_pressed(MOUSE_BUTTON_LEFT, true)){
-            s32 idx = world_grid_idx_from_cell(state->castle_cell);
-            state->building_selected_id = TextureAsset_Castle1;
-            state->building_selected = true;
+            state->entity_selected = state->castle;
+            state->is_entity_selected = true;
         }
 
         console_update();
@@ -1379,7 +1406,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             d3d_context->Unmap(d3d_constant_buffer, 0);
 
             render_batches_reset();
-            arena_free(ts->batch_arena);
+            //arena_free(ts->batch_arena);
             draw_world_terrain();
             if(state->scene_state == SceneState_Editor){
                 draw_world_grid();
@@ -1387,8 +1414,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             draw_entities(state);
 
             //debug_draw_mouse_cell_pos();
-
-            ui_end();
 
             // draw selected texture
             if(state->terrain_selected){
@@ -1398,6 +1423,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
 
 
+            ui_end();
             set_font(state->font);
             String8 fps = str8_formatted(ts->frame_arena, "FPS: %.2f", FPS);
             draw_text(fps, make_v2(window.width - text_padding - font_string_width(state->font, fps), window.height - text_padding), ORANGE);
@@ -1405,8 +1431,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             Quad quad = make_quad(make_v2(0, 0), make_v2(3, 3));
             quad = quad_screen_from_world(quad);
             set_texture(&assets.textures[TextureAsset_Skeleton1]);
-            draw_texture(quad);
-            draw_bounding_box(quad, 2, RED);
+            //draw_texture(quad);
+            //draw_bounding_box(quad, 2, RED);
 
             console_draw();
 

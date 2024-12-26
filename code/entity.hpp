@@ -35,7 +35,11 @@ typedef enum ParticleType{
     ParticleType_Bullet,
 } ParticleType;
 
-typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Castle} EntityType;
+typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Structure} EntityType;
+
+typedef enum StructureType{
+    StructureType_Castle,
+} StructureType;
 
 typedef struct Entity{
     Entity* origin;
@@ -46,6 +50,11 @@ typedef struct Entity{
     EntityType type;
     DeathType death_type;
     ParticleType particle_type;
+
+    // structure info
+    StructureType structure_type;
+    v2 waypoint;
+    v2 waypoint_cell;
 
     u32 flags;
     u32 collision_type;
@@ -59,6 +68,9 @@ typedef struct Entity{
         };
         v2 pos;
     };
+    v2 cell;
+    v2 move_to_target;
+
     v2 dim;
     v2 dir;
     v2 accel_dir;
@@ -74,19 +86,19 @@ typedef struct Entity{
     f32 shoot_t;
     f32 velocity;
 
-    s32 health;
-    s32 damage;
-    bool in_play;
-    f32 particle_t;
-    bool accelerating;
-    bool exploding;
-    u32  explosion_tex;
-    f32 explosion_t;
-    f32 immune_t;
-    bool immune;
+    //s32 health;
+    //s32 damage;
+    //bool in_play;
+    //f32 particle_t;
+    //bool accelerating;
+    //bool exploding;
+    //u32  explosion_tex;
+    //f32 explosion_t;
+    //f32 immune_t;
+    //bool immune;
 
-    bool dead;
-    u32 texture;
+    //bool dead;
+    TextureAsset texture;
 } Entity;
 
 static bool has_flags(u32 rflags, u32 lflags);

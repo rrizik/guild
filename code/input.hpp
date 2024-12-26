@@ -4,6 +4,7 @@
 typedef enum KeyCode{
     KeyCode_None = 0,
 
+    // change to MouseButton_Right or KeyCode_MBR, MBL, MBM, KeyCode_MWU,MWD
     MOUSE_BUTTON_LEFT     = 0x01,
     MOUSE_BUTTON_RIGHT    = 0x02,
     MOUSE_BUTTON_MIDDLE   = 0x04,
@@ -152,6 +153,10 @@ typedef struct Mouse{
 typedef struct Controller{
     Mouse mouse;
     Button button[KeyCode_Count];
+
+    bool shift_pressed;
+    bool ctrl_pressed;
+    bool alt_pressed;
 } Controller;
 global Controller controller;
 
@@ -162,9 +167,9 @@ static bool controller_button_released(KeyCode key, bool consume = false);
 static bool controller_button_held(KeyCode key);
 
 // NOTE: EVENTS:
-global bool alt_pressed;
 global bool shift_pressed;
 global bool ctrl_pressed;
+global bool alt_pressed;
 
 typedef enum EventType{
     EventType_NONE,
