@@ -35,7 +35,7 @@ typedef enum ParticleType{
     ParticleType_Bullet,
 } ParticleType;
 
-typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Structure} EntityType;
+typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Structure, EntityType_Skeleton1} EntityType;
 
 typedef enum StructureType{
     StructureType_Castle,
@@ -72,10 +72,13 @@ typedef struct Entity{
     v2 move_to_target;
 
     v2 dim;
+    v2 rot;
+    f32 deg;
+
     v2 dir;
     v2 accel_dir;
     f32 accel_deg;
-    f32 deg;
+
     RGBA color;
 
     f32 collision_padding;
@@ -101,9 +104,9 @@ typedef struct Entity{
     TextureAsset texture;
 } Entity;
 
-static bool has_flags(u32 rflags, u32 lflags);
-static void set_flags(u32* rflags, u32 lflags);
-static void clear_flags(u32* rflags, u32 lflags);
+static bool has_flag(u32 lflags, u32 rflags);
+static void set_flag(u32* lflags, u32 rflags);
+static void clear_flag(u32* lflags, u32 rflags);
 
 typedef struct EntityHandle{
     u32 index;

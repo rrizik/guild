@@ -41,7 +41,9 @@ global ID3D11VertexShader* d3d_2d_textured_vs;
 global ID3D11PixelShader*  d3d_2d_textured_ps;
 global ID3D11InputLayout*  d3d_2d_textured_il;
 
-global ID3D11Buffer* d3d_vertex_buffer_8mb;
+global ID3D11Buffer* d3d_vertex_buffer;
+global s32 d3d_vertex_buffer_size;
+
 global ID3D11Buffer* d3d_index_buffer;
 global ID3D11Buffer* d3d_instance_buffer;
 global ID3D11Buffer* d3d_constant_buffer;
@@ -92,10 +94,14 @@ static void d3d_init_debug_stuff(void);
 static void d3d_load_shader(String8 shader_path, D3D11_INPUT_ELEMENT_DESC* il, u32 layout_count,
                             ID3D11VertexShader** d3d_vs, ID3D11PixelShader** d3d_ps, ID3D11InputLayout** d3d_il);
 static void d3d_init_texture_resource(ID3D11ShaderResourceView** shader_resource, Bitmap* bitmap);
+static void d3d_release_vertex_buffer(ID3D11Buffer* vertex_buffer);
+static ID3D11Buffer* d3d_make_vertex_buffer(s32 size);
+
 static void d3d_clear_color(RGBA color);
+static void d3d_resize_window(Window* window, f32 width, f32 height);
 static void d3d_draw(Vertex3* buffer, s32 count, Texture* texture);
+static void d3d_update_vertex_buffer_size(s32 new_size);
 static void d3d_present(void);
 static void d3d_release(void);
-static void d3d_resize_window(Window* window, f32 width, f32 height);
 
 #endif

@@ -1,5 +1,5 @@
-#include "main.hpp"
 
+#include "main.hpp"
 
 static void
 sim_game(void){
@@ -46,20 +46,22 @@ sim_game(void){
     // resolve entity motion
     for(s32 i = 0; i < array_count(state->entities); ++i){
         Entity *e = state->entities + i;
-        if(!has_flags(e->flags, EntityFlag_Active)){
+        if(!has_flag(e->flags, EntityFlag_Active)){
             continue;
         }
 
-        if(has_flags(e->flags, EntityFlag_MoveWithPhys)){
-            e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
-            e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
+        if(has_flag(e->flags, EntityFlag_MoveWithPhys)){
+            if(!v2_close_enough(e->pos, e->waypoint, 0.1f)){
+                e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
+                e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
+            }
         }
     }
 
     // resolve death todo(rr): this will be different
     for(s32 i = 0; i < array_count(state->entities); ++i){
         Entity *e = state->entities + i;
-        if(!has_flags(e->flags, EntityFlag_Active)){
+        if(!has_flag(e->flags, EntityFlag_Active)){
             continue;
         }
     }
@@ -72,6 +74,15 @@ sim_game(void){
         //switch(e->type){
         //}
     }
+}
+
+static bool
+v2_close_enough(v2 p1, v2 p2, f32 epsilon){
+    f32 x = abs_f32(p1.x - p2.x);
+    f32 y = abs_f32(p1.y - p2.y);
+    bool tx = x <= epsilon;
+    bool ty = y <= epsilon;
+    return(x <= epsilon && y <= epsilon);
 }
 
 // todo(rr): Move these to entity once you move PermanentMemory further up in the tool chain
@@ -101,7 +112,7 @@ handle_from_entity(Entity *e){
 static void
 remove_entity(Entity* e){
     e->type = EntityType_None;
-    clear_flags(&e->flags, EntityFlag_Active);
+    clear_flag(&e->flags, EntityFlag_Active);
     state->free_entities[++state->free_entities_at] = e->index;
     state->entities_count--;
     *e = {0};
@@ -113,7 +124,7 @@ add_entity(EntityType type){
         u32 free_entity_index = state->free_entities[state->free_entities_at--];
         Entity *e = state->entities + free_entity_index;
         e->index = free_entity_index;
-        set_flags(&e->flags, EntityFlag_Active);
+        set_flag(&e->flags, EntityFlag_Active);
         state->generation[e->index]++;
         state->entities_count++;
         e->generation = state->generation[e->index]; // CONSIDER: this might not be necessary
@@ -128,11 +139,11 @@ static Entity*
 add_quad(v2 pos, v2 dim, RGBA color){
     Entity* e = add_entity(EntityType_Quad);
     if(e){
-        e->dir = make_v2(1, 1);
+        e->rot = make_v2(1, 1);
         e->color = color;
         e->pos = pos;
         e->dim = dim;
-        e->dir = make_v2(0, 1);
+        e->rot = make_v2(0, 1);
         e->deg = 90;
     }
     else{
@@ -145,11 +156,11 @@ static Entity*
 add_texture(TextureAsset texture, v2 pos, v2 dim, RGBA color, u32 flags){
     Entity* e = add_entity(EntityType_Texture);
     if(e){
-        e->dir = make_v2(1, 1);
+        e->rot = make_v2(1, 1);
         e->color = color;
         e->pos = pos;
         e->dim = dim;
-        e->dir = make_v2(0, 1);
+        e->rot = make_v2(0, 1);
         e->deg = 90;
         e->texture = texture;
     }
@@ -171,7 +182,7 @@ add_castle(TextureAsset texture, v2 cell, v2 dim, RGBA color, u32 flags){
         e->dim = dim;
         e->texture = texture;
         e->deg = 0;
-        e->dir = dir_from_deg(e->deg);
+        e->rot = dir_from_deg(e->deg);
         e->structure_type = StructureType_Castle;
     }
     else{
@@ -182,17 +193,18 @@ add_castle(TextureAsset texture, v2 cell, v2 dim, RGBA color, u32 flags){
 
 static Entity*
 add_skeleton(TextureAsset texture, v2 pos, v2 dim, v2 dir, RGBA color, u32 flags){
-    Entity* e = add_entity(EntityType_Texture);
+    Entity* e = add_entity(EntityType_Skeleton1);
     if(e){
         e->color = color;
         e->pos = pos;
         e->dim = dim;
         e->texture = texture;
         e->velocity = 1;
-        e->speed = 5;
+        e->speed = 5.0f;
         e->dir = dir;
-        e->deg = deg_from_dir(dir);
-        set_flags(&e->flags, EntityFlag_MoveWithPhys);
+        e->rot = make_v2(1, 0);
+        e->deg = deg_from_dir(e->rot);
+        set_flag(&e->flags, EntityFlag_MoveWithPhys);
     }
     else{
         print("Failed to add entity: Quad\n");
@@ -206,7 +218,7 @@ entities_clear(void){
     for(u32 i = state->free_entities_at; i <= state->free_entities_at; --i){
         Entity* e = state->entities + i;
         e->type = EntityType_None;
-        clear_flags(&e->flags, EntityFlag_Active);
+        clear_flag(&e->flags, EntityFlag_Active);
         state->free_entities[i] = state->free_entities_at - i;
         state->generation[i] = 0;
     }
@@ -331,11 +343,11 @@ generate_new_world(f32 width, f32 height){
 static void
 draw_entities(State* state){
     // todo(rr): later change to screen space in shader with matrix multiplication (identify matrix)
-    for(s32 index = 0; index < array_count(state->entities); ++index){
-        Entity *e = state->entities + index;
+    for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+        Entity *e = state->entities + idx;
 
         Quad quad = quad_from_entity(e);
-        if(has_flags(e->flags, EntityFlag_Active)){
+        if(has_flag(e->flags, EntityFlag_Active)){
 
             switch(e->type){
                 case EntityType_Quad:{
@@ -347,11 +359,11 @@ draw_entities(State* state){
             }
         }
     }
-    for(s32 index = 0; index < array_count(state->entities); ++index){
-        Entity *e = state->entities + index;
+    for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+        Entity *e = state->entities + idx;
 
         Quad quad = quad_from_entity(e);
-        if(has_flags(e->flags, EntityFlag_Active)){
+        if(has_flag(e->flags, EntityFlag_Active)){
 
             switch(e->type){
                 case EntityType_Structure:{
@@ -365,19 +377,21 @@ draw_entities(State* state){
                             v2 p1 = v2_screen_from_world(e->pos);
                             v2 p2 = v2_screen_from_world(e->waypoint);
                             draw_line(p1, p2, 2, RED);
-                            draw_line(make_v2(100, 100), make_v2(200, 200), 5, RED);
-                            draw_quad(make_rect_size(make_v2(100, 100), make_v2(20, 20)), BLUE);
+
+                            set_font(state->font);
+                            String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->waypoint.x, e->waypoint.y);
+                            draw_text(fmt_str, v2_screen_from_world(e->waypoint), GREEN);
                         }
                     }
                 } break;
             }
         }
     }
-    for(s32 index = 0; index < array_count(state->entities); ++index){
-        Entity *e = state->entities + index;
+    for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+        Entity *e = state->entities + idx;
 
         Quad quad = quad_from_entity(e);
-        if(has_flags(e->flags, EntityFlag_Active)){
+        if(has_flag(e->flags, EntityFlag_Active)){
 
             switch(e->type){
                 case EntityType_Texture:{
@@ -386,6 +400,32 @@ draw_entities(State* state){
 
                     set_texture(&r_assets->textures[e->texture]);
                     draw_texture(quad, e->color);
+                } break;
+                case EntityType_Skeleton1:{
+                    quad = rotate_quad(quad, e->deg, e->pos);
+                    quad = quad_screen_from_world(quad);
+
+                    set_texture(&r_assets->textures[e->texture]);
+                    draw_texture(quad, e->color);
+
+                    if(state->scene_state == SceneState_Editor){
+                        v2 pos = v2_screen_from_world(e->pos);
+                        ui_set_pos(pos.x + 20, pos.y);
+                        ui_set_size(ui_size_children(0), ui_size_children(0));
+                        ui_set_border_thickness(10);
+                        ui_set_background_color(DEFAULT);
+
+                        String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
+                        ui_begin_panel(box_name, ui_floating_panel_world);
+
+                        ui_size(ui_size_text(0), ui_size_text(0))
+                        ui_text_color(LIGHT_GRAY)
+                        {
+                            String8 fmt_str = str8_formatted(ts->frame_arena, "%f, %f##%i", e->pos.x, e->pos.y);
+                            ui_label(fmt_str);
+                        }
+                        ui_end_panel();
+                    }
                 } break;
             }
         }
@@ -414,13 +454,16 @@ debug_ui_render_batches(void){
     ui_text_color(LIGHT_GRAY)
     {
 
-        v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
         String8 mouse_pos = str8_format(ts->frame_arena, "mouse pos: %f, %f", controller.mouse.x, controller.mouse.y);
         ui_label(mouse_pos);
 
+        v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
         v2 cell = grid_cell_from_pos(world_mouse);
         String8 mouse_cell = str8_format(ts->frame_arena, "mouse cell: %i, %i", (s32)cell.x, (s32)cell.y);
         ui_label(mouse_cell);
+
+        String8 mouse_world_pos = str8_format(ts->frame_arena, "mouse cell: %f, %f", world_mouse.x, world_mouse.y);
+        ui_label(mouse_world_pos);
 
         String8 zoom = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
         ui_label(zoom);
@@ -433,7 +476,7 @@ debug_ui_render_batches(void){
 
         s32 count = 0;
         for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-            if(count < 25){
+            if(count < 50){
                 String8 batch_str = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->count, batch->cap, batch->id);
                 ui_label(batch_str);
             }
@@ -504,11 +547,13 @@ ui_structure_castle(void){
         ui_background_color(DARK_GRAY)
         {
             if(ui_button(str8_literal("skeleton1")).pressed_left){
-                v2 dir = direction_v2(state->entity_selected->pos, state->entity_selected->waypoint);
-                Entity* e = add_skeleton(TextureAsset_Skeleton1, state->entity_selected->pos, make_v2(3, 3), dir);
-                e->origin = state->entity_selected;
-                e->waypoint = state->entity_selected->waypoint;
-                e->waypoint_cell = state->entity_selected->waypoint_cell;
+                for(s32 i=0; i < 5; ++i){
+                    v2 dir = direction_v2(state->entity_selected->pos, state->entity_selected->waypoint);
+                    Entity* e = add_skeleton(TextureAsset_Skeleton1, state->entity_selected->pos, make_v2(3, 3), dir);
+                    e->origin = state->entity_selected;
+                    e->waypoint = state->entity_selected->waypoint;
+                    e->waypoint_cell = state->entity_selected->waypoint_cell;
+                }
             }
             ui_spacer(10);
             if(ui_button(str8_literal("unit 2")).pressed_left){
@@ -736,7 +781,7 @@ init_memory(u64 permanent, u64 transient){
 }
 
 static Window
-win32_window_create(const wchar* window_name, u32 width, u32 height){
+win32_window_create(s32 width, s32 height, const wchar* window_name){
     Window result = {0};
     result.type = WindowType_Windowed;
 
@@ -760,13 +805,14 @@ win32_window_create(const wchar* window_name, u32 width, u32 height){
     // adjust window size to exclude client area
     DWORD style = WS_OVERLAPPEDWINDOW|WS_VISIBLE;
     style = style & ~WS_MAXIMIZEBOX; // disable maximize button
-    RECT rect = { 0, 0, (s32)width, (s32)height };
+    RECT rect = { 0, 0, width, height };
     AdjustWindowRect(&rect, style, FALSE);
     s32 adjusted_w = rect.right - rect.left;
     s32 adjusted_h = rect.bottom - rect.top;
 
     result.handle = CreateWindowW(L"window class", window_name, style, CW_USEDEFAULT, CW_USEDEFAULT, adjusted_w, adjusted_h, 0, 0, GetModuleHandle(0), 0);
-    if(!IsWindow(result.handle)){
+    if(!IsWindow(result.handle) || !result.handle){
+        print("Error: Could not create window\n");
         // todo(rr): log error
     }
     assert(IsWindow(result.handle));
@@ -1176,7 +1222,7 @@ win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
 s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 window_type){
     begin_profiler();
 
-    window = win32_window_create(L"Guild", SCREEN_WIDTH, SCREEN_HEIGHT);
+    window = win32_window_create(SCREEN_WIDTH, SCREEN_HEIGHT, L"Guild");
     if(!window.handle){
         print("Error: Could not create window\n");
         return(0);
@@ -1310,6 +1356,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         // DRAW UI
         if(state->scene_state == SceneState_Editor){
+            print("HERE1\n");
             ui_level_editor();
             debug_ui_render_batches();
         }
@@ -1393,6 +1440,11 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         }
 
+        //v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
+        //if(v2_close_enough(world_mouse, state->castle->waypoint, 0.0001f)){
+        //    print("ALOKSDJALKSJDLAKSJDLAKSJd\n:ALKSJD:ALKSJD:ALKSJD\nASLKDJALKSDJ\n");
+        //}
+
         camera_2d_update(&camera, window.aspect_ratio);
         wasapi_play_cursors();
 
@@ -1434,11 +1486,18 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //draw_texture(quad);
             //draw_bounding_box(quad, 2, RED);
 
+            set_font(state->font);
+            String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
+            draw_text(str_fmt, make_v2(200, 100), GREEN);
+
             console_draw();
+            Rect r = make_rect_size(make_v2(10, 10), make_v2(100, 100));
+            draw_quad(r, RED);
 
             {
                 d3d_clear_color(BACKGROUND_COLOR);
                 draw_render_batches();
+                //draw_render_batches_new();
                 d3d_present();
 
                 arena_free(ts->frame_arena);

@@ -10,34 +10,34 @@ static RGBA TEAL =    {0.0f, 1.0f, 1.0f,  1.0f};
 static RGBA PINK =    {0.92f, 0.62f, 0.96f, 1.0f};
 static RGBA YELLOW =  {0.9f, 0.9f, 0.0f,  1.0f};
 static RGBA ORANGE =  {1.0f, 0.5f, 0.15f,  1.0f};
-static RGBA ORANGE_HALF =  {1.0f, 0.5f, 0.15f,  0.1f};
-static RGBA DARK_GRAY =  {0.5f, 0.5f, 0.5f,  1.0f};
+static RGBA ORANGE_HALF = {1.0f, 0.5f, 0.15f,  0.1f};
+static RGBA LIGHT_GRAY =  {0.85f, 0.85f, 0.85f,  1.0f};
+static RGBA DARK_GRAY =   {0.5f, 0.5f, 0.5f,  1.0f};
 static RGBA DARK_GRAY_LIGHT =  {0.5f, 0.5f, 0.5f,  0.1f};
-static RGBA LIGHT_GRAY = {0.85f, 0.85f, 0.85f,  1.0f};
-static RGBA WHITE =   {1.0f, 1.0f, 1.0f,  1.0f};
-static RGBA BLACK =   {0.0f, 0.0f, 0.0f,  1.0f};
-static RGBA BACKGROUND_COLOR =   {1.0f/255.0f, 1.0f/255.0f, 1.0f/255.0f};
-static RGBA ARMY_GREEN =   {0.25f, 0.25f, 0.23f, 1.0f};
-static RGBA DEFAULT    =   {0.31f, 0.36f, 0.41f, 1.0f};
+static RGBA BACKGROUND_COLOR = {1.0f/255.0f, 1.0f/255.0f, 1.0f/255.0f};
+static RGBA ARMY_GREEN = {0.25f, 0.25f, 0.23f, 1.0f};
+static RGBA DEFAULT    = {0.31f, 0.36f, 0.41f, 1.0f};
+static RGBA WHITE =      {1.0f, 1.0f, 1.0f,  1.0f};
+static RGBA BLACK =      {0.0f, 0.0f, 0.0f,  1.0f};
 
 global Arena*   r_arena = 0;
 global Assets*  r_assets = 0;
 global Texture* r_texture;
 global Font*    r_font;
 
-#define DEFAULT_BATCH_SIZE MB(8)
+//#define DEFAULT_BATCH_SIZE MB(8)
 //#define DEFAULT_BATCH_SIZE KB(200)
-//#define DEFAULT_BATCH_SIZE KB(100)
+#define DEFAULT_BATCH_SIZE KB(100)
 typedef struct RenderBatch{
     RenderBatch* next;
     Vertex3* buffer;
     s32 id;
+    s32 start_index_in_vertex_buffer;
 
     s32 count;
     s32 cap;
     Texture* texture;
 } RenderBatch;
-s32 bcount = 0;
 
 typedef struct RenderBatchNode{
     RenderBatch* first;
@@ -117,6 +117,7 @@ static void draw_line(v2 p0, v2 p1, f32 width, RGBA color);
 static void draw_text(String8 text, v2 pos, RGBA color);
 
 static void draw_render_batches(void);
+static void draw_render_batches_new(void);
 static void render_batches_reset(void);
 
 

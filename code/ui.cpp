@@ -12,7 +12,7 @@ ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
     ui_state->controller = controller;
     ui_state->default_font = &assets->fonts[FontAsset_Arial];
     //ui_state->generation = 0;
-    init_table(arena, &ui_state->table);
+    table_init(arena, &ui_state->table);
     ui_state->arena = make_arena(MB(100));
 
     ui_state->parent_stack.top = &ui_parent_null;
@@ -32,7 +32,6 @@ static void
 ui_begin(void){
     //ui_state->generation += 1;
     ui_state->hot = 0;
-    //ui_state->closed = false;
 
     ui_push_pos_x(0);
     ui_push_pos_y(0);
@@ -58,19 +57,6 @@ ui_end(void){
     ui_layout();
     ui_draw(ui_root());
 
-    //ui_parent_top = 0;
-    //ui_pos_x_top = 0;
-    //ui_pos_y_top = 0;
-    //ui_size_w_top = 0;
-    //ui_size_h_top = 0;
-    //ui_layout_axis_top = 0;
-
-    //ui_text_padding_top = 0;
-    //ui_text_color_top = 0;
-
-    //ui_background_color_top = 0;
-    //ui_border_thickness_top = 0;
-    //ui_font_top = 0;
     ui_state->parent_stack.top = &ui_parent_null;
     ui_state->pos_x_stack.top = &ui_pos_x_null;
     ui_state->pos_y_stack.top = &ui_pos_y_null;
@@ -82,6 +68,19 @@ ui_end(void){
     ui_state->background_color_stack.top = &ui_background_color_null;
     ui_state->border_thickness_stack.top = &ui_border_thickness_null;
     ui_state->font_stack.top = &ui_font_null;
+
+    // todo(rr): go back to this
+    //ui_state->parent_stack.top = 0;
+    //ui_state->pos_x_stack.top = 0;
+    //ui_state->pos_y_stack.top = 0;
+    //ui_state->size_w_stack.top = 0;
+    //ui_state->size_h_stack.top = 0;
+    //ui_state->layout_axis_stack.top = 0;
+    //ui_state->text_padding_stack.top = 0;
+    //ui_state->text_color_stack.top = 0;
+    //ui_state->background_color_stack.top = 0;
+    //ui_state->border_thickness_stack.top = 0;
+    //ui_state->font_stack.top = 0;
 
     arena_free(ui_arena());
 }
@@ -114,31 +113,26 @@ ui_auto_pop(void){
 // todo: ui_root() on first function call so that you don't have to pass it in.
 static void
 ui_draw(UI_Box* box){
-    // todo(rr): idk why this is needed anymore
-    //if(ui_closed()){
-    //    return;
-    //}
-
     if(box == 0){
         return;
     }
 
-    set_font(box->font);
-
-    if(has_flags(box->flags, UI_BoxFlag_DrawBackground)){
+    if(has_flag(box->flags, UI_BoxFlag_DrawBackground)){
         if(ui_state->hot == box->key && ui_state->active == box->key){
-            if(has_flags(box->flags, UI_BoxFlag_ActiveAnimation)){
+            if(has_flag(box->flags, UI_BoxFlag_ActiveAnimation)){
                 box->background_color = darken_color(box->background_color, 0.2f);
             }
         }
         if(ui_state->hot == box->key && ui_state->active == 0){
-            if(has_flags(box->flags, UI_BoxFlag_HotAnimation)){
+            if(has_flag(box->flags, UI_BoxFlag_HotAnimation)){
                 box->background_color = brighten_color(box->background_color, 0.2f);
             }
         }
         draw_quad(box->rect, box->background_color);
     }
-    if(has_flags(box->flags, UI_BoxFlag_DrawText)){
+    if(has_flag(box->flags, UI_BoxFlag_DrawText)){
+        set_font(box->font);
+
         String8 text = ui_text_part_from_key(box->string);
 
         f32 width = font_string_width(box->font, text);
@@ -187,17 +181,6 @@ static Mouse
 ui_mouse(void){
     return(ui_state->controller->mouse);
 }
-
-// todo(rr): idk why this is needed anymore
-//static bool
-//ui_closed(void){
-//    return(ui_state->closed);
-//}
-//
-//static void
-//ui_close(void){
-//    ui_state->closed = true;
-//}
 
 static String8
 ui_text_part_from_key(String8 string){
@@ -265,13 +248,16 @@ ui_make_box(String8 string, UI_BoxFlags flags){
 
     BoxCache* cache = table_lookup(BoxCache, &ui_state->table, string);
     if(cache){
-        result->rect = cache->rect;
-        result->size[Axis_X] = cache->size[Axis_X];
-        result->size[Axis_Y] = cache->size[Axis_Y];
-        result->pos[Axis_X] = cache->pos[Axis_X];
-        result->pos[Axis_Y] = cache->pos[Axis_Y];
-        result->rel_pos[Axis_X] = cache->rel_pos[Axis_X];
-        result->rel_pos[Axis_Y] = cache->rel_pos[Axis_Y];
+        // todo(rr): I think I need a per cache item flag check, almost like auto_pop
+        if(!has_flag(flags, UI_BoxFlag_NoCache)){
+            result->rect = cache->rect;
+            result->size[Axis_X] = cache->size[Axis_X];
+            result->size[Axis_Y] = cache->size[Axis_Y];
+            result->pos[Axis_X] = cache->pos[Axis_X];
+            result->pos[Axis_Y] = cache->pos[Axis_Y];
+            result->rel_pos[Axis_X] = cache->rel_pos[Axis_X];
+            result->rel_pos[Axis_Y] = cache->rel_pos[Axis_Y];
+        }
     }
 
     ui_auto_pop();
@@ -280,10 +266,11 @@ ui_make_box(String8 string, UI_BoxFlags flags){
 }
 
 // Basic Widgets
-static void
+static UI_Box*
 ui_begin_panel(String8 string, UI_BoxFlags flags){
-    UI_Box* box1 = ui_make_box(string, flags);
-    ui_push_parent(box1);
+    UI_Box* box = ui_make_box(string, flags);
+    ui_push_parent(box);
+    return(box);
 }
 
 static void
@@ -308,6 +295,7 @@ ui_button(String8 string, UI_BoxFlags flags_in){
     return(signal);
 }
 
+// todo(rr): make string unique
 static void
 ui_label(String8 string){
     u32 flags = UI_BoxFlag_DrawText;
@@ -328,7 +316,7 @@ ui_signal_from_box(UI_Box* box){
     UI_Signal signal = {0};
 
     v2 mouse_pos = ui_mouse_pos();
-    if(has_flags(box->flags, UI_BoxFlag_Clickable)){
+    if(has_flag(box->flags, UI_BoxFlag_Clickable)){
 
         if(rect_contains_point(box->rect, mouse_pos)){
             if(ui_state->hot == 0){
@@ -356,7 +344,7 @@ ui_signal_from_box(UI_Box* box){
         }
     }
 
-    if(has_flags(box->flags, UI_BoxFlag_Draggable)){
+    if(has_flag(box->flags, UI_BoxFlag_Draggable)){
         if(ui_state->active == box->key && controller_button_held(MOUSE_BUTTON_LEFT)){
             box->rel_pos[Axis_X] = (f32)(mouse_pos.x - ui_state->mouse_pos_record.x);
             box->rel_pos[Axis_Y] = (f32)(mouse_pos.y - ui_state->mouse_pos_record.y);
@@ -433,10 +421,14 @@ ui_traverse_positions(UI_Box* box, Axis axis){
         return;
     }
 
+    if(str8_contains(box->string, str8_literal("skelebox"))){
+        u32 a = 1;
+    }
+
     // TODO(rr): why do I have this here?
     //if(!box->prev){
     if(box->layout_axis == axis){
-        if(has_flags(box->flags, UI_BoxFlag_NoSiblings)){
+        if(has_flag(box->flags, UI_BoxFlag_NoSiblings)){
             if(box->parent){
                 box->pos[axis] = box->parent->pos[axis] + box->rel_pos[axis] + box->border_thickness;
             }
@@ -453,7 +445,7 @@ ui_traverse_positions(UI_Box* box, Axis axis){
         }
     }
     else{
-        if(has_flags(box->flags, UI_BoxFlag_NoSiblings)){
+        if(has_flag(box->flags, UI_BoxFlag_NoSiblings)){
             if(box->parent){
                 box->pos[axis] = box->parent->pos[axis] + box->rel_pos[axis] + box->border_thickness;
             }

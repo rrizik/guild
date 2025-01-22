@@ -62,16 +62,22 @@ enum {
   UI_BoxFlag_ActiveAnimation = (1<<9),
   UI_BoxFlag_Draggable       = (1<<10),
   UI_BoxFlag_NoSiblings      = (1<<11),
+  UI_BoxFlag_NoCache         = (1<<12),
 };
 UI_BoxFlags ui_floating_panel = UI_BoxFlag_DrawBackground |
                                 UI_BoxFlag_Clickable |
                                 UI_BoxFlag_Draggable |
                                 UI_BoxFlag_NoSiblings;
+UI_BoxFlags ui_floating_panel_world = UI_BoxFlag_DrawBackground |
+                                      UI_BoxFlag_Clickable |
+                                      UI_BoxFlag_Draggable |
+                                      UI_BoxFlag_NoSiblings|
+                                      UI_BoxFlag_NoCache;
 UI_BoxFlags ui_fixed_panel    = UI_BoxFlag_DrawBackground |
                                 UI_BoxFlag_Clickable |
                                 UI_BoxFlag_NoSiblings;
 
-// todo: not even using this
+// todo(rr): not even using this
 typedef struct TextInfo{
     s32 text_width;
     s32 vertical_offset;
@@ -125,29 +131,26 @@ static void ui_init(Arena* arena, Window* window, Controller* controller, Assets
 static void ui_begin(void);
 static void ui_end(void);
 static void ui_layout(void);
-static void ui_auto_pop(void);
 static void ui_draw(UI_Box* box);
+static void ui_auto_pop(void);
+static UI_Box*   ui_make_box(String8 str, UI_BoxFlags flags);
+static BoxCache  cache_from_box(UI_Box* box);
+static UI_Signal ui_signal_from_box(UI_Box* box);
 
+// Quick access functions
 static Arena*    ui_arena(void);
 static Window*   ui_window(void);
 static UI_Box*   ui_root(void);
 static HashTable ui_table(void);
 static v2        ui_mouse_pos(void);
 static Mouse     ui_mouse(void);
-// todo(rr): idk why this is needed anymore
-//static bool      ui_closed(void);
-//static void      ui_close(void);
 static String8   ui_text_part_from_key(String8 string);
 
-static UI_Box*   ui_make_box(String8 str, UI_BoxFlags flags);
-static void      ui_begin_panel(String8 string, UI_BoxFlags flags=0);
+static UI_Box*   ui_begin_panel(String8 string, UI_BoxFlags flags=0);
 static void      ui_end_panel(void);
 static UI_Signal ui_button(String8 string, UI_BoxFlags flags_in=0);
 static void      ui_label(String8 string);
 static void      ui_spacer(f32 size);
-
-static BoxCache cache_from_box(UI_Box* box);
-static UI_Signal ui_signal_from_box(UI_Box* box);
 
 static void ui_traverse_independent(UI_Box* box, Axis axis);
 static void ui_traverse_children(UI_Box* box, Axis axis);
@@ -214,9 +217,6 @@ typedef struct UI_State{
 
     v2 mouse_pos_record;
 
-    // todo(rr): idk why this is needed anymore
-    //bool closed;
-
     //u64 generation;
 
     UI_ParentStack          parent_stack;
@@ -246,6 +246,14 @@ global UI_State* ui_state;
     ui_state->##name##_stack.auto_pop = false; \
     return(old_node->v); \
 
+#define ui_stack_pop_impl(type, name) \
+    UI_##type##Node* node = ui_state->##name##_stack.top; \
+    ui_state->##name##_stack.top = ui_state->##name##_stack.top->next; \
+    return(node->v); \
+
+#define ui_stack_top_impl(name) \
+    return(ui_state->##name##_stack.top->v); \
+
 #define ui_stack_set_impl(arena, type, name, v) \
     UI_##type##Node* node = push_struct(arena, UI_##type##Node); \
     node->v = v; \
@@ -255,16 +263,8 @@ global UI_State* ui_state;
     ui_state->##name##_stack.auto_pop = true; \
     return(old_node->v); \
 
-#define ui_stack_pop_impl(type, name) \
-    UI_##type##Node* node = ui_state->##name##_stack.top; \
-    ui_state->##name##_stack.top = ui_state->##name##_stack.top->next; \
-    return(node->v); \
-
-#define ui_stack_top_impl(name) \
-    return(ui_state->##name##_stack.top->v); \
-
 //------------------------------------------------------------
-// Push/Set/Pop/Top
+// Push/Pop/Top/Set
 
 static UI_Box* ui_push_parent(UI_Box* v)        { ui_stack_push_impl(ui_arena(), Parent, parent, v) }
 static f32     ui_push_pos_x(f32 v)             { ui_stack_push_impl(ui_arena(), PosX, pos_x, v) }
@@ -277,18 +277,6 @@ static RGBA    ui_push_text_color(RGBA v)       { ui_stack_push_impl(ui_arena(),
 static RGBA    ui_push_background_color(RGBA v) { ui_stack_push_impl(ui_arena(), BackgroundColor, background_color, v) }
 static f32     ui_push_border_thickness(f32 v)  { ui_stack_push_impl(ui_arena(), BorderThickness, border_thickness, v) }
 static Font*   ui_push_font(Font* v)            { ui_stack_push_impl(ui_arena(), Font, font, v) }
-
-static UI_Box* ui_set_parent(UI_Box* v)         { ui_stack_set_impl(ui_arena(), Parent, parent, v) }
-static f32     ui_set_pos_x(f32 v)              { ui_stack_set_impl(ui_arena(), PosX, pos_x, v) }
-static f32     ui_set_pos_y(f32 v)              { ui_stack_set_impl(ui_arena(), PosY, pos_y, v) }
-static UI_Size ui_set_size_w(UI_Size v)         { ui_stack_set_impl(ui_arena(), SizeW, size_w, v) }
-static UI_Size ui_set_size_h(UI_Size v)         { ui_stack_set_impl(ui_arena(), SizeH, size_h, v) }
-static Axis    ui_set_layout_axis(Axis v)       { ui_stack_set_impl(ui_arena(), LayoutAxis, layout_axis, v) }
-static f32     ui_set_text_padding(f32 v)       { ui_stack_set_impl(ui_arena(), TextPadding, text_padding, v) }
-static RGBA    ui_set_text_color(RGBA v)        { ui_stack_set_impl(ui_arena(), TextColor, text_color, v) }
-static RGBA    ui_set_background_color(RGBA v)  { ui_stack_set_impl(ui_arena(), BackgroundColor, background_color, v) }
-static f32     ui_set_border_thickness(f32 v)   { ui_stack_set_impl(ui_arena(), BorderThickness, border_thickness, v) }
-static Font*   ui_set_font(Font* v)             { ui_stack_set_impl(ui_arena(), Font, font, v) }
 
 static UI_Box* ui_pop_parent(void)              { ui_stack_pop_impl(Parent, parent) }
 static f32     ui_pop_pos_x(void)               { ui_stack_pop_impl(PosX, pos_x) }
@@ -314,15 +302,27 @@ static RGBA    ui_top_background_color(void)    { ui_stack_top_impl(background_c
 static f32     ui_top_border_thickness(void)    { ui_stack_top_impl(border_thickness) }
 static Font*   ui_top_font(void)                { ui_stack_top_impl(font) }
 
+static UI_Box* ui_set_parent(UI_Box* v)         { ui_stack_set_impl(ui_arena(), Parent, parent, v) }
+static f32     ui_set_pos_x(f32 v)              { ui_stack_set_impl(ui_arena(), PosX, pos_x, v) }
+static f32     ui_set_pos_y(f32 v)              { ui_stack_set_impl(ui_arena(), PosY, pos_y, v) }
+static UI_Size ui_set_size_w(UI_Size v)         { ui_stack_set_impl(ui_arena(), SizeW, size_w, v) }
+static UI_Size ui_set_size_h(UI_Size v)         { ui_stack_set_impl(ui_arena(), SizeH, size_h, v) }
+static Axis    ui_set_layout_axis(Axis v)       { ui_stack_set_impl(ui_arena(), LayoutAxis, layout_axis, v) }
+static f32     ui_set_text_padding(f32 v)       { ui_stack_set_impl(ui_arena(), TextPadding, text_padding, v) }
+static RGBA    ui_set_text_color(RGBA v)        { ui_stack_set_impl(ui_arena(), TextColor, text_color, v) }
+static RGBA    ui_set_background_color(RGBA v)  { ui_stack_set_impl(ui_arena(), BackgroundColor, background_color, v) }
+static f32     ui_set_border_thickness(f32 v)   { ui_stack_set_impl(ui_arena(), BorderThickness, border_thickness, v) }
+static Font*   ui_set_font(Font* v)             { ui_stack_set_impl(ui_arena(), Font, font, v) }
+
 //------------------------------------------------------------
 // Push/Pop/Top/Set Compositions
 
 static void ui_push_pos(f32 x, f32 y)           { ui_push_pos_x(x); ui_push_pos_y(y); }
-static void ui_set_pos(f32 x, f32 y)            { ui_set_pos_x(x); ui_set_pos_y(y); }
 static void ui_pop_pos(void)                    { ui_pop_pos_x(); ui_pop_pos_y(); }
+static void ui_set_pos(f32 x, f32 y)            { ui_set_pos_x(x); ui_set_pos_y(y); }
 static void ui_push_size(UI_Size w, UI_Size h)  { ui_push_size_w(w); ui_push_size_h(h); }
-static void ui_set_size(UI_Size w, UI_Size h)   { ui_set_size_w(w); ui_set_size_h(h); }
 static void ui_pop_size(void)                   { ui_pop_size_w(); ui_pop_size_h(); }
+static void ui_set_size(UI_Size w, UI_Size h)   { ui_set_size_w(w); ui_set_size_h(h); }
 
 //------------------------------------------------------------
 // DeferLoops

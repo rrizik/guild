@@ -56,26 +56,6 @@ d3d_load_shader(String8 shader_path, D3D11_INPUT_ELEMENT_DESC* il, u32 layout_co
 };
 
 static void
-d3d_resize_window(f32 width, f32 height){
-    // first you have to release the resources
-    d3d_framebuffer_view->Release();
-    d3d_framebuffer->Release();
-
-    // resize swapchain buffer
-    d3d_swapchain->ResizeBuffers(0, (u32)width, (u32)height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, 0);
-
-    // update render target view with new buffer size
-    hr = d3d_swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&d3d_framebuffer);
-    assert_hr(hr);
-    hr = d3d_device->CreateRenderTargetView(d3d_framebuffer, 0, &d3d_framebuffer_view);
-    assert_hr(hr);
-
-    // update viewport
-    d3d_viewport.Width = width;
-    d3d_viewport.Height = height;
-}
-
-static void
 init_d3d(HWND window_handle, u32 width, u32 height){
     // ---------------------------------------------------------------------------------
     // Device + Context
@@ -204,14 +184,15 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     // ---------------------------------------------------------------------------------
     // Vertex Buffers
     // ---------------------------------------------------------------------------------
+    d3d_vertex_buffer_size = MB(8);
     {
         D3D11_BUFFER_DESC desc = {0};
-        desc.ByteWidth = MB(8);
+        desc.ByteWidth = (u32)d3d_vertex_buffer_size;
         desc.Usage     = D3D11_USAGE_DYNAMIC;
         desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
         desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-        hr = d3d_device->CreateBuffer(&desc, 0, &d3d_vertex_buffer_8mb);
+        hr = d3d_device->CreateBuffer(&desc, 0, &d3d_vertex_buffer);
         assert_hr(hr);
     }
 
@@ -326,16 +307,41 @@ d3d_clear_color(RGBA color){
 }
 
 static void
+d3d_resize_window(f32 width, f32 height){
+    if(!d3d_framebuffer_view || !d3d_framebuffer){
+        return;
+    }
+
+    // first you have to release the resources
+    d3d_framebuffer_view->Release();
+    d3d_framebuffer->Release();
+
+    // resize swapchain buffer
+    d3d_swapchain->ResizeBuffers(0, (u32)width, (u32)height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, 0);
+
+    // update render target view with new buffer size
+    hr = d3d_swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&d3d_framebuffer);
+    assert_hr(hr);
+    hr = d3d_device->CreateRenderTargetView(d3d_framebuffer, 0, &d3d_framebuffer_view);
+    assert_hr(hr);
+    d3d_context->OMSetRenderTargets(1, &d3d_framebuffer_view, 0);
+
+    // update viewport
+    d3d_viewport.Width = width;
+    d3d_viewport.Height = height;
+}
+
+static void
 d3d_draw(Vertex3* buffer, s32 count, Texture* texture){
     {
         D3D11_MAPPED_SUBRESOURCE resource;
-        hr = d3d_context->Map(d3d_vertex_buffer_8mb, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+        hr = d3d_context->Map(d3d_vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
         assert_hr(hr);
 
-        memcpy(resource.pData, buffer, sizeof(Vertex3) * count);
-        d3d_context->Unmap(d3d_vertex_buffer_8mb, 0);
+        memcpy(resource.pData, buffer, count * sizeof(Vertex3));
+        d3d_context->Unmap(d3d_vertex_buffer, 0);
 
-        ID3D11Buffer* buffers[] = {d3d_vertex_buffer_8mb};
+        ID3D11Buffer* buffers[] = {d3d_vertex_buffer};
         u32 strides[] = {sizeof(Vertex3)};
         u32 offset[] = {0};
 
@@ -360,6 +366,29 @@ d3d_draw(Vertex3* buffer, s32 count, Texture* texture){
     d3d_context->PSSetShader(d3d_2d_textured_ps, 0, 0);
 
     d3d_context->Draw((u32)count, 0);
+}
+
+static void
+d3d_release_vertex_buffer(ID3D11Buffer* vertex_buffer){
+    if(d3d_vertex_buffer) d3d_vertex_buffer->Release();
+}
+
+static ID3D11Buffer*
+d3d_make_vertex_buffer(s32 size){
+    ID3D11Buffer* result;
+
+    d3d_vertex_buffer_size = size;
+    {
+        D3D11_BUFFER_DESC desc = {0};
+        desc.ByteWidth = (u32)d3d_vertex_buffer_size;
+        desc.Usage     = D3D11_USAGE_DYNAMIC;
+        desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+        hr = d3d_device->CreateBuffer(&desc, 0, &result);
+        assert_hr(hr);
+    }
+    return(result);
 }
 
 static void
@@ -388,7 +417,7 @@ d3d_release(void){
     if(d3d_2d_textured_ps) d3d_2d_textured_ps->Release();
     if(d3d_2d_textured_il) d3d_2d_textured_il->Release();
 
-    if(d3d_vertex_buffer_8mb) d3d_vertex_buffer_8mb->Release();
+    if(d3d_vertex_buffer) d3d_vertex_buffer->Release();
     if(d3d_index_buffer)      d3d_index_buffer->Release();
     if(d3d_instance_buffer)   d3d_instance_buffer->Release();
     if(d3d_constant_buffer)   d3d_constant_buffer->Release();

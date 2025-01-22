@@ -192,11 +192,13 @@ static v2 grid_pos_from_cell(v2 cell);
 static v2 grid_cell_from_pos(v2 pos);
 static v2 grid_cell_center(v2 pos);
 static s32 world_gird_idx_from_cell(v2 cell);
+static bool v2_close_enough(v2 p1, v2 p2, f32 epsilon);
 
 static void serialize_world(String8 world);
 static void deserialize_world(String8 world);
 static void save_state(void);
 static void load_state(void);
+
 
 #include "console.hpp"
 #include "command.hpp"

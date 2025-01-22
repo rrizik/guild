@@ -399,8 +399,8 @@ get_render_batch(u64 vertex_count){
 
     RenderBatch *batch = render_batches.last;
     if(batch == 0 || batch->count + vertex_count >= batch->cap || batch->texture != texture){
-        batch = push_array_zero(r_arena, RenderBatch, 1);
-        batch->buffer = push_array_zero(r_arena, Vertex3, DEFAULT_BATCH_SIZE / sizeof(Vertex3));
+        batch = push_array(r_arena, RenderBatch, 1);
+        batch->buffer = push_array(r_arena, Vertex3, DEFAULT_BATCH_SIZE / sizeof(Vertex3));
         batch->cap = DEFAULT_BATCH_SIZE / sizeof(Vertex3);
         batch->count = 0;
         batch->texture = texture;
@@ -423,6 +423,56 @@ static void draw_render_batches(){
     //d3d_draw(render_batches);
     for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
         d3d_draw(batch->buffer, batch->count, batch->texture);
+    }
+}
+
+static void draw_render_batches_new(){
+    s32 required_size = 0;
+    for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+        required_size += batch->count * sizeof(Vertex3);
+    }
+
+    if(required_size > d3d_vertex_buffer_size){
+        d3d_release_vertex_buffer(d3d_vertex_buffer);
+        d3d_vertex_buffer = d3d_make_vertex_buffer(required_size);
+    }
+
+    D3D11_MAPPED_SUBRESOURCE resource;
+    hr = d3d_context->Map(d3d_vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+    assert_hr(hr);
+
+    s32 at = 0;
+    for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+        batch->start_index_in_vertex_buffer = at;
+        memcpy((u8*)resource.pData + at, batch->buffer, batch->count * sizeof(Vertex3));
+        at += batch->count;
+    }
+    d3d_context->Unmap(d3d_vertex_buffer, 0);
+
+
+    ID3D11Buffer* buffers[] = {d3d_vertex_buffer};
+    u32 strides[] = {sizeof(Vertex3)};
+    u32 offset[] = {0};
+
+    d3d_context->IASetVertexBuffers(0, 1, buffers, strides, offset);
+
+    d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    d3d_context->PSSetSamplers(0, 1, &d3d_sampler_state);
+
+    d3d_context->OMSetRenderTargets(1, &d3d_framebuffer_view, 0);
+    d3d_context->OMSetBlendState(d3d_blend_state, 0, 0xFFFFFFFF);
+    d3d_context->RSSetState(d3d_rasterizer_state);
+
+    d3d_context->VSSetConstantBuffers(0, 1, &d3d_constant_buffer);
+
+    d3d_context->RSSetViewports(1, &d3d_viewport);
+    d3d_context->IASetInputLayout(d3d_2d_textured_il);
+    d3d_context->VSSetShader(d3d_2d_textured_vs, 0, 0);
+    d3d_context->PSSetShader(d3d_2d_textured_ps, 0, 0);
+
+    for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+        d3d_context->PSSetShaderResources(0, 1, &batch->texture->view);
+        d3d_context->Draw((u32)batch->count, (u32)batch->start_index_in_vertex_buffer);
     }
 }
 
