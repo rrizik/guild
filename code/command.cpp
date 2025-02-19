@@ -146,7 +146,7 @@ command_saves(String8* args){
     String8Node files = {0};
     files.next = &files;
     files.prev = &files;
-    os_dir_files(scratch.arena, &files, str8_literal("saves"));
+    os_dir_read(scratch.arena, &files, str8_literal("saves"));
     dll_pop_front(&files);
     dll_pop_front(&files);
 

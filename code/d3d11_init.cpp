@@ -184,7 +184,7 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     // ---------------------------------------------------------------------------------
     // Vertex Buffers
     // ---------------------------------------------------------------------------------
-    d3d_vertex_buffer_size = MB(8);
+    d3d_vertex_buffer_size = KB(100);
     {
         D3D11_BUFFER_DESC desc = {0};
         desc.ByteWidth = (u32)d3d_vertex_buffer_size;
@@ -353,6 +353,8 @@ d3d_draw(Vertex3* buffer, s32 count, Texture* texture){
     d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     d3d_context->PSSetSamplers(0, 1, &d3d_sampler_state);
     d3d_context->PSSetShaderResources(0, 1, &texture->view);
+    // for the batch, add all the textures you need for each slot, and in the shader, give it extra information so it knows which slot to choose from in order to find the correct texture
+    //d3d_context->PSSetShaderResources(1, 1, &texture2->view);
 
     d3d_context->OMSetRenderTargets(1, &d3d_framebuffer_view, 0);
     d3d_context->OMSetBlendState(d3d_blend_state, 0, 0xFFFFFFFF);
@@ -367,6 +369,25 @@ d3d_draw(Vertex3* buffer, s32 count, Texture* texture){
 
     d3d_context->Draw((u32)count, 0);
 }
+/*
+    Render:
+        R_Tex();
+        ...
+        R_Batch;
+        R_Vertex;
+        typedef struct Texture;
+    D3D:
+        Implementation of R_Tex
+    OpenGL:
+        Implementation of R_Tex
+    Vulkan:
+        Implementation of R_Tex
+    w.e:
+        Implementation of R_Tex
+
+    Draw:
+        draw_quad():
+*/
 
 static void
 d3d_release_vertex_buffer(ID3D11Buffer* vertex_buffer){

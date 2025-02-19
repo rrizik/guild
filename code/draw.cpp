@@ -176,12 +176,12 @@ draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
     RenderBatch *batch = get_render_batch(6);
 
     RGBA linear_color = linear_from_srgb(color); // gamma correction
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
 }
 
 static void
@@ -196,12 +196,12 @@ draw_quad(v2 pos, v2 dim, RGBA color){
     v2 p3 = make_v2(pos.x, pos.y + dim.h);
 
     RGBA linear_color = linear_from_srgb(color); // gamma correction
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
 }
 
 static void
@@ -216,12 +216,12 @@ draw_quad(Rect rect, RGBA color){
     v2 p3 = make_v2(rect.x0, rect.y1);
 
     RGBA linear_color = linear_from_srgb(color); // gamma correction
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
 }
 
 static void
@@ -231,12 +231,12 @@ draw_quad(Quad quad, RGBA color){
     RenderBatch *batch = get_render_batch(6);
 
     RGBA linear_color = linear_from_srgb(color); // gamma correction
-    batch->buffer[batch->count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { quad.p1, linear_color, make_v2(1.0f, 0.0f) };
-    batch->buffer[batch->count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { quad.p3, linear_color, make_v2(0.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p1, linear_color, make_v2(1.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p3, linear_color, make_v2(0.0f, 1.0f) };
 }
 
 static void
@@ -275,12 +275,12 @@ draw_line(v2 p0, v2 p1, f32 width, RGBA color){
     v2 p3 = p0 + (perp * width);
 
     RGBA linear_color = linear_from_srgb(color); // gamma correction
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
 }
 
 static void
@@ -289,12 +289,12 @@ draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
     RenderBatch *batch = get_render_batch(6);
 
     RGBA linear_color = linear_from_srgb(color); // gamma correction
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
 }
 
 static void
@@ -308,12 +308,12 @@ draw_texture(v2 pos, v2 dim, RGBA color){
     v2 p3 = make_v2(pos.x, pos.y + dim.h);
 
     RGBA linear_color = linear_from_srgb(color); // gamma correction
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
 }
 
 static void
@@ -327,12 +327,12 @@ draw_texture(Rect rect, RGBA color){
     v2 p3 = make_v2(rect.x0, rect.y1);
 
     RGBA linear_color = linear_from_srgb(color); // gamma correction
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p1, linear_color, make_v2(1.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { p3, linear_color, make_v2(0.0f, 1.0f) };
 }
 
 static void
@@ -341,12 +341,12 @@ draw_texture(Quad quad, RGBA color){
     RenderBatch *batch = get_render_batch(6);
 
     RGBA linear_color = linear_from_srgb(color); // gamma correction
-    batch->buffer[batch->count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { quad.p1, linear_color, make_v2(1.0f, 0.0f) };
-    batch->buffer[batch->count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->count++] = { quad.p3, linear_color, make_v2(0.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p1, linear_color, make_v2(1.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p3, linear_color, make_v2(0.0f, 1.0f) };
 }
 
 static void
@@ -383,12 +383,12 @@ draw_text(String8 text, v2 pos, RGBA color){
             //p2 = rotate_point_deg(p2, g_angle, origin);
             //p3 = rotate_point_deg(p3, g_angle, origin);
 
-            batch->buffer[batch->count++] = { p0, linear_color, make_v2(quad.s0, quad.t0) };
-            batch->buffer[batch->count++] = { p1, linear_color, make_v2(quad.s1, quad.t0) };
-            batch->buffer[batch->count++] = { p2, linear_color, make_v2(quad.s1, quad.t1) };
-            batch->buffer[batch->count++] = { p0, linear_color, make_v2(quad.s0, quad.t0) };
-            batch->buffer[batch->count++] = { p2, linear_color, make_v2(quad.s1, quad.t1) };
-            batch->buffer[batch->count++] = { p3, linear_color, make_v2(quad.s0, quad.t1) };
+            batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(quad.s0, quad.t0) };
+            batch->buffer[batch->vertex_count++] = { p1, linear_color, make_v2(quad.s1, quad.t0) };
+            batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(quad.s1, quad.t1) };
+            batch->buffer[batch->vertex_count++] = { p0, linear_color, make_v2(quad.s0, quad.t0) };
+            batch->buffer[batch->vertex_count++] = { p2, linear_color, make_v2(quad.s1, quad.t1) };
+            batch->buffer[batch->vertex_count++] = { p3, linear_color, make_v2(quad.s0, quad.t1) };
         }
     }
 }
@@ -398,11 +398,11 @@ get_render_batch(u64 vertex_count){
     Texture* texture = get_texture();
 
     RenderBatch *batch = render_batches.last;
-    if(batch == 0 || batch->count + vertex_count >= batch->cap || batch->texture != texture){
-        batch = push_array(r_arena, RenderBatch, 1);
+    if(batch == 0 || batch->vertex_count + vertex_count >= batch->vertex_cap || batch->texture != texture){
+        batch = push_array_zero(r_arena, RenderBatch, 1);
         batch->buffer = push_array(r_arena, Vertex3, DEFAULT_BATCH_SIZE / sizeof(Vertex3));
-        batch->cap = DEFAULT_BATCH_SIZE / sizeof(Vertex3);
-        batch->count = 0;
+        batch->vertex_cap = DEFAULT_BATCH_SIZE / sizeof(Vertex3);
+        batch->vertex_count = 0;
         batch->texture = texture;
         batch->id = render_batches.count;
         if(render_batches.last == 0){
@@ -422,14 +422,14 @@ static void draw_render_batches(){
     // todo: Its ok for d3d to understand the concept of a Renderbatch, you can move this straight to d3d and pass in the batches all together.
     //d3d_draw(render_batches);
     for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-        d3d_draw(batch->buffer, batch->count, batch->texture);
+        d3d_draw(batch->buffer, batch->vertex_count, batch->texture);
     }
 }
 
 static void draw_render_batches_new(){
     s32 required_size = 0;
     for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-        required_size += batch->count * sizeof(Vertex3);
+        required_size += batch->vertex_count * sizeof(Vertex3);
     }
 
     if(required_size > d3d_vertex_buffer_size){
@@ -437,18 +437,19 @@ static void draw_render_batches_new(){
         d3d_vertex_buffer = d3d_make_vertex_buffer(required_size);
     }
 
-    D3D11_MAPPED_SUBRESOURCE resource;
-    hr = d3d_context->Map(d3d_vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
-    assert_hr(hr);
-
-    s32 at = 0;
-    for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-        batch->start_index_in_vertex_buffer = at;
-        memcpy((u8*)resource.pData + at, batch->buffer, batch->count * sizeof(Vertex3));
-        at += batch->count;
+    {
+        D3D11_MAPPED_SUBRESOURCE resource;
+        d3d_context->Map(d3d_vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+        s32 vertex_idx = 0;
+        for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+            batch->idx_in_vertex_buffer = vertex_idx;
+            memcpy((u8*)resource.pData + (vertex_idx * sizeof(Vertex3)),
+                   batch->buffer,
+                   batch->vertex_count * sizeof(Vertex3));
+            vertex_idx += batch->vertex_count;
+        }
+        d3d_context->Unmap(d3d_vertex_buffer, 0);
     }
-    d3d_context->Unmap(d3d_vertex_buffer, 0);
-
 
     ID3D11Buffer* buffers[] = {d3d_vertex_buffer};
     u32 strides[] = {sizeof(Vertex3)};
@@ -472,7 +473,7 @@ static void draw_render_batches_new(){
 
     for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
         d3d_context->PSSetShaderResources(0, 1, &batch->texture->view);
-        d3d_context->Draw((u32)batch->count, (u32)batch->start_index_in_vertex_buffer);
+        d3d_context->Draw((u32)batch->vertex_count, (u32)batch->idx_in_vertex_buffer);
     }
 }
 

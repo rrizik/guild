@@ -32,10 +32,10 @@ typedef struct RenderBatch{
     RenderBatch* next;
     Vertex3* buffer;
     s32 id;
-    s32 start_index_in_vertex_buffer;
+    s32 idx_in_vertex_buffer;
 
-    s32 count;
-    s32 cap;
+    s32 vertex_count;
+    s32 vertex_cap;
     Texture* texture;
 } RenderBatch;
 

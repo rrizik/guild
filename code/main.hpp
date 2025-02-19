@@ -87,7 +87,8 @@ typedef enum SceneState{
     SceneState_Editor,
 } SceneState;
 
-#define ENTITIES_MAX 4096
+//#define ENTITIES_MAX 4096
+#define ENTITIES_MAX 10000
 #define WORLD_WIDTH_IN_TILES_MAX 1000
 #define WORLD_HEIGHT_IN_TILES_MAX 1000
 f32 grid_size = 10;

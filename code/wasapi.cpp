@@ -8,7 +8,7 @@
 // todo: put WASAPI in base file as it can be standalone
 // todo: change all asserts to error logs
 static void
-init_wasapi(u16 channels, u32 samples_per_sec, u16 bits_per_sample){
+wasapi_init(u16 channels, u32 samples_per_sec, u16 bits_per_sample){
     HRESULT hr = S_OK;
 
     hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), 0, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&device_enumerator);
@@ -40,7 +40,7 @@ init_wasapi(u16 channels, u32 samples_per_sec, u16 bits_per_sample){
     wave_format.nChannels = channels;
     wave_format.nSamplesPerSec = samples_per_sec;
     wave_format.wBitsPerSample = bits_per_sample;
-    wave_format.nBlockAlign = (u16)(wave_format.nChannels * wave_format.wBitsPerSample / 8);
+    wave_format.nBlockAlign = (u16)(channels * bits_per_sample / 8);
     wave_format.nAvgBytesPerSec = wave_format.nSamplesPerSec * wave_format.nBlockAlign;
     wave_format.cbSize = 0;
 

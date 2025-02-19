@@ -1,4 +1,3 @@
-
 #include "main.hpp"
 
 static void
@@ -43,7 +42,7 @@ sim_game(void){
         }
     }
 
-    // resolve entity motion
+    // resolve motion
     for(s32 i = 0; i < array_count(state->entities); ++i){
         Entity *e = state->entities + i;
         if(!has_flag(e->flags, EntityFlag_Active)){
@@ -51,9 +50,31 @@ sim_game(void){
         }
 
         if(has_flag(e->flags, EntityFlag_MoveWithPhys)){
-            if(!v2_close_enough(e->pos, e->waypoint, 0.1f)){
-                e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
-                e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
+            //if(!v2_close_enough(e->pos, e->waypoint, 0.1f)){
+            //    e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
+            //    e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
+            //}
+            e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
+            e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
+
+            v2 p0 = v2_screen_from_world(camera.p0);
+            v2 p1 = v2_screen_from_world(camera.p1);
+            v2 p2 = v2_screen_from_world(camera.p2);
+            v2 p3 = v2_screen_from_world(camera.p3);
+
+            v2 e_pos = v2_screen_from_world(e->pos);
+
+            if(e_pos.x < 0){
+                e->dir.x = -e->dir.x;
+            }
+            if(e_pos.x > window.width){
+                e->dir.x = -e->dir.x;
+            }
+            if(e_pos.y < 0){
+                e->dir.y = -e->dir.y;
+            }
+            if(e_pos.y > window.height){
+                e->dir.y = -e->dir.y;
             }
         }
     }
@@ -418,10 +439,20 @@ draw_entities(State* state){
                         String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
                         ui_begin_panel(box_name, ui_floating_panel_world);
 
+                        String8 fmt_str;
                         ui_size(ui_size_text(0), ui_size_text(0))
                         ui_text_color(LIGHT_GRAY)
                         {
-                            String8 fmt_str = str8_formatted(ts->frame_arena, "%f, %f##%i", e->pos.x, e->pos.y);
+                            fmt_str = str8_formatted(ts->frame_arena, "pos: %f, %f##pos%i", e->pos.x, e->pos.y);
+                            ui_label(fmt_str);
+                            v2 spos = v2_screen_from_world(e->pos);
+                            fmt_str = str8_formatted(ts->frame_arena, "screen_pos: %f, %f##spos%i", spos.x, spos.y);
+                            ui_label(fmt_str);
+                            fmt_str = str8_formatted(ts->frame_arena, "dir: %f, %f##dir%i", e->dir.x, e->dir.y);
+                            ui_label(fmt_str);
+                            fmt_str = str8_formatted(ts->frame_arena, "velocity: %f##velocity%i", e->velocity, e->velocity);
+                            ui_label(fmt_str);
+                            fmt_str = str8_formatted(ts->frame_arena, "speed: %f##speed%i", e->speed, e->speed);
                             ui_label(fmt_str);
                         }
                         ui_end_panel();
@@ -477,7 +508,7 @@ debug_ui_render_batches(void){
         s32 count = 0;
         for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
             if(count < 50){
-                String8 batch_str = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->count, batch->cap, batch->id);
+                String8 batch_str = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->vertex_count, batch->vertex_cap, batch->id);
                 ui_label(batch_str);
             }
             count++;
@@ -547,8 +578,17 @@ ui_structure_castle(void){
         ui_background_color(DARK_GRAY)
         {
             if(ui_button(str8_literal("skeleton1")).pressed_left){
-                for(s32 i=0; i < 5; ++i){
-                    v2 dir = direction_v2(state->entity_selected->pos, state->entity_selected->waypoint);
+                for(s32 i=0; i < 50; ++i){
+                    //v2 dir = direction_v2(state->entity_selected->pos, state->entity_selected->waypoint);
+                    //Entity* e = add_skeleton(TextureAsset_Skeleton1, state->entity_selected->pos, make_v2(3, 3), dir);
+                    //e->origin = state->entity_selected;
+                    //e->waypoint = state->entity_selected->waypoint;
+                    //e->waypoint_cell = state->entity_selected->waypoint_cell;
+
+                    f32 x = random_range_f32(2.0f) - 1;
+                    f32 y = random_range_f32(2.0f) - 1;
+
+                    v2 dir = make_v2(x, y);
                     Entity* e = add_skeleton(TextureAsset_Skeleton1, state->entity_selected->pos, make_v2(3, 3), dir);
                     e->origin = state->entity_selected;
                     e->waypoint = state->entity_selected->waypoint;
@@ -915,11 +955,11 @@ deserialize_state(void){
         while(line.size){
             String8 word = str8_eat_word(&line);
             if(str8_contains(word, str8_literal("current_world"))){
-                String8Node str8_node = {0};
+                String8Node* str8_node = {0};
                 str8_node = str8_split(scratch.arena, word, ':');
-                if(str8_ends_with(str8_node.prev->str, str8_literal(".g"))){
-                    memcpy(state->current_world.str, str8_node.prev->str.str, str8_node.prev->str.count);
-                    state->current_world.count = str8_node.prev->str.count;
+                if(str8_ends_with(str8_node->prev->str, str8_literal(".g"))){
+                    memcpy(state->current_world.str, str8_node->prev->str.str, str8_node->prev->str.count);
+                    state->current_world.count = str8_node->prev->str.count;
                 }
             }
         }
@@ -1238,7 +1278,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
     init_paths(global_arena);
     init_memory(MB(500), GB(4));
     init_clock(&clock);
-    init_wasapi(2, 48000, 32);
+    wasapi_init(2, 48000, 32);
     init_events(&events);
 
     // note: sim measurements
@@ -1412,23 +1452,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
         }
 
-        // camera boundary
-        //if(!state->dragging_world && state->scene_state == SceneState_Game){
-        //    if(camera.left_border < -10.0f){
-        //        //camera.x += abs_f32(camera.left_border) - abs_f32(-10.0f);
-        //        camera.x = -10.0f;
-        //    }
-        //    if(camera.bottom_border < -10){
-        //        camera.y += abs_f32(camera.bottom_border) - abs_f32(-10.0f);
-        //    }
-        //    if(camera.right_border > state->world_width + 10){
-        //        //camera.x = camera.x - state->world_width + 10;
-        //    }
-        //    if(camera.top_border < -10.0f){
-        //        //camera.y += abs_f32(camera.left_border) - abs_f32(-10.0f);
-        //    }
-        //}
-
         simulations = 0;
         accumulator += frame_time;
         while(accumulator >= clock.dt){
@@ -1439,11 +1462,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             simulations++;
 
         }
-
-        //v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
-        //if(v2_close_enough(world_mouse, state->castle->waypoint, 0.0001f)){
-        //    print("ALOKSDJALKSJDLAKSJDLAKSJd\n:ALKSJD:ALKSJD:ALKSJD\nASLKDJALKSDJ\n");
-        //}
 
         camera_2d_update(&camera, window.aspect_ratio);
         wasapi_play_cursors();
@@ -1490,14 +1508,20 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
             draw_text(str_fmt, make_v2(200, 100), GREEN);
 
-            console_draw();
-            Rect r = make_rect_size(make_v2(10, 10), make_v2(100, 100));
-            draw_quad(r, RED);
 
+            console_draw();
+            v2 p0 = v2_screen_from_world(camera.p0);
+            v2 p1 = v2_screen_from_world(camera.p1);
+            v2 p2 = v2_screen_from_world(camera.p2);
+            v2 p3 = v2_screen_from_world(camera.p3);
+            draw_line(p0, p1, 5, RED);
+            draw_line(p1, p2, 5, RED);
+            draw_line(p2, p3, 5, RED);
+            draw_line(p3, p0, 5, RED);
             {
                 d3d_clear_color(BACKGROUND_COLOR);
-                draw_render_batches();
-                //draw_render_batches_new();
+                //draw_render_batches();
+                draw_render_batches_new();
                 d3d_present();
 
                 arena_free(ts->frame_arena);
