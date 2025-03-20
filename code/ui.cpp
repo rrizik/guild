@@ -360,6 +360,11 @@ ui_traverse_independent(UI_Box* box, Axis axis){
         return;
     }
 
+    if(box->first != 0){
+        ui_traverse_independent(box->first, axis);
+    }
+    ui_traverse_independent(box->next, axis);
+
     switch(box->semantic_size[axis].type){
         case UI_SizeType_Pixel:{
             box->size[axis] = box->semantic_size[axis].value;
@@ -375,13 +380,36 @@ ui_traverse_independent(UI_Box* box, Axis axis){
             }
         } break;
     }
-
-    if(box->first != 0){
-        ui_traverse_independent(box->first, axis);
-    }
-
-    ui_traverse_independent(box->next, axis);
 }
+
+//static void
+//ui_traverse_independent(UI_Box* box, Axis axis){
+//    if(box == 0){
+//        return;
+//    }
+//
+//    switch(box->semantic_size[axis].type){
+//        case UI_SizeType_Pixel:{
+//            box->size[axis] = box->semantic_size[axis].value;
+//        } break;
+//        case UI_SizeType_TextContent:{
+//            if(axis == Axis_X){
+//                f32 width = font_string_width(box->font, box->string);
+//                box->size[axis] = (f32)width + box->text_padding;
+//            }
+//            if(axis == Axis_Y){
+//                f32 height = font_vertical_offset(box->font);
+//                box->size[axis] = height + box->text_padding;
+//            }
+//        } break;
+//    }
+//
+//    if(box->first != 0){
+//        ui_traverse_independent(box->first, axis);
+//    }
+//
+//    ui_traverse_independent(box->next, axis);
+//}
 
 static void
 ui_traverse_children(UI_Box* box, Axis axis){
@@ -419,10 +447,6 @@ static void
 ui_traverse_positions(UI_Box* box, Axis axis){
     if(box == 0){
         return;
-    }
-
-    if(str8_contains(box->string, str8_literal("skelebox"))){
-        u32 a = 1;
     }
 
     // TODO(rr): why do I have this here?

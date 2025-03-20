@@ -88,7 +88,8 @@ typedef enum SceneState{
 } SceneState;
 
 //#define ENTITIES_MAX 4096
-#define ENTITIES_MAX 10000
+#define ENTITIES_MAX 10001
+#define ENTITIES_SELECTED_MAX ENTITIES_MAX
 #define WORLD_WIDTH_IN_TILES_MAX 1000
 #define WORLD_HEIGHT_IN_TILES_MAX 1000
 f32 grid_size = 10;
@@ -113,8 +114,15 @@ typedef struct State{
     Entity* castle;
     v2 castle_cell;
 
-    bool is_entity_selected;
+    //bool is_entity_selected;
     Entity* entity_selected;
+    Entity* entity_hovered;
+    Entity* entities_selected[ENTITIES_SELECTED_MAX];
+    s32 entities_selected_count;
+
+    v2 selection_mouse_record;
+    bool selecting;
+    Rect selection_rect;
 
     bool terrain_selected;
     s32 terrain_selected_id;
@@ -138,6 +146,7 @@ typedef struct State{
 
 } State, PermanentMemory;
 global State* state;
+static bool move_randomly = false;
 
 typedef struct TransientMemory{
     Arena arena;
@@ -189,6 +198,7 @@ static void ui_level_editor(void);
 static void ui_structure_castle(void);
 
 static bool mouse_in_cell(v2 cell);
+static bool mouse_in_boundingbox(Entity* e);
 static v2 grid_pos_from_cell(v2 cell);
 static v2 grid_cell_from_pos(v2 pos);
 static v2 grid_cell_center(v2 pos);

@@ -21,9 +21,9 @@ sim_game(void){
     }
 
     // draw terrain
-    {
+    if(state->scene_state == SceneState_Editor){
         if(controller_button_held(MOUSE_BUTTON_LEFT) &&
-           controller_button_pressed(MOUSE_BUTTON_LEFT, true)){
+           controller_button_pressed(MOUSE_BUTTON_LEFT)){
             state->draw_terrain = true;
         }
         if(!controller_button_held(MOUSE_BUTTON_LEFT)){
@@ -50,32 +50,58 @@ sim_game(void){
         }
 
         if(has_flag(e->flags, EntityFlag_MoveWithPhys)){
-            //if(!v2_close_enough(e->pos, e->waypoint, 0.1f)){
+            if(!entity_commands_empty(e) && !e->active_command){
+                EntityCommand* c = entity_commands_next(e);
+                e->active_command = c;
+            }
+            if(e->active_command){
+
+                EntityCommand* c = e->active_command;
+                switch(c->type){
+                    case EntityCommandType_Move:{
+                        if(!v2_close_enough(e->pos, c->move_to, 0.1f)){
+                            v2 dir = direction_v2(e->pos, c->move_to);
+                            e->pos.x += (dir.x * e->velocity * e->speed) * (f32)clock.dt;
+                            e->pos.y += (dir.y * e->velocity * e->speed) * (f32)clock.dt;
+                        }
+                        else{
+                            e->active_command = 0;
+                        }
+                    }
+                }
+            }
+            //if(move_randomly){
             //    e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
             //    e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
+
+            //    v2 p0 = v2_screen_from_world(camera.p0);
+            //    v2 p1 = v2_screen_from_world(camera.p1);
+            //    v2 p2 = v2_screen_from_world(camera.p2);
+            //    v2 p3 = v2_screen_from_world(camera.p3);
+
+            //    v2 e_pos = v2_screen_from_world(e->pos);
+
+            //    if(e_pos.x < 0){
+            //        e->dir.x = -e->dir.x;
+            //    }
+            //    if(e_pos.x > window.width){
+            //        e->dir.x = -e->dir.x;
+            //    }
+            //    if(e_pos.y < 0){
+            //        e->dir.y = -e->dir.y;
+            //    }
+            //    if(e_pos.y > window.height){
+            //        e->dir.y = -e->dir.y;
+            //    }
             //}
-            e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
-            e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
-
-            v2 p0 = v2_screen_from_world(camera.p0);
-            v2 p1 = v2_screen_from_world(camera.p1);
-            v2 p2 = v2_screen_from_world(camera.p2);
-            v2 p3 = v2_screen_from_world(camera.p3);
-
-            v2 e_pos = v2_screen_from_world(e->pos);
-
-            if(e_pos.x < 0){
-                e->dir.x = -e->dir.x;
-            }
-            if(e_pos.x > window.width){
-                e->dir.x = -e->dir.x;
-            }
-            if(e_pos.y < 0){
-                e->dir.y = -e->dir.y;
-            }
-            if(e_pos.y > window.height){
-                e->dir.y = -e->dir.y;
-            }
+            //else{
+            //    if(e->move_order){
+            //        if(!v2_close_enough(e->pos, e->waypoint, 0.1f)){
+            //            e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
+            //            e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
+            //        }
+            //    }
+            //}
         }
     }
 
@@ -397,11 +423,11 @@ draw_entities(State* state){
 
                             v2 p1 = v2_screen_from_world(e->pos);
                             v2 p2 = v2_screen_from_world(e->waypoint);
-                            draw_line(p1, p2, 2, RED);
+                            //draw_line(p1, p2, 2, RED);
 
                             set_font(state->font);
                             String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->waypoint.x, e->waypoint.y);
-                            draw_text(fmt_str, v2_screen_from_world(e->waypoint), GREEN);
+                            //draw_text(fmt_str, v2_screen_from_world(e->waypoint), GREEN);
                         }
                     }
                 } break;
@@ -429,6 +455,28 @@ draw_entities(State* state){
                     set_texture(&r_assets->textures[e->texture]);
                     draw_texture(quad, e->color);
 
+
+
+                    // SELECTED HERE
+                    if(e->selected){
+                        if(e->active_command){
+                            v2 screen_space = v2_screen_from_world(e->active_command->move_to);
+                            draw_quad(screen_space, make_v2(10, 10), RED);
+                        }
+
+
+                        u32 read_idx = e->commands_read;
+                        while(read_idx != e->commands_write){
+                            EntityCommand* c = entity_commands_read(e, read_idx);
+                            read_idx++;
+
+
+                            v2 screen_space = v2_screen_from_world(c->move_to);
+                            draw_quad(screen_space, make_v2(10, 10), RED);
+                        }
+                    }
+
+
                     if(state->scene_state == SceneState_Editor){
                         v2 pos = v2_screen_from_world(e->pos);
                         ui_set_pos(pos.x + 20, pos.y);
@@ -443,16 +491,7 @@ draw_entities(State* state){
                         ui_size(ui_size_text(0), ui_size_text(0))
                         ui_text_color(LIGHT_GRAY)
                         {
-                            fmt_str = str8_formatted(ts->frame_arena, "pos: %f, %f##pos%i", e->pos.x, e->pos.y);
-                            ui_label(fmt_str);
-                            v2 spos = v2_screen_from_world(e->pos);
-                            fmt_str = str8_formatted(ts->frame_arena, "screen_pos: %f, %f##spos%i", spos.x, spos.y);
-                            ui_label(fmt_str);
-                            fmt_str = str8_formatted(ts->frame_arena, "dir: %f, %f##dir%i", e->dir.x, e->dir.y);
-                            ui_label(fmt_str);
-                            fmt_str = str8_formatted(ts->frame_arena, "velocity: %f##velocity%i", e->velocity, e->velocity);
-                            ui_label(fmt_str);
-                            fmt_str = str8_formatted(ts->frame_arena, "speed: %f##speed%i", e->speed, e->speed);
+                            fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
                             ui_label(fmt_str);
                         }
                         ui_end_panel();
@@ -479,7 +518,7 @@ debug_ui_render_batches(void){
     ui_set_size(ui_size_children(0), ui_size_children(0));
     ui_set_border_thickness(10);
     ui_set_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##1"), ui_floating_panel);
+    ui_begin_panel(str8_literal("box1##render_batches"), ui_floating_panel);
 
     ui_size(ui_size_text(0), ui_size_text(0))
     ui_text_color(LIGHT_GRAY)
@@ -488,31 +527,48 @@ debug_ui_render_batches(void){
         String8 mouse_pos = str8_format(ts->frame_arena, "mouse pos: %f, %f", controller.mouse.x, controller.mouse.y);
         ui_label(mouse_pos);
 
+        String8 fmt;
         v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
         v2 cell = grid_cell_from_pos(world_mouse);
-        String8 mouse_cell = str8_format(ts->frame_arena, "mouse cell: %i, %i", (s32)cell.x, (s32)cell.y);
-        ui_label(mouse_cell);
+        fmt = str8_format(ts->frame_arena, "mouse cell: %i, %i", (s32)cell.x, (s32)cell.y);
+        ui_label(fmt);
 
-        String8 mouse_world_pos = str8_format(ts->frame_arena, "mouse cell: %f, %f", world_mouse.x, world_mouse.y);
-        ui_label(mouse_world_pos);
+        fmt = str8_format(ts->frame_arena, "mouse cell: %f, %f", world_mouse.x, world_mouse.y);
+        ui_label(fmt);
 
-        String8 zoom = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
-        ui_label(zoom);
-        String8 pos = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
-        ui_label(pos);
+        fmt = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
+        ui_label(fmt);
+
+        fmt = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
+        ui_label(fmt);
         ui_spacer(10);
 
-        String8 title = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
-        ui_label(title);
+        fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
+        ui_label(fmt);
 
-        s32 count = 0;
-        for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-            if(count < 50){
-                String8 batch_str = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->vertex_count, batch->vertex_cap, batch->id);
-                ui_label(batch_str);
-            }
-            count++;
+        // SELECTED HERE
+        if(state->entity_hovered){
+            fmt = str8_format(ts->frame_arena, "hover idx: %i", state->entity_hovered->index);
+            ui_label(fmt);
         }
+        for(s32 i=0; i < state->entities_selected_count; ++i){
+            Entity* entity_selected = state->entities_selected[0];
+            fmt = str8_format(ts->frame_arena, "selected idx: %i", entity_selected->index);
+            ui_label(fmt);
+        }
+
+
+
+        //fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
+        //ui_label(fmt);
+        //s32 count = 0;
+        //for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+        //    if(count < 50){
+        //        fmt = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->vertex_count, batch->vertex_cap, batch->id);
+        //        ui_label(fmt);
+        //    }
+        //    count++;
+        //}
     }
 
     ui_end_panel();
@@ -577,24 +633,14 @@ ui_structure_castle(void){
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)
         {
-            if(ui_button(str8_literal("skeleton1")).pressed_left){
-                for(s32 i=0; i < 50; ++i){
-                    //v2 dir = direction_v2(state->entity_selected->pos, state->entity_selected->waypoint);
-                    //Entity* e = add_skeleton(TextureAsset_Skeleton1, state->entity_selected->pos, make_v2(3, 3), dir);
-                    //e->origin = state->entity_selected;
-                    //e->waypoint = state->entity_selected->waypoint;
-                    //e->waypoint_cell = state->entity_selected->waypoint_cell;
+            Entity* entity_selected = state->entities_selected[0];
+            // SELECTED HERE
+            v2 dir = direction_v2(entity_selected->pos, entity_selected->waypoint);
+            Entity* e = add_skeleton(TextureAsset_Skeleton1, entity_selected->pos, make_v2(3, 3), dir);
+            e->origin = entity_selected;
+            e->waypoint = entity_selected->waypoint;
+            e->waypoint_cell = entity_selected->waypoint_cell;
 
-                    f32 x = random_range_f32(2.0f) - 1;
-                    f32 y = random_range_f32(2.0f) - 1;
-
-                    v2 dir = make_v2(x, y);
-                    Entity* e = add_skeleton(TextureAsset_Skeleton1, state->entity_selected->pos, make_v2(3, 3), dir);
-                    e->origin = state->entity_selected;
-                    e->waypoint = state->entity_selected->waypoint;
-                    e->waypoint_cell = state->entity_selected->waypoint_cell;
-                }
-            }
             ui_spacer(10);
             if(ui_button(str8_literal("unit 2")).pressed_left){
             }
@@ -698,12 +744,21 @@ draw_world_terrain(void){
 }
 
 static bool
+mouse_in_boundingbox(Entity* e){
+    v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
+    Rect rect = rect_from_entity(e);
+
+    if(rect_contains_point(rect, world_mouse)){
+        return(true);
+    }
+
+    return(false);
+}
+
+static bool
 mouse_in_cell(v2 cell){
     v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
     v2 mouse_cell = grid_cell_from_pos(world_mouse);
-    if(controller_button_pressed(KeyCode_U)){
-        debug_break();
-    }
     if(mouse_cell == cell){
         return(true);
     }
@@ -1300,6 +1355,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
     state = (PermanentMemory*)memory.permanent_base;
     ts    = (TransientMemory*)memory.transient_base;
 
+    Entity* tar = 0;
     if(!memory.initialized){
         // consider: maybe move this memory stuff to init_memory()
         init_arena(&state->arena, (u8*)memory.permanent_base + sizeof(PermanentMemory), memory.permanent_size - sizeof(PermanentMemory));
@@ -1334,16 +1390,18 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         deserialize_world(state->current_world);
 
         // load castle
-        state->castle_cell = make_v2(1, 2);
-        state->castle = add_castle(TextureAsset_Castle1, make_v2(1, 2), make_v2(10, 10));
+        state->castle_cell = make_v2(2, 5);
+        state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(10, 10));
+        tar = add_skeleton(TextureAsset_Skeleton1, make_v2(50, 50), make_v2(3, 3), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(60, 50), make_v2(3, 3), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(55, 60), make_v2(3, 3), make_v2(1, 0));
 
         state->scene_state = SceneState_Game;
         //init_camera_2d(&camera, make_v2((state->world_width_in_tiles/2) * state->tile_size, (state->world_height_in_tiles/2) * state->tile_size), 30);
-        init_camera_2d(&camera, make_v2(0, 0), 30);
+        init_camera_2d(&camera, make_v2(50, 50), 30);
 
         memory.initialized = true;
     }
-
 
     should_quit = false;
     while(!should_quit){
@@ -1383,73 +1441,10 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             handled = handle_game_events(event);
         }
 
-        if(controller_button_pressed(KeyCode_F8, true)){
-            if(state->scene_state == SceneState_Editor){
-                state->scene_state = SceneState_Game;
-                state->terrain_selected = false;
-                state->terrain_selected_id = 0;
-            }
-            else if(state->scene_state == SceneState_Game){
-                state->scene_state = SceneState_Editor;
-            }
-        }
-
-        // DRAW UI
+        // note: consumes input so needs to be here
         if(state->scene_state == SceneState_Editor){
-            print("HERE1\n");
             ui_level_editor();
             debug_ui_render_batches();
-        }
-
-        if(state->is_entity_selected){
-            switch(state->entity_selected->structure_type){
-                case StructureType_Castle:{
-                    if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT, true)){
-                        v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
-                        state->entity_selected->waypoint = world_mouse;
-                        state->entity_selected->waypoint_cell = grid_cell_from_pos(world_mouse);
-                    }
-                    ui_structure_castle();
-                }
-            }
-        }
-
-        if(mouse_in_cell(state->castle_cell) && controller_button_pressed(MOUSE_BUTTON_LEFT, true)){
-            state->entity_selected = state->castle;
-            state->is_entity_selected = true;
-        }
-
-        console_update();
-
-        // camera drag
-        if(controller_button_held(MOUSE_BUTTON_RIGHT) &&
-           controller_button_pressed(MOUSE_BUTTON_RIGHT)){
-            world_camera_record = camera;
-            world_mouse_record = v2_world_from_screen(controller.mouse.pos);
-            state->dragging_world = true;
-        }
-        if(controller_button_held(MOUSE_BUTTON_RIGHT)){
-            v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
-            v2 world_rel_pos = world_mouse_record - world_mouse_current;
-
-            camera.x = world_camera_record.x + world_rel_pos.x;
-            camera.y = world_camera_record.y + world_rel_pos.y;
-        }
-        else{
-            world_camera_record = {0};
-            world_mouse_record = {0};
-            state->dragging_world = false;
-        }
-
-        // zoom
-        if(camera.size > 10){
-            camera.size -= (f32)controller.mouse.wheel_dir * 20;
-        }
-        if(camera.size <= 10){
-            camera.size -= (f32)controller.mouse.wheel_dir;
-            if(camera.size < 3){
-                camera.size = 3;
-            }
         }
 
         simulations = 0;
@@ -1461,6 +1456,154 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             time_elapsed += clock.dt;
             simulations++;
 
+        }
+
+        if(controller_button_pressed(KeyCode_F8)){
+            if(state->scene_state == SceneState_Editor){
+                state->scene_state = SceneState_Game;
+                state->terrain_selected = false;
+                state->terrain_selected_id = 0;
+            }
+            else if(state->scene_state == SceneState_Game){
+                state->scene_state = SceneState_Editor;
+            }
+        }
+
+        // camera drag
+        if(controller_button_pressed(MOUSE_BUTTON_RIGHT, false) || controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
+            world_camera_record = camera;
+            world_mouse_record = v2_world_from_screen(controller.mouse.pos);
+        }
+        if(controller_button_held(MOUSE_BUTTON_RIGHT) && controller_button_held(MOUSE_BUTTON_LEFT)){
+            v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
+            v2 world_rel_pos = world_mouse_record - world_mouse_current;
+            if(world_rel_pos.x != 0 || world_rel_pos.y != 0){
+                state->dragging_world = true;
+            }
+            state->dragging_world = true;
+            state->selecting = false;
+            camera.x = world_camera_record.x + world_rel_pos.x;
+            camera.y = world_camera_record.y + world_rel_pos.y;
+
+        }
+        else{
+            world_camera_record = {0};
+            world_mouse_record = {0};
+            state->dragging_world = false;
+        }
+
+        // drag selection box
+        if(!state->dragging_world){
+            if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
+                state->selection_mouse_record = controller.mouse.pos;
+                state->selecting = true;
+            }
+            if(state->selecting && controller_button_held(MOUSE_BUTTON_LEFT)){
+                state->selection_rect = make_rect(state->selection_mouse_record, controller.mouse.pos);
+            }
+            if(controller_button_released(MOUSE_BUTTON_LEFT)){
+                state->selection_mouse_record = {0};
+                state->selecting = false;
+
+                s32 count = 0;
+                bool selected_new_units = false;
+                for(s32 i=0; i < array_count(state->entities); ++i){
+                    Entity* e = state->entities + i;
+
+                    v2 world_pos = v2_screen_from_world(e->pos);
+                    if(rect_contains_point(state->selection_rect, world_pos)){
+                        selected_new_units = true;
+                        state->entities_selected[count] = e;
+                        e->selected = true;
+                        count++;
+                    }
+                }
+
+                if(selected_new_units == true){
+                    state->entities_selected_count = count;
+                }
+
+                state->selection_rect = {0};
+            }
+
+            // MOUSE SELECTION
+            bool found = false;
+            for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+                Entity *e = state->entities + idx;
+                if(mouse_in_boundingbox(e)){
+                    state->entity_hovered = e;
+                    found = true;
+                }
+            }
+            if(!found){
+                state->entity_hovered = 0;
+            }
+
+            // SELECTED HERE
+            if(state->entity_hovered && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                for(s32 i=0; i < state->entities_selected_count; ++i){
+                    Entity* selected_entity = state->entities_selected[i];
+                    selected_entity->selected = false;
+                    state->entities_selected[0] = 0;
+                }
+                state->entities_selected[0] = state->entity_hovered;
+                state->entities_selected[0]->selected = true;
+                state->entities_selected_count = 1;
+            }
+
+            else if(controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                for(s32 i=0; i < state->entities_selected_count; ++i){
+                    Entity* selected_entity = state->entities_selected[i];
+                    selected_entity->selected = false;
+                    state->entities_selected[0] = 0;
+                }
+                state->entities_selected_count = 0;
+            }
+        }
+
+        // SELECTED HERE
+        v2 world_mouse = v2_world_from_screen(controller.mouse.pos); // yuck we do this every frame?
+        for(s32 i=0; i < state->entities_selected_count; ++i){
+            Entity* selected_entity = state->entities_selected[i];
+
+            switch(selected_entity->structure_type){
+                case StructureType_Castle:{
+                    if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                        selected_entity->waypoint = world_mouse;
+                        selected_entity->waypoint_cell = grid_cell_from_pos(world_mouse);
+                    }
+                    ui_structure_castle();
+                }
+            }
+
+            switch(selected_entity->type){
+                case EntityType_Skeleton1:{
+                    if(!state->dragging_world &&
+                       !controller.shift_pressed &&
+                       controller_button_released(MOUSE_BUTTON_RIGHT)){
+                        entity_commands_clear(selected_entity);
+                        entity_commands_move(selected_entity, world_mouse);
+                    }
+                    if(!state->dragging_world &&
+                       controller.shift_pressed &&
+                       controller_button_released(MOUSE_BUTTON_RIGHT)){
+                        entity_commands_move(selected_entity, world_mouse);
+                    }
+                }
+            }
+        }
+
+        console_update();
+
+        // zoom
+        if(camera.size > 10){
+            camera.size -= (f32)controller.mouse.wheel_dir * 20;
+        }
+        if(camera.size <= 10){
+            camera.size -= (f32)controller.mouse.wheel_dir;
+            if(camera.size < 3){
+                camera.size = 3;
+            }
         }
 
         camera_2d_update(&camera, window.aspect_ratio);
@@ -1483,6 +1626,18 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
             draw_entities(state);
 
+            // SELECTED HERE
+            if(state->entities_selected_count){
+                for(s32 i=0; i < state->entities_selected_count; ++i){
+                    Entity* e = state->entities_selected[i];
+                    if(e->selected){
+                        Rect rect = rect_from_entity(e);
+                        rect = rect_screen_from_world(rect);
+                        draw_bounding_box(rect, 2.5f, RED);
+                    }
+                }
+            }
+
             //debug_draw_mouse_cell_pos();
 
             // draw selected texture
@@ -1492,11 +1647,15 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 2, RED);
             }
 
+            if(state->selecting && !state->dragging_world){
+                draw_bounding_box(state->selection_rect, 3.5, RED);
+            }
+
 
             ui_end();
             set_font(state->font);
             String8 fps = str8_formatted(ts->frame_arena, "FPS: %.2f", FPS);
-            draw_text(fps, make_v2(window.width - text_padding - font_string_width(state->font, fps), window.height - text_padding), ORANGE);
+            //draw_text(fps, make_v2(window.width - text_padding - font_string_width(state->font, fps), window.height - text_padding), ORANGE);
 
             Quad quad = make_quad(make_v2(0, 0), make_v2(3, 3));
             quad = quad_screen_from_world(quad);
@@ -1506,23 +1665,27 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
             set_font(state->font);
             String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
-            draw_text(str_fmt, make_v2(200, 100), GREEN);
+            //draw_text(str_fmt, make_v2(200, 100), GREEN);
 
 
             console_draw();
+            // draw border
             v2 p0 = v2_screen_from_world(camera.p0);
             v2 p1 = v2_screen_from_world(camera.p1);
             v2 p2 = v2_screen_from_world(camera.p2);
             v2 p3 = v2_screen_from_world(camera.p3);
-            draw_line(p0, p1, 5, RED);
-            draw_line(p1, p2, 5, RED);
-            draw_line(p2, p3, 5, RED);
-            draw_line(p3, p0, 5, RED);
+            //draw_line(p0, p1, 5, RED);
+            //draw_line(p1, p2, 5, RED);
+            //draw_line(p2, p3, 5, RED);
+            //draw_line(p3, p0, 5, RED);
             {
                 d3d_clear_color(BACKGROUND_COLOR);
                 //draw_render_batches();
                 draw_render_batches_new();
                 d3d_present();
+
+                String8 title = str8_fmt(ts->frame_arena, "Entity Count: %i - FPS: %.2f\0", state->entities_count - 1, FPS);
+                SetWindowText(window.handle, (char*)title.str);
 
                 arena_free(ts->frame_arena);
             }

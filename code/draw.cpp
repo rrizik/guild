@@ -205,6 +205,21 @@ draw_quad(v2 pos, v2 dim, RGBA color){
 }
 
 static void
+draw_quad(Quad quad, RGBA color){
+
+    set_texture(&r_assets->textures[TextureAsset_White]);
+    RenderBatch *batch = get_render_batch(6);
+
+    RGBA linear_color = linear_from_srgb(color); // gamma correction
+    batch->buffer[batch->vertex_count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p1, linear_color, make_v2(1.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
+    batch->buffer[batch->vertex_count++] = { quad.p3, linear_color, make_v2(0.0f, 1.0f) };
+}
+
+static void
 draw_quad(Rect rect, RGBA color){
 
     set_texture(&r_assets->textures[TextureAsset_White]);
@@ -225,26 +240,19 @@ draw_quad(Rect rect, RGBA color){
 }
 
 static void
-draw_quad(Quad quad, RGBA color){
-
-    set_texture(&r_assets->textures[TextureAsset_White]);
-    RenderBatch *batch = get_render_batch(6);
-
-    RGBA linear_color = linear_from_srgb(color); // gamma correction
-    batch->buffer[batch->vertex_count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->vertex_count++] = { quad.p1, linear_color, make_v2(1.0f, 0.0f) };
-    batch->buffer[batch->vertex_count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->vertex_count++] = { quad.p0, linear_color, make_v2(0.0f, 0.0f) };
-    batch->buffer[batch->vertex_count++] = { quad.p2, linear_color, make_v2(1.0f, 1.0f) };
-    batch->buffer[batch->vertex_count++] = { quad.p3, linear_color, make_v2(0.0f, 1.0f) };
-}
-
-static void
 draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color){
     draw_line(p0, p1, width, color);
     draw_line(p1, p2, width, color);
     draw_line(p2, p3, width, color);
     draw_line(p3, p0, width, color);
+}
+
+static void
+draw_bounding_box(v2 pos, v2 dim, f32 width, RGBA color){
+    draw_line(pos, make_v2(pos.x, pos.y + dim.h), width, color);
+    draw_line(make_v2(pos.x, pos.y + dim.h), make_v2(pos.x + dim.w, pos.y + dim.h), width, color);
+    draw_line(make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x + dim.w, pos.y), width, color);
+    draw_line(make_v2(pos.x + dim.w, pos.y), pos, width, color);
 }
 
 static void

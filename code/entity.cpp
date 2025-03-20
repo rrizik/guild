@@ -49,8 +49,69 @@ quad_from_entity(Entity* e){
     return(result);
 }
 
+static u32
+entity_commands_count(Entity* e){
+    u32 result = e->commands_write - e->commands_read;
+    return(result);
+}
 
+static bool
+entity_commands_empty(Entity* e){
+    bool result = e->commands_read == e->commands_write;
+    return(result);
+}
 
+static bool
+entity_commands_full(Entity* e){
+    bool result = (entity_commands_count(e) == ENTITY_COMMANDS_MAX);
+    return(result);
+}
+
+static void
+entity_commands_clear(Entity* e){
+    e->active_command = 0;
+    e->commands_read = 0;
+    e->commands_write = 0;
+}
+
+static void
+entity_commands_add(Entity* e, EntityCommand c){
+    assert(!entity_commands_full(e));
+
+    u32 write_idx = e->commands_write & (ENTITY_COMMANDS_MAX - 1);
+    e->commands[write_idx] = c;
+    e->commands_write++;
+}
+
+static EntityCommand*
+entity_commands_read(Entity* e, u32 read){
+    assert(!entity_commands_empty(e));
+
+    u32 read_idx = read & (ENTITY_COMMANDS_MAX - 1);
+    EntityCommand* c = e->commands + read_idx;
+
+    return(c);
+}
+
+static EntityCommand*
+entity_commands_next(Entity* e){
+    assert(!entity_commands_empty(e));
+
+    u32 read_idx = e->commands_read & (ENTITY_COMMANDS_MAX - 1);
+    EntityCommand* c = e->commands + read_idx;
+    e->commands_read++;
+
+    return(c);
+}
+
+static void
+entity_commands_move(Entity* e, v2 pos){
+    EntityCommand c = {0};
+    c.type = EntityCommandType_Move;
+    c.move_to = pos;
+
+    entity_commands_add(e, c);
+}
 
 //static Vec4F32
 //UI_PushBackgroundColor(Vec4F32 v){

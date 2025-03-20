@@ -81,9 +81,10 @@ events_available(Events* events){
     return(result);
 }
 
+// note: This only works on powers of 2
 static u32
-mask(Events* events, u32 idx){
-    u32 result = idx & (events->size - 1);
+mask(u32 size, u32 idx){
+    u32 result = idx & (size - 1);
     return(result);
 }
 
@@ -91,7 +92,7 @@ static void
 events_add(Events* events, Event event){
     assert(!events_full(events));
 
-    u32 masked_idx = mask(events, events->write++);
+    u32 masked_idx = mask(events->size, events->write++);
     events->e[masked_idx] = event;
 }
 
@@ -99,7 +100,7 @@ static Event
 events_next(Events* events){
     assert(!events_empty(events));
 
-    u32 masked_idx = mask(events, events->read++);
+    u32 masked_idx = mask(events->size, events->read++);
     Event event = events->e[masked_idx];
     return(event);
 }

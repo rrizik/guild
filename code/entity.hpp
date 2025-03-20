@@ -38,9 +38,23 @@ typedef enum ParticleType{
 typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Structure, EntityType_Skeleton1} EntityType;
 
 typedef enum StructureType{
+    StructureType_None,
     StructureType_Castle,
+    StructureType_Count,
 } StructureType;
 
+typedef enum EntityCommandType{
+    EntityCommandType_None,
+    EntityCommandType_Move,
+    EntityCommandType_Count,
+} EntityCommandType;
+
+typedef struct EntityCommand{
+    EntityCommandType type;
+    v2 move_to;
+} EntityCommand;
+
+#define ENTITY_COMMANDS_MAX 1024
 typedef struct Entity{
     Entity* origin;
     Entity* parent;
@@ -89,6 +103,11 @@ typedef struct Entity{
     f32 shoot_t;
     f32 velocity;
 
+    EntityCommand commands[ENTITY_COMMANDS_MAX];
+    EntityCommand* active_command;
+    u32 commands_read;
+    u32 commands_write;
+
     //s32 health;
     //s32 damage;
     //bool in_play;
@@ -101,6 +120,7 @@ typedef struct Entity{
     //bool immune;
 
     //bool dead;
+    bool selected;
     TextureAsset texture;
 } Entity;
 
@@ -120,5 +140,14 @@ static Rect rect_from_entity(Entity* e);
 static Rect collision_box_from_entity(Entity* e);
 static Quad bounding_box_from_entity(Entity* e);
 
+static u32 entity_commands_count(Entity* e);
+static bool entity_commands_empty(Entity* e);
+static bool entity_commands_full(Entity* e);
+static void entity_commands_clear(Entity* e);
+
+static void entity_commands_add(Entity* e, EntityCommand c);
+static EntityCommand* entity_commands_next(Entity* e);
+
+static void entity_commands_move(Entity* e, v2 pos);
 
 #endif
