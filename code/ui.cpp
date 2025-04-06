@@ -314,6 +314,9 @@ ui_spacer(f32 size){
 static UI_Signal
 ui_signal_from_box(UI_Box* box){
     UI_Signal signal = {0};
+    if(box == ui_state->root){
+        return(signal);
+    }
 
     v2 mouse_pos = ui_mouse_pos();
     if(has_flag(box->flags, UI_BoxFlag_Clickable)){
@@ -325,7 +328,7 @@ ui_signal_from_box(UI_Box* box){
         }
 
         if(ui_state->hot == box->key && ui_state->active == 0){
-            if(controller_button_pressed(MOUSE_BUTTON_LEFT, true) && controller_button_held(MOUSE_BUTTON_LEFT)){
+            if(controller_button_pressed(MOUSE_BUTTON_LEFT) && controller_button_held(MOUSE_BUTTON_LEFT)){
                 ui_state->active = box->key;
                 ui_state->mouse_pos_record = mouse_pos;
                 ui_state->mouse_pos_record.x -= box->rel_pos[Axis_X];

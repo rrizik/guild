@@ -22,8 +22,9 @@ sim_game(void){
 
     // draw terrain
     if(state->scene_state == SceneState_Editor){
+        begin_timed_scope("draw terrain");
         if(controller_button_held(MOUSE_BUTTON_LEFT) &&
-           controller_button_pressed(MOUSE_BUTTON_LEFT)){
+           controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
             state->draw_terrain = true;
         }
         if(!controller_button_held(MOUSE_BUTTON_LEFT)){
@@ -44,25 +45,43 @@ sim_game(void){
 
     // resolve motion
     for(s32 i = 0; i < array_count(state->entities); ++i){
+        begin_timed_scope("resolve motion");
         Entity *e = state->entities + i;
         if(!has_flag(e->flags, EntityFlag_Active)){
             continue;
         }
 
         if(has_flag(e->flags, EntityFlag_MoveWithPhys)){
+            for(s32 j = 0; j < array_count(state->entities); ++j){
+                if(i == j) continue;
+
+                Entity *other = state->entities + j;
+                if(has_flag(other->flags, EntityFlag_MoveWithPhys)){
+                    f32 distance = distance_v2(e->pos, other->pos);
+                    if(distance > 0 && distance < 1){
+                        v2 dir = normalize_v2(e->pos - other->pos);
+                        e->velocity.x     += (dir.x * 50 * (f32)clock.dt) / distance;
+                        e->velocity.y     += (dir.y * 50 * (f32)clock.dt) / distance;
+                        other->velocity.x -= (dir.x * 50 * (f32)clock.dt) / distance;
+                        other->velocity.y -= (dir.y * 50 * (f32)clock.dt) / distance;
+                    }
+                }
+            }
+
             if(!entity_commands_empty(e) && !e->active_command){
                 EntityCommand* c = entity_commands_next(e);
                 e->active_command = c;
             }
             if(e->active_command){
-
                 EntityCommand* c = e->active_command;
+
                 switch(c->type){
                     case EntityCommandType_Move:{
+                        v2 move_dir = direction_v2(e->pos, c->move_to);
+                        e->dir = move_dir;
                         if(!v2_close_enough(e->pos, c->move_to, 0.1f)){
-                            v2 dir = direction_v2(e->pos, c->move_to);
-                            e->pos.x += (dir.x * e->velocity * e->speed) * (f32)clock.dt;
-                            e->pos.y += (dir.y * e->velocity * e->speed) * (f32)clock.dt;
+                            e->velocity.x += (move_dir.x * e->speed) * (f32)clock.dt;
+                            e->velocity.y += (move_dir.y * e->speed) * (f32)clock.dt;
                         }
                         else{
                             e->active_command = 0;
@@ -70,57 +89,30 @@ sim_game(void){
                     }
                 }
             }
-            //if(move_randomly){
-            //    e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
-            //    e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
-
-            //    v2 p0 = v2_screen_from_world(camera.p0);
-            //    v2 p1 = v2_screen_from_world(camera.p1);
-            //    v2 p2 = v2_screen_from_world(camera.p2);
-            //    v2 p3 = v2_screen_from_world(camera.p3);
-
-            //    v2 e_pos = v2_screen_from_world(e->pos);
-
-            //    if(e_pos.x < 0){
-            //        e->dir.x = -e->dir.x;
-            //    }
-            //    if(e_pos.x > window.width){
-            //        e->dir.x = -e->dir.x;
-            //    }
-            //    if(e_pos.y < 0){
-            //        e->dir.y = -e->dir.y;
-            //    }
-            //    if(e_pos.y > window.height){
-            //        e->dir.y = -e->dir.y;
-            //    }
-            //}
-            //else{
-            //    if(e->move_order){
-            //        if(!v2_close_enough(e->pos, e->waypoint, 0.1f)){
-            //            e->pos.x += (e->dir.x * e->velocity * e->speed) * (f32)clock.dt;
-            //            e->pos.y += (e->dir.y * e->velocity * e->speed) * (f32)clock.dt;
-            //        }
-            //    }
-            //}
         }
+
+        e->velocity.x *= 0.75f;
+        e->velocity.y *= 0.75f;
+        e->pos.x += e->velocity.x * (f32)clock.dt;
+        e->pos.y += e->velocity.y * (f32)clock.dt;
     }
 
     // resolve death todo(rr): this will be different
-    for(s32 i = 0; i < array_count(state->entities); ++i){
-        Entity *e = state->entities + i;
-        if(!has_flag(e->flags, EntityFlag_Active)){
-            continue;
-        }
-    }
+    //for(s32 i = 0; i < array_count(state->entities); ++i){
+    //    Entity *e = state->entities + i;
+    //    if(!has_flag(e->flags, EntityFlag_Active)){
+    //        continue;
+    //    }
+    //}
 
     // type loop
-    for(s32 i = 0; i < array_count(state->entities); ++i){
-        Entity *e = state->entities + i;
-        Rect e_rect = rect_from_entity(e);
+    //for(s32 i = 0; i < array_count(state->entities); ++i){
+    //    Entity *e = state->entities + i;
+    //    Rect e_rect = rect_from_entity(e);
 
-        //switch(e->type){
-        //}
-    }
+    //    //switch(e->type){
+    //    //}
+    //}
 }
 
 static bool
@@ -239,15 +231,15 @@ add_castle(TextureAsset texture, v2 cell, v2 dim, RGBA color, u32 flags){
 }
 
 static Entity*
-add_skeleton(TextureAsset texture, v2 pos, v2 dim, v2 dir, RGBA color, u32 flags){
+add_skeleton(TextureAsset texture, v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
     Entity* e = add_entity(EntityType_Skeleton1);
     if(e){
         e->color = color;
-        e->pos = pos;
+        e->pos = grid_pos_from_cell(cell);
         e->dim = dim;
         e->texture = texture;
-        e->velocity = 1;
-        e->speed = 5.0f;
+        e->velocity = {0};
+        e->speed = 1000.0f;
         e->dir = dir;
         e->rot = make_v2(1, 0);
         e->deg = deg_from_dir(e->rot);
@@ -423,7 +415,7 @@ draw_entities(State* state){
 
                             v2 p1 = v2_screen_from_world(e->pos);
                             v2 p2 = v2_screen_from_world(e->waypoint);
-                            //draw_line(p1, p2, 2, RED);
+                            draw_line(p1, p2, 2, RED);
 
                             set_font(state->font);
                             String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->waypoint.x, e->waypoint.y);
@@ -457,7 +449,6 @@ draw_entities(State* state){
 
 
 
-                    // SELECTED HERE
                     if(e->selected){
                         if(e->active_command){
                             v2 screen_space = v2_screen_from_world(e->active_command->move_to);
@@ -476,25 +467,24 @@ draw_entities(State* state){
                         }
                     }
 
-
                     if(state->scene_state == SceneState_Editor){
-                        v2 pos = v2_screen_from_world(e->pos);
-                        ui_set_pos(pos.x + 20, pos.y);
-                        ui_set_size(ui_size_children(0), ui_size_children(0));
-                        ui_set_border_thickness(10);
-                        ui_set_background_color(DEFAULT);
+                        //v2 pos = v2_screen_from_world(e->pos);
+                        //ui_set_pos(pos.x + 20, pos.y);
+                        //ui_set_size(ui_size_children(0), ui_size_children(0));
+                        //ui_set_border_thickness(10);
+                        //ui_set_background_color(DEFAULT);
 
-                        String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
-                        ui_begin_panel(box_name, ui_floating_panel_world);
+                        //String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
+                        //ui_begin_panel(box_name, ui_floating_panel_world);
 
-                        String8 fmt_str;
-                        ui_size(ui_size_text(0), ui_size_text(0))
-                        ui_text_color(LIGHT_GRAY)
-                        {
-                            fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
-                            ui_label(fmt_str);
-                        }
-                        ui_end_panel();
+                        //String8 fmt_str;
+                        //ui_size(ui_size_text(0), ui_size_text(0))
+                        //ui_text_color(LIGHT_GRAY)
+                        //{
+                        //    fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
+                        //    ui_label(fmt_str);
+                        //}
+                        //ui_end_panel();
                     }
                 } break;
             }
@@ -546,7 +536,6 @@ debug_ui_render_batches(void){
         fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
         ui_label(fmt);
 
-        // SELECTED HERE
         if(state->entity_hovered){
             fmt = str8_format(ts->frame_arena, "hover idx: %i", state->entity_hovered->index);
             ui_label(fmt);
@@ -633,13 +622,16 @@ ui_structure_castle(void){
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)
         {
-            Entity* entity_selected = state->entities_selected[0];
-            // SELECTED HERE
-            v2 dir = direction_v2(entity_selected->pos, entity_selected->waypoint);
-            Entity* e = add_skeleton(TextureAsset_Skeleton1, entity_selected->pos, make_v2(3, 3), dir);
-            e->origin = entity_selected;
-            e->waypoint = entity_selected->waypoint;
-            e->waypoint_cell = entity_selected->waypoint_cell;
+            if(ui_button(str8_literal("skeleton1")).pressed_left){
+                Entity* entity_selected = state->entities_selected[0];
+
+                v2 dir = direction_v2(entity_selected->pos, entity_selected->waypoint);
+                Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(entity_selected->pos), make_v2(1, 1), dir);
+                e->origin = entity_selected;
+                e->waypoint = entity_selected->waypoint;
+                e->waypoint_cell = entity_selected->waypoint_cell;
+                entity_commands_move(e, e->waypoint);
+            }
 
             ui_spacer(10);
             if(ui_button(str8_literal("unit 2")).pressed_left){
@@ -681,8 +673,8 @@ draw_world_grid(void){
     }
 
     // draw coordinates
-#if 0
-    f32 y = low.y;
+#if 1
+    y = low.y;
     while(y < high.y){
 
         f32 x = low.x;
@@ -1045,6 +1037,36 @@ serialize_state(void){
     end_scratch(scratch);
 }
 
+static void
+put_entities_in_bis(){
+    for(s32 i=0; i < array_count(state->entities); ++i){
+        Entity* e = state->entities + i;
+
+        v2 cell_coords = grid_cell_from_pos(e->pos);
+        Cell cell = state->cells[(s32)cell_coords.x][(s32)cell_coords.y];
+        if(cell.bin_count == 0){
+            cell.bin_count = 1;
+
+            BinNode* bin = push_struct(ts->bin_arena, BinNode);
+            cell.bin = bin;
+
+            //bin->cap = (s32)pow(BIN_SIZE, cell.bin_count);
+            bin->cap = BIN_SIZE;
+        }
+
+        if(cell.bin->at == cell.bin->cap){
+            BinNode* bin = push_struct(ts->bin_arena, BinNode);
+            cell.bin_count++;
+
+            bin->next = cell.bin;
+            cell.bin = bin;
+        }
+
+        BinNode* bin = cell.bin;
+        bin->entities[bin->at++] = e;
+    }
+}
+
 static LRESULT
 win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
     LRESULT result = 0;
@@ -1355,7 +1377,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
     state = (PermanentMemory*)memory.permanent_base;
     ts    = (TransientMemory*)memory.transient_base;
 
-    Entity* tar = 0;
     if(!memory.initialized){
         // consider: maybe move this memory stuff to init_memory()
         init_arena(&state->arena, (u8*)memory.permanent_base + sizeof(PermanentMemory), memory.permanent_size - sizeof(PermanentMemory));
@@ -1367,13 +1388,14 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         ts->ui_state_arena = push_arena(&ts->arena, MB(100));
         ts->batch_arena    = push_arena(&ts->arena, GB(1));
         ts->data_arena     = push_arena(&ts->arena, KB(1024));
+        ts->bin_arena      = push_arena(&ts->arena, MB(512));
 
         show_cursor(true);
         assets_load(ts->asset_arena, &assets);
 
         state->world_width_in_tiles = 10;
         state->world_height_in_tiles = 10;
-        state->tile_size = 10;
+        state->tile_size = 1;
 
         init_console(global_arena, &camera, &window, &assets);
         ui_init(ts->ui_state_arena, &window, &controller, &assets);
@@ -1390,24 +1412,24 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         deserialize_world(state->current_world);
 
         // load castle
-        state->castle_cell = make_v2(2, 5);
-        state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(10, 10));
-        tar = add_skeleton(TextureAsset_Skeleton1, make_v2(50, 50), make_v2(3, 3), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(60, 50), make_v2(3, 3), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(55, 60), make_v2(3, 3), make_v2(1, 0));
+        state->castle_cell = make_v2(45, 50);
+        state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(2, 2));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(50, 50), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(52, 50), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
 
         state->scene_state = SceneState_Game;
         //init_camera_2d(&camera, make_v2((state->world_width_in_tiles/2) * state->tile_size, (state->world_height_in_tiles/2) * state->tile_size), 30);
-        init_camera_2d(&camera, make_v2(50, 50), 30);
+        init_camera_2d(&camera, make_v2(50, 50), 10);
 
         memory.initialized = true;
     }
 
     should_quit = false;
     while(!should_quit){
-        ui_begin();
-
         begin_timed_scope("while(!should_quit)");
+
+        ui_begin();
 
         u64 now_ticks = clock.get_os_timer();
         f64 frame_time = clock.get_seconds_elapsed(now_ticks, last_ticks);
@@ -1441,6 +1463,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             handled = handle_game_events(event);
         }
 
+        //put_entities_in_bis();
+
         // note: consumes input so needs to be here
         if(state->scene_state == SceneState_Editor){
             ui_level_editor();
@@ -1450,6 +1474,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         simulations = 0;
         accumulator += frame_time;
         while(accumulator >= clock.dt){
+            begin_timed_scope("sim loop");
             sim_game();
 
             accumulator -= clock.dt;
@@ -1466,6 +1491,38 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
             else if(state->scene_state == SceneState_Game){
                 state->scene_state = SceneState_Editor;
+            }
+        }
+
+        // move command
+        v2 world_mouse = v2_world_from_screen(controller.mouse.pos); // yuck we do this every frame?
+        for(s32 i=0; i < state->entities_selected_count; ++i){
+            Entity* selected_entity = state->entities_selected[i];
+
+            switch(selected_entity->structure_type){
+                case StructureType_Castle:{
+                    if(controller_button_pressed(MOUSE_BUTTON_RIGHT)){
+                        selected_entity->waypoint = world_mouse;
+                        selected_entity->waypoint_cell = grid_cell_from_pos(world_mouse);
+                    }
+                    ui_structure_castle();
+                }
+            }
+
+            switch(selected_entity->type){
+                case EntityType_Skeleton1:{
+                    if(!state->dragging_world &&
+                       !controller.shift_pressed &&
+                       controller_button_released(MOUSE_BUTTON_RIGHT)){
+                        entity_commands_clear(selected_entity);
+                        entity_commands_move(selected_entity, world_mouse);
+                    }
+                    if(!state->dragging_world &&
+                       controller.shift_pressed &&
+                       controller_button_released(MOUSE_BUTTON_RIGHT)){
+                        entity_commands_move(selected_entity, world_mouse);
+                    }
+                }
             }
         }
 
@@ -1513,20 +1570,25 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                     v2 world_pos = v2_screen_from_world(e->pos);
                     if(rect_contains_point(state->selection_rect, world_pos)){
                         selected_new_units = true;
-                        state->entities_selected[count] = e;
+                        if(controller.ctrl_pressed){
+                            state->entities_selected[state->entities_selected_count++] = e;
+                        }
+                        else{
+                            state->entities_selected[count] = e;
+                        }
                         e->selected = true;
                         count++;
                     }
                 }
 
-                if(selected_new_units == true){
+                if(!controller.ctrl_pressed && selected_new_units == true){
                     state->entities_selected_count = count;
                 }
 
                 state->selection_rect = {0};
             }
 
-            // MOUSE SELECTION
+            // mouse hover
             bool found = false;
             for(s32 idx = 0; idx < array_count(state->entities); ++idx){
                 Entity *e = state->entities + idx;
@@ -1539,8 +1601,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 state->entity_hovered = 0;
             }
 
-            // SELECTED HERE
-            if(state->entity_hovered && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+            // single select
+            if(state->entity_hovered && !controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
                 for(s32 i=0; i < state->entities_selected_count; ++i){
                     Entity* selected_entity = state->entities_selected[i];
                     selected_entity->selected = false;
@@ -1550,47 +1612,22 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 state->entities_selected[0]->selected = true;
                 state->entities_selected_count = 1;
             }
-
-            else if(controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                for(s32 i=0; i < state->entities_selected_count; ++i){
-                    Entity* selected_entity = state->entities_selected[i];
-                    selected_entity->selected = false;
-                    state->entities_selected[0] = 0;
-                }
-                state->entities_selected_count = 0;
+            if(state->entity_hovered && controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                state->entities_selected[state->entities_selected_count] = state->entity_hovered;
+                state->entities_selected[state->entities_selected_count]->selected = true;
+                state->entities_selected_count++;
             }
+
         }
 
-        // SELECTED HERE
-        v2 world_mouse = v2_world_from_screen(controller.mouse.pos); // yuck we do this every frame?
-        for(s32 i=0; i < state->entities_selected_count; ++i){
-            Entity* selected_entity = state->entities_selected[i];
-
-            switch(selected_entity->structure_type){
-                case StructureType_Castle:{
-                    if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                        selected_entity->waypoint = world_mouse;
-                        selected_entity->waypoint_cell = grid_cell_from_pos(world_mouse);
-                    }
-                    ui_structure_castle();
-                }
+        // CLEAR SELECTION
+        if(!controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+            for(s32 i=0; i < state->entities_selected_count; ++i){
+                Entity* selected_entity = state->entities_selected[i];
+                selected_entity->selected = false;
+                state->entities_selected[0] = 0;
             }
-
-            switch(selected_entity->type){
-                case EntityType_Skeleton1:{
-                    if(!state->dragging_world &&
-                       !controller.shift_pressed &&
-                       controller_button_released(MOUSE_BUTTON_RIGHT)){
-                        entity_commands_clear(selected_entity);
-                        entity_commands_move(selected_entity, world_mouse);
-                    }
-                    if(!state->dragging_world &&
-                       controller.shift_pressed &&
-                       controller_button_released(MOUSE_BUTTON_RIGHT)){
-                        entity_commands_move(selected_entity, world_mouse);
-                    }
-                }
-            }
+            state->entities_selected_count = 0;
         }
 
         console_update();
@@ -1611,6 +1648,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         // rendering
         {
+            begin_timed_scope("rendering");
             //----constant buffer----
             D3D11_MAPPED_SUBRESOURCE mapped_subresource;
             d3d_context->Map(d3d_constant_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_subresource);
@@ -1626,7 +1664,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
             draw_entities(state);
 
-            // SELECTED HERE
+            // draw selection rects
             if(state->entities_selected_count){
                 for(s32 i=0; i < state->entities_selected_count; ++i){
                     Entity* e = state->entities_selected[i];
@@ -1690,6 +1728,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 arena_free(ts->frame_arena);
             }
         }
+        arena_free(ts->bin_arena);
         clear_controller_pressed();
 
         frame_inc++;

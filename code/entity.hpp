@@ -101,7 +101,7 @@ typedef struct Entity{
     f32 rotation_speed;
     f32 accel_speed;
     f32 shoot_t;
-    f32 velocity;
+    v2 velocity;
 
     EntityCommand commands[ENTITY_COMMANDS_MAX];
     EntityCommand* active_command;

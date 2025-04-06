@@ -80,6 +80,19 @@ global Camera2D world_camera_record;
 global bool game_in_focus = true;
 global bool tracking_mouse = false;
 
+#define BIN_SIZE 8
+typedef struct BinNode{
+    BinNode* next;
+    Entity* entities[BIN_SIZE];
+    s32 at;
+    s32 cap;
+} BinNode;
+
+typedef struct Cell{
+    BinNode* bin;
+    s32 bin_count;
+} Cell;
+
 typedef enum SceneState{
     SceneState_None,
     //SceneState_Menu,
@@ -104,6 +117,8 @@ typedef struct State{
     u32 generation[ENTITIES_MAX];
     u32 free_entities[ENTITIES_MAX];
     u32 free_entities_at;
+
+    Cell cells[WORLD_WIDTH_IN_TILES_MAX][WORLD_HEIGHT_IN_TILES_MAX];
 
     Font* font;
 
@@ -156,6 +171,7 @@ typedef struct TransientMemory{
     Arena *ui_state_arena;
     Arena *batch_arena;
     Arena *data_arena;
+    Arena *bin_arena;
 } TransientMemory, TState;
 global TState* ts;
 
@@ -209,6 +225,8 @@ static void serialize_world(String8 world);
 static void deserialize_world(String8 world);
 static void save_state(void);
 static void load_state(void);
+
+static void put_entities_in_bins(void);
 
 
 #include "console.hpp"
