@@ -43,35 +43,71 @@ sim_game(void){
         }
     }
 
-    // resolve motion
-    for(s32 i = 0; i < array_count(state->entities); ++i){
-        begin_timed_scope("resolve motion");
-        Entity *e = state->entities + i;
-        if(!has_flag(e->flags, EntityFlag_Active)){
-            continue;
-        }
+    if(do_motion){
+    // Resolve motion.
+        for(s32 i = 0; i < array_count(state->entities); ++i){
+            Entity *e = state->entities + i;
+            if(!has_flag(e->flags, EntityFlag_Active)) continue;
+            if(!has_flag(e->flags, EntityFlag_MoveWithPhys)) continue;
 
-        if(has_flag(e->flags, EntityFlag_MoveWithPhys)){
-            for(s32 j = 0; j < array_count(state->entities); ++j){
-                if(i == j) continue;
+            // All 9 surrounding cells.
+            v2 cell_coords = grid_cell_from_pos(e->pos);
+            v2 all_coords[9] = {
+                cell_coords,
+                make_v2(cell_coords.x - 1, cell_coords.y - 1),
+                make_v2(cell_coords.x - 1, cell_coords.y),
+                make_v2(cell_coords.x - 1, cell_coords.y + 1),
+                make_v2(cell_coords.x, cell_coords.y - 1),
+                make_v2(cell_coords.x, cell_coords.y + 1),
+                make_v2(cell_coords.x + 1, cell_coords.y - 1),
+                make_v2(cell_coords.x + 1, cell_coords.y),
+                make_v2(cell_coords.x + 1, cell_coords.y + 1),
+            };
 
-                Entity *other = state->entities + j;
-                if(has_flag(other->flags, EntityFlag_MoveWithPhys)){
-                    f32 distance = distance_v2(e->pos, other->pos);
-                    if(distance > 0 && distance < 1){
-                        v2 dir = normalize_v2(e->pos - other->pos);
-                        e->velocity.x     += (dir.x * 50 * (f32)clock.dt) / distance;
-                        e->velocity.y     += (dir.y * 50 * (f32)clock.dt) / distance;
-                        other->velocity.x -= (dir.x * 50 * (f32)clock.dt) / distance;
-                        other->velocity.y -= (dir.y * 50 * (f32)clock.dt) / distance;
+            if(controller_button_pressed(KeyCode_1)){
+                do_motion = !do_motion;
+            }
+            if(controller_button_pressed(KeyCode_2)){
+                for(s32 i=0; i < array_count(state->entities_selected); ++i){
+                    Entity* e = state->entities_selected[i];
+                    entity_commands_clear(e);
+                }
+            }
+
+            // Flocking, cumulative velocity.
+            for(s32 j=0; j < array_count(all_coords); ++j){
+                v2 coords = all_coords[j];
+                if(!grid_cell_coords_in_bounds(coords)) continue;
+
+                Cell* cell = state->cells + ((s32)coords.x + (WORLD_WIDTH_IN_TILES_MAX * (s32)coords.y));
+                for(BinNode* bin = cell->bin; bin != 0; bin = bin->next){
+                    for(s32 k = 0; k < bin->at; ++k){
+                        Entity* other = bin->entities[k];
+                        if(!has_flag(other->flags, EntityFlag_MoveWithPhys)) continue;
+                        if(e == other) continue;
+
+                        f32 distance_squared = distance_squared_v2(e->pos, other->pos);
+                        if(distance_squared > 0 && distance_squared < 1){
+                            f32 distance = sqrtf(distance_squared);
+                            v2 dir = (e->pos - other->pos);
+                            dir.x /= distance;
+                            dir.y /= distance;
+                            e->velocity.x     += (dir.x * 50 * (f32)clock.dt) / distance;
+                            e->velocity.y     += (dir.y * 50 * (f32)clock.dt) / distance;
+                            other->velocity.x -= (dir.x * 50 * (f32)clock.dt) / distance;
+                            other->velocity.y -= (dir.y * 50 * (f32)clock.dt) / distance;
+                        }
                     }
                 }
             }
 
+            // Look for command.
             if(!entity_commands_empty(e) && !e->active_command){
                 EntityCommand* c = entity_commands_next(e);
                 e->active_command = c;
             }
+
+            // Resolve command.
             if(e->active_command){
                 EntityCommand* c = e->active_command;
 
@@ -89,12 +125,13 @@ sim_game(void){
                     }
                 }
             }
-        }
 
-        e->velocity.x *= 0.75f;
-        e->velocity.y *= 0.75f;
-        e->pos.x += e->velocity.x * (f32)clock.dt;
-        e->pos.y += e->velocity.y * (f32)clock.dt;
+            // Apply motion.
+            e->velocity.x *= 0.75f;
+            e->velocity.y *= 0.75f;
+            e->pos.x += e->velocity.x * (f32)clock.dt;
+            e->pos.y += e->velocity.y * (f32)clock.dt;
+        }
     }
 
     // resolve death todo(rr): this will be different
@@ -413,9 +450,11 @@ draw_entities(State* state){
                             set_texture(&r_assets->textures[e->texture]);
                             draw_texture(quad, e->color);
 
-                            v2 p1 = v2_screen_from_world(e->pos);
-                            v2 p2 = v2_screen_from_world(e->waypoint);
-                            draw_line(p1, p2, 2, RED);
+                            if(e->selected){
+                                v2 p1 = v2_screen_from_world(e->pos);
+                                v2 p2 = v2_screen_from_world(e->waypoint);
+                                draw_line(p1, p2, 2, RED);
+                            }
 
                             set_font(state->font);
                             String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->waypoint.x, e->waypoint.y);
@@ -461,9 +500,9 @@ draw_entities(State* state){
                             EntityCommand* c = entity_commands_read(e, read_idx);
                             read_idx++;
 
-
                             v2 screen_space = v2_screen_from_world(c->move_to);
                             draw_quad(screen_space, make_v2(10, 10), RED);
+                            draw_line(v2_screen_from_world(e->pos), screen_space, 2, ORANGE);
                         }
                     }
 
@@ -515,6 +554,10 @@ debug_ui_render_batches(void){
     {
 
         String8 mouse_pos = str8_format(ts->frame_arena, "mouse pos: %f, %f", controller.mouse.x, controller.mouse.y);
+        ui_label(mouse_pos);
+
+        v2 mouse_world = v2_world_from_screen(controller.mouse.pos);
+        mouse_pos = str8_format(ts->frame_arena, "mouse pos(world): %f, %f", mouse_world.x, mouse_world.y);
         ui_label(mouse_pos);
 
         String8 fmt;
@@ -622,7 +665,7 @@ ui_structure_castle(void){
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)
         {
-            if(ui_button(str8_literal("skeleton1")).pressed_left){
+            if(ui_button(str8_literal("skeleton")).pressed_left){
                 Entity* entity_selected = state->entities_selected[0];
 
                 v2 dir = direction_v2(entity_selected->pos, entity_selected->waypoint);
@@ -634,10 +677,30 @@ ui_structure_castle(void){
             }
 
             ui_spacer(10);
-            if(ui_button(str8_literal("unit 2")).pressed_left){
+            if(ui_button(str8_literal("skeletonX10")).pressed_left){
+                for(s32 i=0; i<10; ++i){
+                    Entity* entity_selected = state->entities_selected[0];
+
+                    v2 dir = direction_v2(entity_selected->pos, entity_selected->waypoint);
+                    Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(entity_selected->pos), make_v2(1, 1), dir);
+                    e->origin = entity_selected;
+                    e->waypoint = entity_selected->waypoint;
+                    e->waypoint_cell = entity_selected->waypoint_cell;
+                    entity_commands_move(e, e->waypoint);
+                }
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("unit 3")).pressed_left){
+            if(ui_button(str8_literal("skeletonx50")).pressed_left){
+                for(s32 i=0; i<50; ++i){
+                    Entity* entity_selected = state->entities_selected[0];
+
+                    v2 dir = direction_v2(entity_selected->pos, entity_selected->waypoint);
+                    Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(entity_selected->pos), make_v2(1, 1), dir);
+                    e->origin = entity_selected;
+                    e->waypoint = entity_selected->waypoint;
+                    e->waypoint_cell = entity_selected->waypoint_cell;
+                    entity_commands_move(e, e->waypoint);
+                }
             }
         }
     }
@@ -673,7 +736,7 @@ draw_world_grid(void){
     }
 
     // draw coordinates
-#if 1
+#if 0
     y = low.y;
     while(y < high.y){
 
@@ -771,6 +834,15 @@ grid_cell_from_pos(v2 pos){
     result.x = floor_f32(pos.x / state->tile_size);
     result.y = floor_f32(pos.y / state->tile_size);
     return(result);
+}
+
+static bool
+grid_cell_coords_in_bounds(v2 coords){
+    if(coords.x >= 0 && coords.x < WORLD_WIDTH_IN_TILES_MAX &&
+       coords.y >= 0 && coords.y < WORLD_HEIGHT_IN_TILES_MAX){
+        return(true);
+    }
+    return(false);
 }
 
 static s32
@@ -1038,31 +1110,38 @@ serialize_state(void){
 }
 
 static void
-put_entities_in_bis(){
+partition_entities_in_bins(){
+    memset(state->cells, 0, sizeof(state->cells));
     for(s32 i=0; i < array_count(state->entities); ++i){
         Entity* e = state->entities + i;
+        if(!has_flag(e->flags, EntityFlag_Active)) continue;
 
         v2 cell_coords = grid_cell_from_pos(e->pos);
-        Cell cell = state->cells[(s32)cell_coords.x][(s32)cell_coords.y];
-        if(cell.bin_count == 0){
-            cell.bin_count = 1;
+        if(!grid_cell_coords_in_bounds(cell_coords)) continue;
 
-            BinNode* bin = push_struct(ts->bin_arena, BinNode);
-            cell.bin = bin;
+        Cell* cell = state->cells + ((s32)cell_coords.x + (WORLD_WIDTH_IN_TILES_MAX * (s32)cell_coords.y));
+        if(cell->bin_count == 0){
+            cell->bin_count = 1;
 
-            //bin->cap = (s32)pow(BIN_SIZE, cell.bin_count);
+            BinNode* bin = push_struct_zero(ts->bin_arena, BinNode); // will change to default zero
+            cell->bin = bin;
+
             bin->cap = BIN_SIZE;
         }
 
-        if(cell.bin->at == cell.bin->cap){
-            BinNode* bin = push_struct(ts->bin_arena, BinNode);
-            cell.bin_count++;
+        if(cell->bin->at == cell->bin->cap){
+            BinNode* bin = push_struct_zero(ts->bin_arena, BinNode); // will change to default zero
+            bin->cap = BIN_SIZE;
+            bin->next = cell->bin;
 
-            bin->next = cell.bin;
-            cell.bin = bin;
+            cell->bin_count++;
+            cell->bin = bin;
+        }
+        if(cell->bin->at > cell->bin->cap){
+            debug_break();
         }
 
-        BinNode* bin = cell.bin;
+        BinNode* bin = cell->bin;
         bin->entities[bin->at++] = e;
     }
 }
@@ -1414,8 +1493,19 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         // load castle
         state->castle_cell = make_v2(45, 50);
         state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(2, 2));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(50, 50), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(52, 50), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(50, 50), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(52, 50), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
         add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
 
         state->scene_state = SceneState_Game;
@@ -1463,7 +1553,17 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             handled = handle_game_events(event);
         }
 
-        //put_entities_in_bis();
+        partition_entities_in_bins();
+
+        //print("53 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 53)].bin_count, state->cells[49 + (1000 * 53)].bin_count, state->cells[50 + (1000 * 53)].bin_count, state->cells[51 + (1000 * 53)].bin_count, state->cells[52 + (1000 * 53)].bin_count, state->cells[53 + (1000 * 53)].bin_count);
+        //print("52 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 52)].bin_count, state->cells[49 + (1000 * 52)].bin_count, state->cells[50 + (1000 * 52)].bin_count, state->cells[51 + (1000 * 52)].bin_count, state->cells[52 + (1000 * 52)].bin_count, state->cells[53 + (!v!5<Mouse>C!w!5
+        //print("51 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 51)].bin_count, state->cells[49 + (1000 * 51)].bin_count, state->cells[50 + (1000 * 51)].bin_count, state->cells[51 + (1000 * 51)].bin_count, state->cells[52 + (1000 * 51)].bin_count, state->cells[53 + (1000 * 51)].bin_count);
+        //print("50 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 50)].bin_count, state->cells[49 + (1000 * 50)].bin_count, state->cells[50 + (1000 * 50)].bin_count, state->cells[51 + (1000 * 50)].bin_count, state->cells[52 + (1000 * 50)].bin_count, state->cells[53 + (1000 * 50)].bin_count);
+        //print("49 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 49)].bin_count, state->cells[49 + (1000 * 49)].bin_count, state->cells[50 + (1000 * 49)].bin_count, state->cells[51 + (1000 * 49)].bin_count, state->cells[52 + (1000 * 49)].bin_count, state->cells[53 + (1000 * 49)].bin_count);
+        //print("48 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 48)].bin_count, state->cells[49 + (1000 * 48)].bin_count, state->cells[50 + (1000 * 48)].bin_count, state->cells[51 + (1000 * 48)].bin_count, state->cells[52 + (1000 * 48)].bin_count, state->cells[53 + (1000 * 48)].bin_count);
+        //print("     --------------\n");
+        //print("     48 49 50 51 52 53\n");
+        //print("-------------------------------------------------------\n");
 
         // note: consumes input so needs to be here
         if(state->scene_state == SceneState_Editor){
@@ -1483,7 +1583,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         }
 
-        if(controller_button_pressed(KeyCode_F8)){
+        if(controller_button_pressed(KeyCode_8)){
             if(state->scene_state == SceneState_Editor){
                 state->scene_state = SceneState_Game;
                 state->terrain_selected = false;
@@ -1494,56 +1594,21 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
         }
 
-        // move command
-        v2 world_mouse = v2_world_from_screen(controller.mouse.pos); // yuck we do this every frame?
-        for(s32 i=0; i < state->entities_selected_count; ++i){
-            Entity* selected_entity = state->entities_selected[i];
-
-            switch(selected_entity->structure_type){
-                case StructureType_Castle:{
-                    if(controller_button_pressed(MOUSE_BUTTON_RIGHT)){
-                        selected_entity->waypoint = world_mouse;
-                        selected_entity->waypoint_cell = grid_cell_from_pos(world_mouse);
-                    }
-                    ui_structure_castle();
-                }
-            }
-
-            switch(selected_entity->type){
-                case EntityType_Skeleton1:{
-                    if(!state->dragging_world &&
-                       !controller.shift_pressed &&
-                       controller_button_released(MOUSE_BUTTON_RIGHT)){
-                        entity_commands_clear(selected_entity);
-                        entity_commands_move(selected_entity, world_mouse);
-                    }
-                    if(!state->dragging_world &&
-                       controller.shift_pressed &&
-                       controller_button_released(MOUSE_BUTTON_RIGHT)){
-                        entity_commands_move(selected_entity, world_mouse);
-                    }
-                }
-            }
-        }
-
         // camera drag
-        if(controller_button_pressed(MOUSE_BUTTON_RIGHT, false) || controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
+        if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT, false)){
             world_camera_record = camera;
             world_mouse_record = v2_world_from_screen(controller.mouse.pos);
+            state->dragging_world = true;
         }
-        if(controller_button_held(MOUSE_BUTTON_RIGHT) && controller_button_held(MOUSE_BUTTON_LEFT)){
+        if(controller.ctrl_pressed && controller_button_held(MOUSE_BUTTON_RIGHT)){
             v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
             v2 world_rel_pos = world_mouse_record - world_mouse_current;
-            if(world_rel_pos.x != 0 || world_rel_pos.y != 0){
-                state->dragging_world = true;
-            }
-            state->dragging_world = true;
             state->selecting = false;
             camera.x = world_camera_record.x + world_rel_pos.x;
             camera.y = world_camera_record.y + world_rel_pos.y;
 
         }
-        else{
+        if(state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT)){
             world_camera_record = {0};
             world_mouse_record = {0};
             state->dragging_world = false;
@@ -1603,11 +1668,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
             // single select
             if(state->entity_hovered && !controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                for(s32 i=0; i < state->entities_selected_count; ++i){
-                    Entity* selected_entity = state->entities_selected[i];
-                    selected_entity->selected = false;
-                    state->entities_selected[0] = 0;
-                }
+                memset(state->entities_selected, 0, sizeof(state->entities_selected));
                 state->entities_selected[0] = state->entity_hovered;
                 state->entities_selected[0]->selected = true;
                 state->entities_selected_count = 1;
@@ -1618,6 +1679,50 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 state->entities_selected_count++;
             }
 
+        }
+
+        // Calc center position of selection.
+        v2 average_position = make_v2(0, 0);
+        for(s32 i=0; i < state->entities_selected_count; ++i){
+            Entity* e = state->entities_selected[i];
+            average_position.x += e->pos.x;
+            average_position.y += e->pos.y;
+        }
+        state->entities_selected_center.x = average_position.x/(f32)state->entities_selected_count;
+        state->entities_selected_center.y = average_position.y/(f32)state->entities_selected_count;
+
+        v2  world_mouse         = v2_world_from_screen(controller.mouse.pos);
+        f32 projected_distance  = distance_v2(state->entities_selected_center, world_mouse);
+        v2  projected_direction = direction_v2(state->entities_selected_center, world_mouse);
+        for(s32 i=0; i < state->entities_selected_count; ++i){
+            Entity* e = state->entities_selected[i];
+
+            switch(e->structure_type){
+                case StructureType_Castle:{
+                    if(!controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT)){
+                        e->waypoint = world_mouse;
+                        e->waypoint_cell = grid_cell_from_pos(world_mouse);
+                    }
+                    ui_structure_castle();
+                }
+            }
+
+            switch(e->type){
+                case EntityType_Skeleton1:{
+                    if(!state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT, false)){
+                        v2 dir_to_target = direction_v2(e->pos, world_mouse);
+                        f32 rad_to_target = rad_from_dir(dir_to_target);
+                        f32 rad = rad_from_dir(projected_direction);
+                        rad = slerp_f32(rad, rad_to_target, 0.5);
+                        v2 projected_offset = dir_from_rad(rad) * projected_distance;
+                        v2 target_pos = e->pos + projected_offset;
+                        if(!controller.shift_pressed){
+                            entity_commands_clear(e);
+                        }
+                        entity_commands_move(e, target_pos);
+                    }
+                }
+            }
         }
 
         // CLEAR SELECTION
@@ -1665,14 +1770,43 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             draw_entities(state);
 
             // draw selection rects
+            f32 max_x = 0;
+            f32 max_y = 0;
+            f32 min_x = 1000;
+            f32 min_y = 1000;
             if(state->entities_selected_count){
-                for(s32 i=0; i < state->entities_selected_count; ++i){
-                    Entity* e = state->entities_selected[i];
-                    if(e->selected){
-                        Rect rect = rect_from_entity(e);
-                        rect = rect_screen_from_world(rect);
-                        draw_bounding_box(rect, 2.5f, RED);
+
+                if(state->entities_selected_count == 1){
+                    Entity* e = state->entities_selected[0];
+                    Rect rect = rect_from_entity(e);
+                    rect = rect_screen_from_world(rect);
+                    draw_bounding_box(rect, 2.5f, RED);
+                }
+                else{
+                    for(s32 i=0; i < state->entities_selected_count; ++i){
+                        Entity* e = state->entities_selected[i];
+                        if(e->selected){
+                            if(e->pos.x > max_x){
+                                max_x = e->pos.x;
+                            }
+                            if(e->pos.y > max_y){
+                                max_y = e->pos.y;
+                            }
+                            if(e->pos.x < min_x){
+                                min_x = e->pos.x;
+                            }
+                            if(e->pos.y < min_y){
+                                min_y = e->pos.y;
+                            }
+                        }
                     }
+                    min_x -= 0.5f;
+                    min_y -= 0.5f;
+                    max_x += 0.5f;
+                    max_y += 0.5f;
+                    Rect rect = make_rect(make_v2(min_x, min_y), make_v2(max_x, max_y));
+                    rect = rect_screen_from_world(rect);
+                    draw_bounding_box(rect, 2.5f, RED);
                 }
             }
 

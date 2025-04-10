@@ -10,7 +10,8 @@ init_console_commands(void){
     add_command(str8_literal("exit"), str8_literal("exit: quit/exit game"), 0, 0, command_exit);
     add_command(str8_literal("quit"), str8_literal("quit: quit/exit game"), 0, 0, command_exit);
     add_command(str8_literal("help"), str8_literal("help: lists all commands"), 0, 1, command_help);
-    add_command(str8_literal("goto"), str8_literal("goto: set camera position"), 2, 2, command_go_to);
+    add_command(str8_literal("cam_to"), str8_literal("cam_to: set camera position"), 2, 2, command_cam_to);
+    add_command(str8_literal("go_to"), str8_literal("go_to: set camera position at entity"), 1, 1, command_go_to);
     add_command(str8_literal("new_world"), str8_literal("new_world: generate new world"), 3, 3, command_new_world);
     add_command(str8_literal("save_world"), str8_literal("save_world: saves the world to a file"), 0, 1, command_save_world);
     add_command(str8_literal("load_world"), str8_literal("new_world: generate new world"), 1, 1, command_load_world);
@@ -106,13 +107,39 @@ command_load_world(String8* args){
 }
 
 static void
-command_go_to(String8* args){
+command_cam_to(String8* args){
     s32 x = atoi((char const*)(args->str));
     s32 y = atoi((char const*)(args + 1)->str);
     console.camera->pos.x = (f32)x;
     console.camera->pos.y = (f32)y;
 
     String8 str = str8_formatted(console.arena, "move camera to position (%i, %i)", x, y);
+    console.output_history[console.output_history_count++] = str;
+}
+
+static void
+command_go_to(String8* args){
+    u32 e_id = (u32)atoi((char const*)(args->str));
+    f32 x = 0;
+    f32 y = 0;
+    bool found = false;
+    for(s32 i=0; i < array_count(state->entities) && !found; ++i){
+        Entity* e = state->entities + i;
+        if(e->index == e_id){
+            x = e->pos.x;
+            y = e->pos.y;
+            found = true;
+        }
+    }
+    String8 str;
+    if(found){
+        console.camera->pos.x = x;
+        console.camera->pos.y = y;
+        str = str8_formatted(console.arena, "move camera to entity: %i, (%f, %f)", e_id, x, y);
+    }
+    else{
+        str = str8_formatted(console.arena, "entity id: %i not found", e_id);
+    }
     console.output_history[console.output_history_count++] = str;
 }
 

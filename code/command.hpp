@@ -30,6 +30,7 @@ static void command_load_world(String8* args);
 //static void command_save(String8* args);
 static void command_add(String8* args);
 //static void command_saves(String8* args);
+static void command_cam_to(String8* args);
 static void command_go_to(String8* args);
 
 static void init_console_commands(void);

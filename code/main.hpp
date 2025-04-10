@@ -84,13 +84,13 @@ global bool tracking_mouse = false;
 typedef struct BinNode{
     BinNode* next;
     Entity* entities[BIN_SIZE];
-    s32 at;
-    s32 cap;
+    u32 at;
+    u32 cap;
 } BinNode;
 
 typedef struct Cell{
     BinNode* bin;
-    s32 bin_count;
+    u32 bin_count;
 } Cell;
 
 typedef enum SceneState{
@@ -117,11 +117,9 @@ typedef struct State{
     u32 generation[ENTITIES_MAX];
     u32 free_entities[ENTITIES_MAX];
     u32 free_entities_at;
-
-    Cell cells[WORLD_WIDTH_IN_TILES_MAX][WORLD_HEIGHT_IN_TILES_MAX];
-
     Font* font;
 
+    Cell cells[WORLD_WIDTH_IN_TILES_MAX * WORLD_HEIGHT_IN_TILES_MAX];
     s32 world_grid[WORLD_WIDTH_IN_TILES_MAX * WORLD_HEIGHT_IN_TILES_MAX];
     // todo(rr): remove this. We need to have some cell info that we can gather
     // from having our mouse over cells, and we can do things on those cells based
@@ -134,6 +132,7 @@ typedef struct State{
     Entity* entity_hovered;
     Entity* entities_selected[ENTITIES_SELECTED_MAX];
     s32 entities_selected_count;
+    v2 entities_selected_center;
 
     v2 selection_mouse_record;
     bool selecting;
@@ -218,6 +217,7 @@ static bool mouse_in_boundingbox(Entity* e);
 static v2 grid_pos_from_cell(v2 cell);
 static v2 grid_cell_from_pos(v2 pos);
 static v2 grid_cell_center(v2 pos);
+static bool grid_cell_coords_in_bounds(v2 coords);
 static s32 world_gird_idx_from_cell(v2 cell);
 static bool v2_close_enough(v2 p1, v2 p2, f32 epsilon);
 
@@ -226,12 +226,13 @@ static void deserialize_world(String8 world);
 static void save_state(void);
 static void load_state(void);
 
-static void put_entities_in_bins(void);
+static void partition_entities_in_bins(void);
 
 
 #include "console.hpp"
 #include "command.hpp"
 #include "console.cpp"
 #include "command.cpp"
+bool do_motion = true;
 
 #endif
