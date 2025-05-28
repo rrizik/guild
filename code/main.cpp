@@ -34,9 +34,9 @@ sim_game(void){
         if(state->draw_terrain){
             if(state->terrain_selected){
                 v2 pos = v2_world_from_screen(controller.mouse.pos);
-                v2 cell = make_v2(floor_f32(pos.x/state->tile_size), floor_f32(pos.y/state->tile_size));
-                if((cell.x < state->world_width_in_tiles && cell.x >= 0)){
-                    s32 idx = (s32)((cell.y * state->world_width_in_tiles) + cell.x);
+                v2 cell = make_v2(floor_f32(pos.x/state->world_cell_size), floor_f32(pos.y/state->world_cell_size));
+                if((cell.x < state->world_width_in_cells && cell.x >= 0)){
+                    s32 idx = (s32)((cell.y * state->world_width_in_cells) + cell.x);
                     state->world_grid[idx] = state->terrain_selected_id;
                 }
             }
@@ -45,13 +45,14 @@ sim_game(void){
 
     if(do_motion){
     // Resolve motion.
+        begin_timed_scope("flocking");
         for(s32 i = 0; i < array_count(state->entities); ++i){
             Entity *e = state->entities + i;
             if(!has_flag(e->flags, EntityFlag_Active)) continue;
             if(!has_flag(e->flags, EntityFlag_MoveWithPhys)) continue;
 
             // All 9 surrounding cells.
-            v2 cell_coords = grid_cell_from_pos(e->pos);
+            v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
             v2 all_coords[9] = {
                 cell_coords,
                 make_v2(cell_coords.x - 1, cell_coords.y - 1),
@@ -126,9 +127,10 @@ sim_game(void){
                 }
             }
 
-            // Apply motion.
+            // Apply friction.
             e->velocity.x *= 0.75f;
             e->velocity.y *= 0.75f;
+            // Apply motion.
             e->pos.x += e->velocity.x * (f32)clock.dt;
             e->pos.y += e->velocity.y * (f32)clock.dt;
         }
@@ -253,8 +255,8 @@ add_castle(TextureAsset texture, v2 cell, v2 dim, RGBA color, u32 flags){
         e->color = color;
         e->cell = cell;
         e->pos = grid_cell_center(e->cell);
-        e->waypoint_cell = make_v2(e->cell.x, e->cell.y - 1);
-        e->waypoint = grid_cell_center(e->waypoint_cell);
+        e->rallypoint_cell = make_v2(e->cell.x, e->cell.y - 1);
+        e->rallypoint = grid_cell_center(e->rallypoint_cell);
         e->dim = dim;
         e->texture = texture;
         e->deg = 0;
@@ -272,7 +274,7 @@ add_skeleton(TextureAsset texture, v2 cell, v2 dim, v2 dir, RGBA color, u32 flag
     Entity* e = add_entity(EntityType_Skeleton1);
     if(e){
         e->color = color;
-        e->pos = grid_pos_from_cell(cell);
+        e->pos = grid_pos_from_cell(cell, state->world_cell_size);
         e->dim = dim;
         e->texture = texture;
         e->velocity = {0};
@@ -452,13 +454,13 @@ draw_entities(State* state){
 
                             if(e->selected){
                                 v2 p1 = v2_screen_from_world(e->pos);
-                                v2 p2 = v2_screen_from_world(e->waypoint);
+                                v2 p2 = v2_screen_from_world(e->rallypoint);
                                 draw_line(p1, p2, 2, RED);
                             }
 
                             set_font(state->font);
-                            String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->waypoint.x, e->waypoint.y);
-                            //draw_text(fmt_str, v2_screen_from_world(e->waypoint), GREEN);
+                            String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->rallypoint.x, e->rallypoint.y);
+                            //draw_text(fmt_str, v2_screen_from_world(e->rallypoint), GREEN);
                         }
                     }
                 } break;
@@ -490,7 +492,7 @@ draw_entities(State* state){
 
                     if(e->selected){
                         if(e->active_command){
-                            v2 screen_space = v2_screen_from_world(e->active_command->move_to);
+                            v2 screen_space = v2_screen_from_world(e->active_command->clicked_at);
                             draw_quad(screen_space, make_v2(10, 10), RED);
                         }
 
@@ -500,30 +502,32 @@ draw_entities(State* state){
                             EntityCommand* c = entity_commands_read(e, read_idx);
                             read_idx++;
 
-                            v2 screen_space = v2_screen_from_world(c->move_to);
+                            v2 screen_space = v2_screen_from_world(c->clicked_at);
                             draw_quad(screen_space, make_v2(10, 10), RED);
-                            draw_line(v2_screen_from_world(e->pos), screen_space, 2, ORANGE);
+                            //draw_line(v2_screen_from_world(e->pos), screen_space, 2, ORANGE);
                         }
                     }
 
                     if(state->scene_state == SceneState_Editor){
-                        //v2 pos = v2_screen_from_world(e->pos);
-                        //ui_set_pos(pos.x + 20, pos.y);
-                        //ui_set_size(ui_size_children(0), ui_size_children(0));
-                        //ui_set_border_thickness(10);
-                        //ui_set_background_color(DEFAULT);
+                        if(state->show_entity_info){
+                            v2 pos = v2_screen_from_world(e->pos);
+                            ui_set_pos(pos.x + 20, pos.y);
+                            ui_set_size(ui_size_children(0), ui_size_children(0));
+                            ui_set_border_thickness(10);
+                            ui_set_background_color(DEFAULT);
 
-                        //String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
-                        //ui_begin_panel(box_name, ui_floating_panel_world);
+                            String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
+                            ui_begin_panel(box_name, ui_floating_panel_world);
 
-                        //String8 fmt_str;
-                        //ui_size(ui_size_text(0), ui_size_text(0))
-                        //ui_text_color(LIGHT_GRAY)
-                        //{
-                        //    fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
-                        //    ui_label(fmt_str);
-                        //}
-                        //ui_end_panel();
+                            String8 fmt_str;
+                            ui_size(ui_size_text(0), ui_size_text(0))
+                            ui_text_color(LIGHT_GRAY)
+                            {
+                                fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
+                                ui_label(fmt_str);
+                            }
+                            ui_end_panel();
+                        }
                     }
                 } break;
             }
@@ -535,79 +539,13 @@ static void
 debug_draw_mouse_cell_pos(void){
     set_font(state->font);
     v2 pos = v2_world_from_screen(controller.mouse.pos);
-    v2 cell = make_v2(floor_f32(pos.x/state->tile_size), floor_f32(pos.y/state->tile_size));
+    v2 cell = make_v2(floor_f32(pos.x/state->world_cell_size), floor_f32(pos.y/state->world_cell_size));
     String8 cell_str = str8_format(ts->frame_arena, "(%i, %i)", (s32)cell.x, (s32)cell.y);
     draw_text(cell_str, controller.mouse.pos, RED);
 }
 
 static void
-debug_ui_render_batches(void){
-
-    ui_set_pos(SCREEN_WIDTH - 200, 10);
-    ui_set_size(ui_size_children(0), ui_size_children(0));
-    ui_set_border_thickness(10);
-    ui_set_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##render_batches"), ui_floating_panel);
-
-    ui_size(ui_size_text(0), ui_size_text(0))
-    ui_text_color(LIGHT_GRAY)
-    {
-
-        String8 mouse_pos = str8_format(ts->frame_arena, "mouse pos: %f, %f", controller.mouse.x, controller.mouse.y);
-        ui_label(mouse_pos);
-
-        v2 mouse_world = v2_world_from_screen(controller.mouse.pos);
-        mouse_pos = str8_format(ts->frame_arena, "mouse pos(world): %f, %f", mouse_world.x, mouse_world.y);
-        ui_label(mouse_pos);
-
-        String8 fmt;
-        v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
-        v2 cell = grid_cell_from_pos(world_mouse);
-        fmt = str8_format(ts->frame_arena, "mouse cell: %i, %i", (s32)cell.x, (s32)cell.y);
-        ui_label(fmt);
-
-        fmt = str8_format(ts->frame_arena, "mouse cell: %f, %f", world_mouse.x, world_mouse.y);
-        ui_label(fmt);
-
-        fmt = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
-        ui_label(fmt);
-
-        fmt = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
-        ui_label(fmt);
-        ui_spacer(10);
-
-        fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
-        ui_label(fmt);
-
-        if(state->entity_hovered){
-            fmt = str8_format(ts->frame_arena, "hover idx: %i", state->entity_hovered->index);
-            ui_label(fmt);
-        }
-        for(s32 i=0; i < state->entities_selected_count; ++i){
-            Entity* entity_selected = state->entities_selected[0];
-            fmt = str8_format(ts->frame_arena, "selected idx: %i", entity_selected->index);
-            ui_label(fmt);
-        }
-
-
-
-        //fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
-        //ui_label(fmt);
-        //s32 count = 0;
-        //for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-        //    if(count < 50){
-        //        fmt = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->vertex_count, batch->vertex_cap, batch->id);
-        //        ui_label(fmt);
-        //    }
-        //    count++;
-        //}
-    }
-
-    ui_end_panel();
-}
-
-static void
-ui_level_editor(void){
+ui_editor(void){
 
     ui_set_pos(20, 20);
     ui_set_size(ui_size_children(0), ui_size_children(0));
@@ -650,6 +588,112 @@ ui_level_editor(void){
     }
 
     ui_end_panel();
+
+    ui_set_pos(SCREEN_WIDTH - 200, 10);
+    ui_set_size(ui_size_children(0), ui_size_children(0));
+    ui_set_border_thickness(10);
+    ui_set_background_color(DEFAULT);
+    ui_begin_panel(str8_literal("box1##render_batches"), ui_floating_panel);
+
+    ui_size(ui_size_text(0), ui_size_text(0))
+    ui_text_color(LIGHT_GRAY)
+    {
+
+        String8 mouse_pos = str8_format(ts->frame_arena, "mouse pos: %f, %f", controller.mouse.x, controller.mouse.y);
+        ui_label(mouse_pos);
+
+        v2 mouse_world = v2_world_from_screen(controller.mouse.pos);
+        mouse_pos = str8_format(ts->frame_arena, "mouse pos(world): %f, %f", mouse_world.x, mouse_world.y);
+        ui_label(mouse_pos);
+
+        String8 fmt;
+        v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
+        v2 cell = grid_cell_from_pos(world_mouse, state->world_cell_size);
+        fmt = str8_format(ts->frame_arena, "mouse cell: %i, %i", (s32)cell.x, (s32)cell.y);
+        ui_label(fmt);
+
+        fmt = str8_format(ts->frame_arena, "mouse cell: %f, %f", world_mouse.x, world_mouse.y);
+        ui_label(fmt);
+
+        fmt = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
+        ui_label(fmt);
+
+        fmt = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
+        ui_label(fmt);
+        ui_spacer(10);
+
+        fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
+        ui_label(fmt);
+
+
+
+        //fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
+        //ui_label(fmt);
+        //s32 count = 0;
+        //for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+        //    if(count < 50){
+        //        fmt = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->vertex_count, batch->vertex_cap, batch->id);
+        //        ui_label(fmt);
+        //    }
+        //    count++;
+        //}
+    }
+
+    ui_end_panel();
+
+    ui_set_pos(200, 20);
+    ui_set_size(ui_size_children(0), ui_size_children(0));
+    ui_set_border_thickness(5);
+    ui_set_background_color(DEFAULT);
+    ui_begin_panel(str8_literal("box1##3"), ui_floating_panel);
+
+    ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
+    ui_background_color(DARK_GRAY)
+    {
+        ui_label(str8_literal("Show Grid"));
+        if(ui_button(str8_literal("World")).pressed_left){
+            state->show_world_cells = !state->show_world_cells;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("Flocking")).pressed_left){
+            state->show_flocking_cells = !state->show_flocking_cells;
+        }
+        ui_spacer(10);
+        if(ui_button(str8_literal("Pathing")).pressed_left){
+            state->show_pathing_cells = !state->show_pathing_cells;
+        }
+
+        ui_spacer(10);
+        ui_label(str8_literal("Other"));
+        if(ui_button(str8_literal("Entity Info")).pressed_left){
+            state->show_entity_info = !state->show_entity_info;
+        }
+    }
+
+    ui_end_panel();
+
+    ui_set_pos(200, 20);
+    ui_set_size(ui_size_children(0), ui_size_children(0));
+    ui_set_border_thickness(5);
+    ui_set_background_color(DEFAULT);
+    ui_begin_panel(str8_literal("box1##5"), ui_floating_panel);
+
+    ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
+    ui_background_color(DARK_GRAY)
+    {
+        ui_label(str8_literal("Cell Size"));
+        if(ui_button(str8_literal("^")).pressed_left){
+            state->flocking_cell_size++;
+        }
+        ui_spacer(2);
+        if(ui_button(str8_literal("V")).pressed_left){
+            if(state->flocking_cell_size > 1){
+                state->flocking_cell_size--;
+            }
+        }
+    }
+
+    ui_end_panel();
 }
 
 static void
@@ -660,46 +704,84 @@ ui_structure_castle(void){
         ui_set_background_color(DEFAULT);
         ui_set_pos(20, window.height - 100);
         ui_set_size(ui_size_children(0), ui_size_children(0));
-        ui_begin_panel(str8_literal("box1##3"), ui_fixed_panel);
+        ui_begin_panel(str8_literal("box1##4"), ui_fixed_panel);
 
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)
         {
             if(ui_button(str8_literal("skeleton")).pressed_left){
-                Entity* entity_selected = state->entities_selected[0];
+                Entity* castle = state->entities_selected[0];
 
-                v2 dir = direction_v2(entity_selected->pos, entity_selected->waypoint);
-                Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(entity_selected->pos), make_v2(1, 1), dir);
-                e->origin = entity_selected;
-                e->waypoint = entity_selected->waypoint;
-                e->waypoint_cell = entity_selected->waypoint_cell;
-                entity_commands_move(e, e->waypoint);
+                v2 dir = direction_v2(castle->pos, castle->rallypoint);
+                Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(1, 1), dir);
+                e->origin = castle;
+                e->rallypoint = castle->rallypoint;
+                e->rallypoint_cell = castle->rallypoint_cell;
+                entity_commands_move(e, e->rallypoint, e->rallypoint);
             }
 
             ui_spacer(10);
-            if(ui_button(str8_literal("skeletonX10")).pressed_left){
-                for(s32 i=0; i<10; ++i){
-                    Entity* entity_selected = state->entities_selected[0];
+            if(ui_button(str8_literal("skeleton - 15")).pressed_left){
+                Entity* castle = state->entities_selected[0];
+                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
+                v2 a = grid_cell_from_pos(castle->pos, 1);
+                v2 b = grid_pos_from_cell(castle->pos, state->world_cell_size);
+                v2 c = grid_pos_from_cell(castle->pos, 1);
+                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
+                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
+                f32 projected_rad = rad_from_dir(projected_direction);
 
-                    v2 dir = direction_v2(entity_selected->pos, entity_selected->waypoint);
-                    Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(entity_selected->pos), make_v2(1, 1), dir);
-                    e->origin = entity_selected;
-                    e->waypoint = entity_selected->waypoint;
-                    e->waypoint_cell = entity_selected->waypoint_cell;
-                    entity_commands_move(e, e->waypoint);
+                f32 y = -1;
+                for(s32 i=0; i<3; ++i){
+                    f32 x = -2;
+                    for(s32 j=0; j<5; ++j){
+                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
+
+                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
+                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
+                        e->origin = castle;
+
+                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
+                        f32 target_rad = rad_from_dir(target_direction);
+
+                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
+                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
+                        v2 target_pos = e->pos + projected_offset;
+
+                        entity_commands_move(e, target_pos, target_pos);
+                        x += 1;
+                    }
+                    y += 1;
                 }
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("skeletonx50")).pressed_left){
-                for(s32 i=0; i<50; ++i){
-                    Entity* entity_selected = state->entities_selected[0];
+            if(ui_button(str8_literal("skeleton - 50")).pressed_left){
+                Entity* castle = state->entities_selected[0];
+                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
+                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
+                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
+                f32 projected_rad = rad_from_dir(projected_direction);
+                f32 y = -2;
+                for(s32 i=0; i<5; ++i){
+                    f32 x = -4;
+                    for(s32 j=0; j<10; ++j){
+                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
 
-                    v2 dir = direction_v2(entity_selected->pos, entity_selected->waypoint);
-                    Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(entity_selected->pos), make_v2(1, 1), dir);
-                    e->origin = entity_selected;
-                    e->waypoint = entity_selected->waypoint;
-                    e->waypoint_cell = entity_selected->waypoint_cell;
-                    entity_commands_move(e, e->waypoint);
+                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
+                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
+                        e->origin = castle;
+
+                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
+                        f32 target_rad = rad_from_dir(target_direction);
+
+                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
+                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
+                        v2 target_pos = e->pos + projected_offset;
+
+                        entity_commands_move(e, target_pos, target_pos);
+                        x += 1;
+                    }
+                    y += 1;
                 }
             }
         }
@@ -709,9 +791,11 @@ ui_structure_castle(void){
 }
 
 static void
-draw_world_grid(void){
-    v2 low  = make_v2(floor_f32(camera.p3.x/state->tile_size) * state->tile_size, floor_f32(camera.p3.y/state->tile_size) * state->tile_size);
-    v2 high = make_v2( ceil_f32(camera.p1.x/state->tile_size) * state->tile_size,  ceil_f32(camera.p1.y/state->tile_size) * state->tile_size);
+draw_grid(f32 size, RGBA color){
+    v2 low  = make_v2(floor_f32(camera.p3.x/size) * size,
+                      floor_f32(camera.p3.y/size) * size);
+    v2 high = make_v2(ceil_f32(camera.p1.x/size) * size,
+                      ceil_f32(camera.p1.y/size) * size);
 
     f32 x = low.x;
     while(x < high.x){
@@ -720,8 +804,8 @@ draw_world_grid(void){
 
         p0 = v2_screen_from_world(p0);
         p1 = v2_screen_from_world(p1);
-        draw_line(p0, p1, 1, RED);
-        x += state->tile_size;
+        draw_line(p0, p1, 1, color);
+        x += size;
     }
 
     f32 y = low.y;
@@ -731,8 +815,8 @@ draw_world_grid(void){
 
         p0 = v2_screen_from_world(p0);
         p1 = v2_screen_from_world(p1);
-        draw_line(p0, p1, 1, RED);
-        y += state->tile_size;
+        draw_line(p0, p1, 1, color);
+        y += size;
     }
 
     // draw coordinates
@@ -743,29 +827,29 @@ draw_world_grid(void){
         f32 x = low.x;
         while(x < high.x){
 
-            if(x >= 0 && (x/state->tile_size) < state->world_width_in_tiles){
-                if(y >= 0 && (y/state->tile_size) < state->world_height_in_tiles){
+            if(x >= 0 && (x/state->world_cell_size) < state->world_width_in_cells){
+                if(y >= 0 && (y/state->world_cell_size) < state->world_height_in_cells){
                     v2 cell = make_v2(x, y);
                     v2 screen_cell = v2_screen_from_world(cell);
 
                     set_font(state->font);
-                    String8 coord = str8_formatted(ts->frame_arena, "(%i, %i)", (s32)x/(s32)state->tile_size, (s32)y/(s32)state->tile_size);
+                    String8 coord = str8_formatted(ts->frame_arena, "(%i, %i)", (s32)x/(s32)state->world_cell_size, (s32)y/(s32)state->world_cell_size);
                     draw_text(coord, screen_cell, YELLOW);
                 }
             }
 
-            x += state->tile_size;
+            x += state->world_cell_size;
         }
 
-        y += state->tile_size;
+        y += state->world_cell_size;
     }
 #endif
 }
 
 static void
 draw_world_terrain(void){
-    v2 low  = make_v2(floor_f32(camera.p3.x/state->tile_size) * state->tile_size, floor_f32(camera.p3.y/state->tile_size) * state->tile_size);
-    v2 high = make_v2( ceil_f32(camera.p1.x/state->tile_size) * state->tile_size,  ceil_f32(camera.p1.y/state->tile_size) * state->tile_size);
+    v2 low  = make_v2(floor_f32(camera.p3.x/state->world_cell_size) * state->world_cell_size, floor_f32(camera.p3.y/state->world_cell_size) * state->world_cell_size);
+    v2 high = make_v2( ceil_f32(camera.p1.x/state->world_cell_size) * state->world_cell_size,  ceil_f32(camera.p1.y/state->world_cell_size) * state->world_cell_size);
 
     for(s32 i=1; i < TextureAsset_Count; ++i){
         f32 y = low.y;
@@ -774,26 +858,26 @@ draw_world_terrain(void){
             f32 x = low.x;
             while(x < high.x){
 
-                if(x >= 0 && (x/state->tile_size) < state->world_width_in_tiles){
-                    if(y >= 0 && (y/state->tile_size) < state->world_height_in_tiles){
+                if(x >= 0 && (x/state->world_cell_size) < state->world_width_in_cells){
+                    if(y >= 0 && (y/state->world_cell_size) < state->world_height_in_cells){
                         v2 cell = make_v2(x, y);
                         v2 screen_cell = v2_screen_from_world(cell);
 
-                        s32 idx = (s32)(((y/state->tile_size) * state->world_width_in_tiles) + (x/state->tile_size));
+                        s32 idx = (s32)(((y/state->world_cell_size) * state->world_width_in_cells) + (x/state->world_cell_size));
                         s32 cell_tex = state->world_grid[idx];
                         if(cell_tex == i){
                             set_texture(&r_assets->textures[cell_tex]);
-                            Rect tex_rect = make_rect_size(cell, make_v2(state->tile_size, state->tile_size));
+                            Rect tex_rect = make_rect_size(cell, make_v2(state->world_cell_size, state->world_cell_size));
                             tex_rect = rect_screen_from_world(tex_rect);
                             draw_texture(tex_rect);
                         }
                     }
                 }
 
-                x += state->tile_size;
+                x += state->world_cell_size;
             }
 
-            y += state->tile_size;
+            y += state->world_cell_size;
         }
     }
 }
@@ -813,7 +897,7 @@ mouse_in_boundingbox(Entity* e){
 static bool
 mouse_in_cell(v2 cell){
     v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
-    v2 mouse_cell = grid_cell_from_pos(world_mouse);
+    v2 mouse_cell = grid_cell_from_pos(world_mouse, state->world_cell_size);
     if(mouse_cell == cell){
         return(true);
     }
@@ -823,16 +907,32 @@ mouse_in_cell(v2 cell){
 static v2
 grid_pos_from_cell(v2 cell){
     v2 result = {0};
-    result.x = cell.x * state->tile_size;
-    result.y = cell.y * state->tile_size;
+    result.x = cell.x * state->world_cell_size;
+    result.y = cell.y * state->world_cell_size;
+    return(result);
+}
+
+static v2
+grid_pos_from_cell(v2 cell, f32 size){
+    v2 result = {0};
+    result.x = cell.x * size;
+    result.y = cell.y * size;
     return(result);
 }
 
 static v2
 grid_cell_from_pos(v2 pos){
     v2 result = {0};
-    result.x = floor_f32(pos.x / state->tile_size);
-    result.y = floor_f32(pos.y / state->tile_size);
+    result.x = floor_f32(pos.x / state->world_cell_size);
+    result.y = floor_f32(pos.y / state->world_cell_size);
+    return(result);
+}
+
+static v2
+grid_cell_from_pos(v2 pos, f32 size){
+    v2 result = {0};
+    result.x = floor_f32(pos.x / size);
+    result.y = floor_f32(pos.y / size);
     return(result);
 }
 
@@ -845,20 +945,14 @@ grid_cell_coords_in_bounds(v2 coords){
     return(false);
 }
 
-static s32
-world_grid_idx_from_cell(v2 cell){
-    s32 idx = (s32)((cell.y * state->world_width_in_tiles) + cell.x);
-    return(idx);
-}
-
 // todo(rr): maybe I don't need this and I can calculate in place
 static v2
 grid_cell_center(v2 cell){
     v2 result = {0};
 
-    v2 pos = grid_pos_from_cell(cell);
-    result.x = pos.x + state->tile_size/2;
-    result.y = pos.y + state->tile_size/2;
+    v2 pos = grid_pos_from_cell(cell, state->world_cell_size);
+    result.x = pos.x + state->world_cell_size/2;
+    result.y = pos.y + state->world_cell_size/2;
     return(result);
 }
 
@@ -993,9 +1087,9 @@ static void
 serialize_world(String8 world){
     Arena* arena = ts->data_arena;
 
-    for(s32 y=0; y<(s32)state->world_height_in_tiles; ++y){
-        for(s32 x=0; x<(s32)state->world_width_in_tiles; ++x){
-            s32 cell = (y * (s32)state->world_width_in_tiles) + x;
+    for(s32 y=0; y<(s32)state->world_height_in_cells; ++y){
+        for(s32 x=0; x<(s32)state->world_width_in_cells; ++x){
+            s32 cell = (y * (s32)state->world_width_in_cells) + x;
             s32 cell_tex = state->world_grid[cell];
 
             arena->at += snprintf((char*)arena->base + arena->at,
@@ -1045,10 +1139,10 @@ deserialize_world(String8 world){
             ++y;
         }
     }
-    state->world_width_in_tiles = (f32)count / y;
-    state->world_height_in_tiles = y;
-    state->world_width = state->world_width_in_tiles * state->tile_size;
-    state->world_height = state->world_height_in_tiles * state->tile_size;
+    state->world_width_in_cells = (f32)count / y;
+    state->world_height_in_cells = y;
+    state->world_width = state->world_width_in_cells * state->world_cell_size;
+    state->world_height = state->world_height_in_cells * state->world_cell_size;
 
     arena_free(ts->data_arena);
     os_file_close(file);
@@ -1073,7 +1167,7 @@ deserialize_state(void){
         String8 line = str8_eat_line(ptr);
         while(line.size){
             String8 word = str8_eat_word(&line);
-            if(str8_contains(word, str8_literal("current_world"))){
+            if(str8_starts_with(word, str8_literal("current_world"))){
                 String8Node* str8_node = {0};
                 str8_node = str8_split(scratch.arena, word, ':');
                 if(str8_ends_with(str8_node->prev->str, str8_literal(".g"))){
@@ -1116,34 +1210,41 @@ partition_entities_in_bins(){
         Entity* e = state->entities + i;
         if(!has_flag(e->flags, EntityFlag_Active)) continue;
 
-        v2 cell_coords = grid_cell_from_pos(e->pos);
+        v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
         if(!grid_cell_coords_in_bounds(cell_coords)) continue;
 
         Cell* cell = state->cells + ((s32)cell_coords.x + (WORLD_WIDTH_IN_TILES_MAX * (s32)cell_coords.y));
-        if(cell->bin_count == 0){
+        if(cell->bin_count == 0){ // Is it empty?
             cell->bin_count = 1;
 
-            BinNode* bin = push_struct_zero(ts->bin_arena, BinNode); // will change to default zero
+            BinNode* bin = push_struct_zero(ts->bin_arena, BinNode); // Will change to default zero.
             cell->bin = bin;
 
             bin->cap = BIN_SIZE;
         }
 
         if(cell->bin->at == cell->bin->cap){
-            BinNode* bin = push_struct_zero(ts->bin_arena, BinNode); // will change to default zero
+            BinNode* bin = push_struct_zero(ts->bin_arena, BinNode); // Will change to default zero.
             bin->cap = BIN_SIZE;
             bin->next = cell->bin;
 
             cell->bin_count++;
             cell->bin = bin;
         }
-        if(cell->bin->at > cell->bin->cap){
-            debug_break();
-        }
 
         BinNode* bin = cell->bin;
         bin->entities[bin->at++] = e;
     }
+}
+
+static void
+clear_entities_selected(){
+    for(s32 i=0; i < state->entities_selected_count; ++i){
+        Entity* selected_entity = state->entities_selected[i];
+        selected_entity->selected = false;
+        state->entities_selected[0] = 0;
+    }
+    state->entities_selected_count = 0;
 }
 
 static LRESULT
@@ -1457,6 +1558,11 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
     ts    = (TransientMemory*)memory.transient_base;
 
     if(!memory.initialized){
+        s32 x = 1;
+        //s32& i = x;
+        s32* i = &x;
+        ++i;
+
         // consider: maybe move this memory stuff to init_memory()
         init_arena(&state->arena, (u8*)memory.permanent_base + sizeof(PermanentMemory), memory.permanent_size - sizeof(PermanentMemory));
         init_arena(&ts->arena, (u8*)memory.transient_base + sizeof(TransientMemory), memory.transient_size - sizeof(TransientMemory));
@@ -1472,11 +1578,15 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         show_cursor(true);
         assets_load(ts->asset_arena, &assets);
 
-        state->world_width_in_tiles = 10;
-        state->world_height_in_tiles = 10;
-        state->tile_size = 1;
+        state->world_width_in_cells = 10;
+        state->world_height_in_cells = 10;
+        state->world_cell_size = 1;
+        state->flocking_cell_size = 5;
+        state->pathing_cell_size = 25;
+        state->show_world_cells = true;
+        state->show_flocking_cells = true;
+        state->show_pathing_cells = true;
 
-        init_console(global_arena, &camera, &window, &assets);
         ui_init(ts->ui_state_arena, &window, &controller, &assets);
         init_draw(ts->batch_arena, &assets);
 
@@ -1491,26 +1601,25 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         deserialize_world(state->current_world);
 
         // load castle
-        state->castle_cell = make_v2(45, 50);
+        state->castle_cell = make_v2(10, 5);
         state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(2, 2));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(50, 50), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(52, 50), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
 
         state->scene_state = SceneState_Game;
-        //init_camera_2d(&camera, make_v2((state->world_width_in_tiles/2) * state->tile_size, (state->world_height_in_tiles/2) * state->tile_size), 30);
-        init_camera_2d(&camera, make_v2(50, 50), 10);
+        //init_camera_2d(&camera, make_v2((state->world_width_in_cells/2) * state->world_cell_size, (state->world_height_in_cells/2) * state->world_cell_size), 30);
+        init_camera_2d(&camera, make_v2(10, 5), 15);
+        init_console(global_arena, &camera, &window, &assets);
 
         memory.initialized = true;
     }
@@ -1567,8 +1676,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         // note: consumes input so needs to be here
         if(state->scene_state == SceneState_Editor){
-            ui_level_editor();
-            debug_ui_render_batches();
+            ui_editor();
         }
 
         simulations = 0;
@@ -1614,7 +1722,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             state->dragging_world = false;
         }
 
-        // drag selection box
+        // Entity Selection.
         if(!state->dragging_world){
             if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
                 state->selection_mouse_record = controller.mouse.pos;
@@ -1631,6 +1739,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 bool selected_new_units = false;
                 for(s32 i=0; i < array_count(state->entities); ++i){
                     Entity* e = state->entities + i;
+                    if(e->type == EntityType_Structure) continue;
 
                     v2 world_pos = v2_screen_from_world(e->pos);
                     if(rect_contains_point(state->selection_rect, world_pos)){
@@ -1668,7 +1777,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
             // single select
             if(state->entity_hovered && !controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                memset(state->entities_selected, 0, sizeof(state->entities_selected));
+                //memset(state->entities_selected, 0, sizeof(state->entities_selected));
+                clear_entities_selected();
                 state->entities_selected[0] = state->entity_hovered;
                 state->entities_selected[0]->selected = true;
                 state->entities_selected_count = 1;
@@ -1691,17 +1801,15 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->entities_selected_center.x = average_position.x/(f32)state->entities_selected_count;
         state->entities_selected_center.y = average_position.y/(f32)state->entities_selected_count;
 
-        v2  world_mouse         = v2_world_from_screen(controller.mouse.pos);
-        f32 projected_distance  = distance_v2(state->entities_selected_center, world_mouse);
-        v2  projected_direction = direction_v2(state->entities_selected_center, world_mouse);
+        v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
         for(s32 i=0; i < state->entities_selected_count; ++i){
             Entity* e = state->entities_selected[i];
 
             switch(e->structure_type){
                 case StructureType_Castle:{
                     if(!controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT)){
-                        e->waypoint = world_mouse;
-                        e->waypoint_cell = grid_cell_from_pos(world_mouse);
+                        e->rallypoint = world_mouse;
+                        e->rallypoint_cell = grid_cell_from_pos(world_mouse, state->world_cell_size);
                     }
                     ui_structure_castle();
                 }
@@ -1710,16 +1818,21 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             switch(e->type){
                 case EntityType_Skeleton1:{
                     if(!state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT, false)){
-                        v2 dir_to_target = direction_v2(e->pos, world_mouse);
-                        f32 rad_to_target = rad_from_dir(dir_to_target);
-                        f32 rad = rad_from_dir(projected_direction);
-                        rad = slerp_f32(rad, rad_to_target, 0.5);
-                        v2 projected_offset = dir_from_rad(rad) * projected_distance;
+                        f32 projected_distance  = distance_v2(state->entities_selected_center, world_mouse);
+                        v2  projected_direction = direction_v2(state->entities_selected_center, world_mouse);
+                        f32 projected_rad = rad_from_dir(projected_direction);
+
+                        v2 target_direction = direction_v2(e->pos, world_mouse);
+                        f32 target_rad = rad_from_dir(target_direction);
+
+                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
+                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
                         v2 target_pos = e->pos + projected_offset;
+
                         if(!controller.shift_pressed){
                             entity_commands_clear(e);
                         }
-                        entity_commands_move(e, target_pos);
+                        entity_commands_move(e, target_pos, world_mouse);
                     }
                 }
             }
@@ -1727,21 +1840,16 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         // CLEAR SELECTION
         if(!controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
-            for(s32 i=0; i < state->entities_selected_count; ++i){
-                Entity* selected_entity = state->entities_selected[i];
-                selected_entity->selected = false;
-                state->entities_selected[0] = 0;
-            }
-            state->entities_selected_count = 0;
+            clear_entities_selected();
         }
 
         console_update();
 
         // zoom
-        if(camera.size > 10){
-            camera.size -= (f32)controller.mouse.wheel_dir * 20;
+        if(camera.size > 30){
+            camera.size -= (f32)controller.mouse.wheel_dir * 10;
         }
-        if(camera.size <= 10){
+        if(camera.size <= 30){
             camera.size -= (f32)controller.mouse.wheel_dir;
             if(camera.size < 3){
                 camera.size = 3;
@@ -1765,7 +1873,15 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //arena_free(ts->batch_arena);
             draw_world_terrain();
             if(state->scene_state == SceneState_Editor){
-                draw_world_grid();
+                if(state->show_world_cells){
+                    draw_grid(state->world_cell_size, RED);
+                }
+                if(state->show_flocking_cells){
+                    draw_grid(state->flocking_cell_size, BLUE);
+                }
+                if(state->show_pathing_cells){
+                    draw_grid(state->pathing_cell_size, GREEN);
+                }
             }
             draw_entities(state);
 
@@ -1810,6 +1926,20 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 }
             }
 
+            //if(state->entities_selected_count){
+            //    for(s32 i=0; i < state->entities_selected_count; ++i){
+            //        u32 read_idx = e->commands_read;
+            //        while(read_idx != e->commands_write){
+            //            EntityCommand* c = entity_commands_read(e, read_idx);
+            //            read_idx++;
+
+            //            v2 screen_space = v2_screen_from_world(c->move_to);
+            //            draw_quad(screen_space, make_v2(10, 10), RED);
+            //            //draw_line(v2_screen_from_world(e->pos), screen_space, 2, ORANGE);
+            //        }
+            //    }
+            //}
+
             //debug_draw_mouse_cell_pos();
 
             // draw selected texture
@@ -1826,8 +1956,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
             ui_end();
             set_font(state->font);
-            String8 fps = str8_formatted(ts->frame_arena, "FPS: %.2f", FPS);
-            //draw_text(fps, make_v2(window.width - text_padding - font_string_width(state->font, fps), window.height - text_padding), ORANGE);
+            String8 fps = str8_formatted(ts->frame_arena, "fps: %.0f", FPS);
+            draw_text(fps, make_v2(text_padding, 20), GREEN);
 
             Quad quad = make_quad(make_v2(0, 0), make_v2(3, 3));
             quad = quad_screen_from_world(quad);
@@ -1856,8 +1986,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 draw_render_batches_new();
                 d3d_present();
 
-                String8 title = str8_fmt(ts->frame_arena, "Entity Count: %i - FPS: %.2f\0", state->entities_count - 1, FPS);
-                SetWindowText(window.handle, (char*)title.str);
+                String8 title = str8_fmt(ts->frame_arena, "Entity Count: %i - FPS: %.2f", state->entities_count - 1, FPS);
+                //SetWindowText(window.handle, (char*)title.str);
 
                 arena_free(ts->frame_arena);
             }

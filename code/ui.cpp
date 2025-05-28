@@ -359,14 +359,13 @@ ui_signal_from_box(UI_Box* box){
 
 static void
 ui_traverse_independent(UI_Box* box, Axis axis){
-    if(box == 0){
-        return;
-    }
+    //if(box == 0){
+    //    return;
+    //}
 
-    if(box->first != 0){
-        ui_traverse_independent(box->first, axis);
+    for(UI_Box* child = box->first; child != 0; child = child->next){
+        ui_traverse_independent(child, axis);
     }
-    ui_traverse_independent(box->next, axis);
 
     switch(box->semantic_size[axis].type){
         case UI_SizeType_Pixel:{
@@ -383,45 +382,26 @@ ui_traverse_independent(UI_Box* box, Axis axis){
             }
         } break;
     }
-}
 
-//static void
-//ui_traverse_independent(UI_Box* box, Axis axis){
-//    if(box == 0){
-//        return;
-//    }
-//
-//    switch(box->semantic_size[axis].type){
-//        case UI_SizeType_Pixel:{
-//            box->size[axis] = box->semantic_size[axis].value;
-//        } break;
-//        case UI_SizeType_TextContent:{
-//            if(axis == Axis_X){
-//                f32 width = font_string_width(box->font, box->string);
-//                box->size[axis] = (f32)width + box->text_padding;
-//            }
-//            if(axis == Axis_Y){
-//                f32 height = font_vertical_offset(box->font);
-//                box->size[axis] = height + box->text_padding;
-//            }
-//        } break;
-//    }
-//
-//    if(box->first != 0){
-//        ui_traverse_independent(box->first, axis);
-//    }
-//
-//    ui_traverse_independent(box->next, axis);
-//}
+    //if(box->first != 0){
+    //    ui_traverse_independent(box->first, axis);
+    //}
+
+    //ui_traverse_independent(box->next, axis);
+}
 
 static void
 ui_traverse_children(UI_Box* box, Axis axis){
-    if(box == 0){
-        return;
-    }
+    //if(box == 0){
+    //    return;
+    //}
 
-    if(box->last){
-        ui_traverse_children(box->last, axis);
+    //if(box->last){
+    //    ui_traverse_children(box->last, axis);
+    //}
+
+    for(UI_Box* child = box->first; child != 0; child = child->next){
+        ui_traverse_children(child, axis);
     }
 
     if(box->semantic_size[axis].type == UI_SizeType_ChildrenSum){
@@ -442,14 +422,18 @@ ui_traverse_children(UI_Box* box, Axis axis){
         box->size[axis] += box->border_thickness * 2;
     }
 
-    ui_traverse_children(box->prev, axis);
+    //ui_traverse_children(box->prev, axis);
 }
 
-// there is a root box that is essentially the window, simply the (0, 0) pos and w/h
+// There is a root box that is essentially the window, simply the (0, 0) pos and w/h.
 static void
 ui_traverse_positions(UI_Box* box, Axis axis){
-    if(box == 0){
-        return;
+    //if(box == 0){
+    //    return;
+    //}
+
+    for(UI_Box* child = box->first; child != 0; child = child->next){
+        ui_traverse_positions(child, axis);
     }
 
     // TODO(rr): why do I have this here?
@@ -487,10 +471,10 @@ ui_traverse_positions(UI_Box* box, Axis axis){
     }
     //}
 
-    if(box->first){
-        ui_traverse_positions(box->first, axis);
-    }
-    ui_traverse_positions(box->next, axis);
+    //if(box->first){
+    //    ui_traverse_positions(box->first, axis);
+    //}
+    //ui_traverse_positions(box->next, axis);
 }
 
 static void

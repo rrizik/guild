@@ -140,6 +140,7 @@ typedef struct Mouse{
         };
         v2 pos;
     };
+    v2 world_pos;
     f32 dx;
     f32 dy;
     s32 wheel_dir;

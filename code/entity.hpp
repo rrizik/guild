@@ -52,6 +52,7 @@ typedef enum EntityCommandType{
 typedef struct EntityCommand{
     EntityCommandType type;
     v2 move_to;
+    v2 clicked_at;
 } EntityCommand;
 
 #define ENTITY_COMMANDS_MAX 1024
@@ -67,8 +68,8 @@ typedef struct Entity{
 
     // structure info
     StructureType structure_type;
-    v2 waypoint;
-    v2 waypoint_cell;
+    v2 rallypoint;
+    v2 rallypoint_cell;
 
     u32 flags;
     u32 collision_type;
@@ -148,6 +149,6 @@ static void entity_commands_clear(Entity* e);
 static void entity_commands_add(Entity* e, EntityCommand c);
 static EntityCommand* entity_commands_next(Entity* e);
 
-static void entity_commands_move(Entity* e, v2 pos);
+static void entity_commands_move(Entity* e, v2 move_to, v2 clicked_at);
 
 #endif

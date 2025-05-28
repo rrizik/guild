@@ -41,8 +41,10 @@
 
 
 
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 720
+//#define SCREEN_WIDTH 1280
+//#define SCREEN_HEIGHT 720
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
 s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 window_type);
 static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param);
 static Window win32_window_create(const wchar* window_name, u32 width, u32 height);
@@ -141,9 +143,15 @@ typedef struct State{
     bool terrain_selected;
     s32 terrain_selected_id;
 
-    f32 tile_size;
-    f32 world_width_in_tiles;
-    f32 world_height_in_tiles;
+    bool show_world_cells;
+    bool show_flocking_cells;
+    bool show_pathing_cells;
+    bool show_entity_info;
+    f32 world_cell_size;
+    f32 flocking_cell_size;
+    f32 pathing_cell_size;
+    f32 world_width_in_cells;
+    f32 world_height_in_cells;
     union{
         struct{
             f32 world_pos_x;
@@ -204,21 +212,21 @@ static bool handle_game_events(Event event);
 
 static void generate_new_world(f32 width, f32 height);
 
-static void draw_world_grid(void);
+static void draw_grid(f32 size);
 static void draw_world_terrain(void);
 static void draw_entities(State* state);
-static void debug_ui_render_batches(void);
 static void debug_draw_mouse_cell_pos(void);
-static void ui_level_editor(void);
+static void ui_editor(void);
 static void ui_structure_castle(void);
 
 static bool mouse_in_cell(v2 cell);
 static bool mouse_in_boundingbox(Entity* e);
 static v2 grid_pos_from_cell(v2 cell);
+static v2 grid_pos_from_cell(v2 cell, f32 size);
 static v2 grid_cell_from_pos(v2 pos);
+static v2 grid_cell_from_pos(v2 pos, f32 size);
 static v2 grid_cell_center(v2 pos);
 static bool grid_cell_coords_in_bounds(v2 coords);
-static s32 world_gird_idx_from_cell(v2 cell);
 static bool v2_close_enough(v2 p1, v2 p2, f32 epsilon);
 
 static void serialize_world(String8 world);
@@ -228,6 +236,8 @@ static void load_state(void);
 
 static void partition_entities_in_bins(void);
 
+static void clear_entities_selected(void);
+
 
 #include "console.hpp"
 #include "command.hpp"
@@ -236,3 +246,44 @@ static void partition_entities_in_bins(void);
 bool do_motion = true;
 
 #endif
+
+
+// rendering
+// simulation
+
+
+
+        // step 1, everything thats not on the edges (separate thread, produces deltas maybe)
+        // step 2, WAIT for step 1, do the deltas (main thread applies deltas)
+        // step 3 apply motion
+        //for(s32 i = 0; i < array_count(state->entities); ++i){
+        //    // FLOCKING
+        //    e->velocity.x     += (dir.x * 50 * (f32)clock.dt) / distance;
+        //    e->velocity.y     += (dir.y * 50 * (f32)clock.dt) / distance;
+        //    other->velocity.x -= (dir.x * 50 * (f32)clock.dt) / distance;
+        //    other->velocity.y -= (dir.y * 50 * (f32)clock.dt) / distance;
+        //}
+
+        //// wait for step 1 (step 2)
+        //for(s32 i = 0; i < array_count(state->entities); ++i){
+        //{
+        //    // NORMAL VELOCITYM MOTION
+        //    e->velocity.x += (move_dir.x * e->speed) * (f32)clock.dt;
+        //    e->velocity.y += (move_dir.y * e->speed) * (f32)clock.dt;
+
+        //    e->velocity.x *= 0.75f;
+        //    e->velocity.y *= 0.75f;
+        //    // Apply motion.
+        //    e->pos.x += e->velocity.x * (f32)clock.dt;
+        //    e->pos.y += e->velocity.y * (f32)clock.dt;
+        //}
+
+        //for(
+        //    [
+        //        [{1, -50},{4, 20},{20, 4}],
+        //        [{1, -50},{4, 20},{20, 4}],
+        //        [{1, -50},{4, 20},{20, 4}],
+        //        [{1, -50},{4, 20},{20, 4}],
+        //        [{1, -50},{4, 20},{20, 4}],
+        //    ]
+        //)

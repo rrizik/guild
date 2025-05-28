@@ -168,6 +168,8 @@ get_font(void){
     return(r_font);
 }
 
+//push_transform(m3 transform){}
+
 // note: quads are always top-left, top-right, bottom-right, bottom-left order
 static void
 draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
@@ -400,6 +402,16 @@ draw_text(String8 text, v2 pos, RGBA color){
         }
     }
 }
+
+// if(batch == 0 ||
+//    batch->vertex_count + vertex_count >= batch->vertex_cap ||
+//    batch->texture != texture ||
+//    batch->transform_gen != current_transform_gen
+//
+//
+//    batch->transform = transform;
+//
+//    push_transform bumps trasnform gen number
 
 static RenderBatch*
 get_render_batch(u64 vertex_count){

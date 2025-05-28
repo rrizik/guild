@@ -105,10 +105,11 @@ entity_commands_next(Entity* e){
 }
 
 static void
-entity_commands_move(Entity* e, v2 pos){
+entity_commands_move(Entity* e, v2 move_to, v2 clicked_at){
     EntityCommand c = {0};
     c.type = EntityCommandType_Move;
-    c.move_to = pos;
+    c.move_to = move_to;
+    c.clicked_at = clicked_at;
 
     entity_commands_add(e, c);
 }

@@ -24,6 +24,8 @@ global Arena*   r_arena = 0;
 global Assets*  r_assets = 0;
 global Texture* r_texture;
 global Font*    r_font;
+global s32      r_transform_gen = 0;
+//global m3       r_transform;
 
 //#define DEFAULT_BATCH_SIZE MB(8)
 //#define DEFAULT_BATCH_SIZE KB(200)
@@ -37,6 +39,9 @@ typedef struct RenderBatch{
     s32 vertex_count;
     s32 vertex_cap;
     Texture* texture;
+
+    //m3 transform;
+    //s32 transform_gen;
 } RenderBatch;
 
 typedef struct RenderBatchNode{
