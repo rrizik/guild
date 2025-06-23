@@ -238,12 +238,16 @@ static void partition_entities_in_bins(void);
 
 static void clear_entities_selected(void);
 
+static m4 m4_screen_from_world();
+static m4 m4_world_from_screen();
+static v2 m4_translate_v2(m4 mat, v2 value);
 
 #include "console.hpp"
 #include "command.hpp"
 #include "console.cpp"
 #include "command.cpp"
-bool do_motion = true;
+static bool do_motion = true;
+
 
 #endif
 

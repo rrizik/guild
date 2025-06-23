@@ -179,7 +179,7 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     // ---------------------------------------------------------------------------------
     // Load Shaders
     // ---------------------------------------------------------------------------------
-	d3d_load_shader(str8_literal("shaders/2d_texture_shader.hlsl"), il_2d_textured, 3, &d3d_2d_textured_vs, &d3d_2d_textured_ps, &d3d_2d_textured_il);
+	d3d_load_shader(str8_literal("shaders/2d_texture_shader.hlsl"), il_2d_textured, 7, &d3d_2d_textured_vs, &d3d_2d_textured_ps, &d3d_2d_textured_il);
 
     // ---------------------------------------------------------------------------------
     // Vertex Buffers

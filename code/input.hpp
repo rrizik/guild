@@ -140,7 +140,13 @@ typedef struct Mouse{
         };
         v2 pos;
     };
-    v2 world_pos;
+    union{
+        struct{
+            f32 world_x;
+            f32 world_y;
+        };
+        v2 world_pos;
+    };
     f32 dx;
     f32 dy;
     s32 wheel_dir;
@@ -166,6 +172,9 @@ static void clear_controller_held(void);
 static bool controller_button_pressed(KeyCode key, bool consume = true);
 static bool controller_button_released(KeyCode key, bool consume = true);
 static bool controller_button_held(KeyCode key);
+static bool button_pressed(KeyCode key, bool consume = true);
+static bool button_released(KeyCode key, bool consume = true);
+static bool button_held(KeyCode key);
 
 // NOTE: EVENTS:
 global bool shift_pressed;
@@ -194,6 +203,8 @@ typedef struct Event{
     bool alt_pressed;
 
     s32 mouse_wheel_dir;
+    f32 world_mouse_x;
+    f32 world_mouse_y;
     f32 mouse_x;
     f32 mouse_y;
     f32 mouse_dx;

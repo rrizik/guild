@@ -15,6 +15,7 @@ init_camera(Camera* camera){
     camera->pitch = (f32)asin(-camera->forward.y);
 }
 
+// todo: maybe I don't need dt here, do I use it?
 static void
 camera_update(Camera* camera, f32 dx, f32 dy, f32 dt){
     camera->yaw += dx * camera->rotation_speed;

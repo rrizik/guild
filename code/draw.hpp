@@ -24,8 +24,8 @@ global Arena*   r_arena = 0;
 global Assets*  r_assets = 0;
 global Texture* r_texture;
 global Font*    r_font;
-global s32      r_transform_gen = 0;
-//global m3       r_transform;
+global m4       r_transform;
+global u32      r_transform_gen = 0;
 
 //#define DEFAULT_BATCH_SIZE MB(8)
 //#define DEFAULT_BATCH_SIZE KB(200)
@@ -40,8 +40,8 @@ typedef struct RenderBatch{
     s32 vertex_cap;
     Texture* texture;
 
-    //m3 transform;
-    //s32 transform_gen;
+    m4 transform;
+    u32 transform_gen;
 } RenderBatch;
 
 typedef struct RenderBatchNode{
@@ -51,10 +51,12 @@ typedef struct RenderBatchNode{
 } RenderBatchNode;
 global RenderBatchNode render_batches = {0};
 
-static void set_font(Font* font);
-static Font* get_font(void);
 static void set_texture(Texture* texture);
 static Texture* get_texture(void);
+static void set_font(Font* font);
+static Font* get_font(void);
+static void set_transform(m4 transform);
+static m4 get_transform(void);
 static RenderBatch* get_render_batch(u64 vertex_count);
 
 typedef enum RenderCommandType{
@@ -91,6 +93,7 @@ static v2 v2_world_from_screen(v2 screen_pos);
 static v2 v2_screen_from_world(v2 world_pos);
 static Rect rect_screen_from_world(Rect rect);
 static Quad quad_screen_from_world(Quad rect);
+static m4 m4_screen_from_world(void);
 
 static RGBA srgb_to_linear_approx(RGBA value);
 static RGBA linear_to_srgb_approx(RGBA value);
@@ -122,7 +125,6 @@ static void draw_line(v2 p0, v2 p1, f32 width, RGBA color);
 static void draw_text(String8 text, v2 pos, RGBA color);
 
 static void draw_render_batches(void);
-static void draw_render_batches_new(void);
 static void render_batches_reset(void);
 
 

@@ -50,6 +50,32 @@ controller_button_held(KeyCode key){
     return(result);
 }
 
+static bool
+button_pressed(KeyCode key, bool consume){
+    bool result = controller.button[key].pressed;
+    if(consume){
+        controller.button[key].pressed = false;
+    }
+
+    return(result);
+}
+
+static bool
+button_released(KeyCode key, bool consume){
+    bool result = controller.button[key].released;
+    if(consume){
+        controller.button[key].released = false;
+    }
+
+    return(result);
+}
+
+static bool
+button_held(KeyCode key){
+    bool result = controller.button[key].held;
+    return(result);
+}
+
 static void
 init_events(Events* events){
     events->size = array_count(events->e);
