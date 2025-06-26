@@ -247,6 +247,8 @@ static v2 m4_translate_v2(m4 mat, v2 value);
 #include "console.cpp"
 #include "command.cpp"
 static bool do_motion = true;
+static v2 min;
+static v2 max;
 
 
 #endif

@@ -572,6 +572,8 @@ draw_entities(State* state){
                             {
                                 fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
                                 ui_label(fmt_str);
+                                fmt_str = str8_formatted(ts->frame_arena, "pos: %f, %f", e->pos.x, e->pos.y);
+                                ui_label(fmt_str);
                             }
                             ui_end_panel();
                         }
@@ -749,7 +751,7 @@ ui_structure_castle(void){
     {
         ui_set_border_thickness(10);
         ui_set_background_color(DEFAULT);
-        ui_set_pos(20, window.height - 100);
+        ui_set_pos(20, window.height - 300);
         ui_set_size(ui_size_children(0), ui_size_children(0));
         ui_begin_panel(str8_literal("box1##4"), ui_floating_panel);
 
@@ -1657,8 +1659,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
 
-        //state->scene_state = SceneState_Game;
-        state->scene_state = SceneState_Editor;
+        state->scene_state = SceneState_Game;
+        //state->scene_state = SceneState_Editor;
         //init_camera_2d(&camera, make_v2((state->world_width_in_cells/2) * state->world_cell_size, (state->world_height_in_cells/2) * state->world_cell_size), 30);
         init_camera_2d(&camera, make_v2(10, 5), 15);
         init_console(global_arena, &camera, &window, &assets);
@@ -1771,7 +1773,11 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 state->selecting = true;
             }
             if(state->selecting && controller_button_held(MOUSE_BUTTON_LEFT)){
-                state->selection_rect = make_rect(state->selection_mouse_record, controller.mouse.world_pos);
+                min.x = state->selection_mouse_record.x <= controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
+                min.y = state->selection_mouse_record.y <= controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
+                max.x = state->selection_mouse_record.x > controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
+                max.y = state->selection_mouse_record.y > controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
+                state->selection_rect = make_rect(min, max);
             }
             if(controller_button_released(MOUSE_BUTTON_LEFT)){
                 state->selection_mouse_record = {0};
@@ -1989,9 +1995,15 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
             if(state->selecting && !state->dragging_world){
                 draw_bounding_box(state->selection_rect, 0.1f, RED);
+                String8 fmt_str = str8_fmt(ts->frame_arena, "min(%f, %f) - max(%f, %f)", state->selection_rect.min.x, state->selection_rect.min.y,
+                                                                                         state->selection_rect.max.x, state->selection_rect.max.y);
+                set_transform(make_m4_ident());
+                draw_text(fmt_str, make_v2(10, 100), GREEN);
+                fmt_str = str8_fmt(ts->frame_arena, "min(%f, %f) - max(%f, %f)", min.x, min.y, max.x, max.y);
+                draw_text(fmt_str, make_v2(10, 120), GREEN);
+                set_transform(m4_screen_from_world());
             }
 
-            set_transform(make_m4_ident());
             // draw selected texture
             if(state->terrain_selected){
                 set_texture(&r_assets->textures[state->terrain_selected_id]);
@@ -2000,8 +2012,10 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
 
 
+            set_transform(make_m4_ident());
             ui_end();
-            set_transform(m4_screen_from_world());
+
+            //set_transform(m4_screen_from_world());
             set_font(state->font);
             String8 fps = str8_formatted(ts->frame_arena, "fps: %.0f", FPS);
             //draw_text(fps, make_v2(text_padding, 20), GREEN);
