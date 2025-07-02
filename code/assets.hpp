@@ -3,7 +3,13 @@
 
 typedef enum FontAsset{
     FontAsset_None,
-    FontAsset_Arial,
+    FontAsset_Arial, // not monospace
+    FontAsset_Arial1,
+    FontAsset_Arial2,
+    FontAsset_Arial3,
+    FontAsset_Arial4,
+    FontAsset_Arial5,
+    FontAsset_Arial6,
     FontAsset_Golos,
     FontAsset_Consolas,
 

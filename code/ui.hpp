@@ -62,17 +62,22 @@ enum {
   UI_BoxFlag_ActiveAnimation = (1<<9),
   UI_BoxFlag_Draggable       = (1<<10),
   UI_BoxFlag_NoSiblings      = (1<<11),
-  UI_BoxFlag_NoCache         = (1<<12),
+  UI_BoxFlag_World           = (1<<12),
+  UI_BoxFlag_Screen          = (1<<13),
+  UI_BoxFlag_NoCache         = (1<<14),
 };
+
 UI_BoxFlags ui_floating_panel = UI_BoxFlag_DrawBackground |
                                 UI_BoxFlag_Clickable |
                                 UI_BoxFlag_Draggable |
-                                UI_BoxFlag_NoSiblings;
+                                UI_BoxFlag_NoSiblings|
+                                UI_BoxFlag_Screen;
 UI_BoxFlags ui_floating_panel_world = UI_BoxFlag_DrawBackground |
                                       UI_BoxFlag_Clickable |
                                       UI_BoxFlag_Draggable |
                                       UI_BoxFlag_NoSiblings|
-                                      UI_BoxFlag_NoCache;
+                                      UI_BoxFlag_NoCache|
+                                      UI_BoxFlag_World;
 UI_BoxFlags ui_fixed_panel    = UI_BoxFlag_DrawBackground |
                                 UI_BoxFlag_Clickable |
                                 UI_BoxFlag_NoSiblings;

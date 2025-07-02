@@ -567,6 +567,7 @@ draw_entities(State* state){
                             ui_begin_panel(box_name, ui_floating_panel_world);
 
                             String8 fmt_str;
+                            //ui_font(font);
                             ui_size(ui_size_text(0), ui_size_text(0))
                             ui_text_color(LIGHT_GRAY)
                             {
@@ -1633,6 +1634,12 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         init_draw(ts->batch_arena, &assets);
 
         state->font = &assets.fonts[FontAsset_Arial];
+        font1 = &assets.fonts[FontAsset_Arial1];
+        font2 = &assets.fonts[FontAsset_Arial2];
+        font3 = &assets.fonts[FontAsset_Arial3];
+        font4 = &assets.fonts[FontAsset_Arial4];
+        font5 = &assets.fonts[FontAsset_Arial5];
+        font6 = &assets.fonts[FontAsset_Arial6];
 
         // setup free entities array in reverse order
         entities_clear();
@@ -2011,7 +2018,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
             }
 
-
             set_transform(make_m4_ident());
             ui_end();
 
@@ -2022,6 +2028,27 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
             set_font(state->font);
             String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
+
+            String8 str = str8_literal("test test test test");
+            Rect r = make_rect(make_v2(0, 0), make_v2(100, 100));
+            draw_text(str, make_v2(0, 0), RED);
+            set_transform(m4_screen_from_world());
+            //draw_quad(r, YELLOW);
+            set_font(font1);
+            draw_text(str, make_v2(0, 0), GREEN);
+            set_font(font2);
+            draw_text(str, make_v2(0, -25), GREEN);
+            set_font(font3);
+            draw_text(str, make_v2(0, -40), GREEN);
+            set_font(font4);
+            draw_text(str, make_v2(0, -50), GREEN);
+            set_font(font5);
+            draw_text(str, make_v2(0, -60), GREEN);
+            set_font(font6);
+            draw_text(str, make_v2(0, -70), GREEN);
+            set_transform(make_m4_ident());
+            draw_quad(r, BLUE);
+
 
             console_draw();
             // draw border

@@ -71,6 +71,7 @@ typedef struct ConstantBuffer{
 
 typedef struct ConstantBuffer2D{
     v2s32 screen_res;
+    //m4 transform;
 } ConstantBuffer2D;
 
 typedef struct InstanceData {

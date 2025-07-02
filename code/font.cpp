@@ -4,7 +4,6 @@
 static Font
 font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     // open file
-
     ScratchArena scratch = begin_scratch();
     String8 full_path = str8_concatenate(scratch.arena, dir, filename);
     File file = os_file_open(full_path, GENERIC_READ, OPEN_EXISTING);
@@ -21,7 +20,8 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     result.scale = stbtt_ScaleForPixelHeight(&result.info, size);
     stbtt_GetFontVMetrics(&result.info, &result.ascent, &result.descent, &result.line_gap);
 
-    result.vertical_offset = round_f32((f32)(result.ascent - result.descent + result.line_gap) * result.scale); // note: I don't see value in keeping this in unscaled.
+    // note: I don't see value in keeping this in unscaled.
+    result.vertical_offset = round_f32((f32)(result.ascent - result.descent + result.line_gap) * result.scale);
 
     result.texture_w = 1024;
     result.texture_h = 1024;
@@ -58,8 +58,7 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     bitmap_rgba.size = (u64)(result.texture_w * result.texture_h * 4);
     bitmap_rgba.str = push_array(scratch.arena, u8, bitmap_rgba.size);
 
-    // note: convert 1 channel to 4 channel.
-    // todo: get rid of this when you create a text specific shader, this is a waste
+    // note todo: Convert 1 channel to 4 channel. Get rid of this when you create a text specific shader, this is a waste.
     u32* base_rgba = (u32*)bitmap_rgba.str;
     u8* base_a = (u8*)bitmap_a.str;
     for(s32 i=0; i < bitmap_a.size; ++i){

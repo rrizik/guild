@@ -59,7 +59,14 @@ assets_load(Arena* arena, Assets* assets){
     assets->waves[WaveAsset_ShipExplode] = wave_file_read(arena, build_path, str8_literal("sounds/ship_explode.wav"));
     assets->waves[WaveAsset_Music] = wave_file_read(arena, build_path, str8_literal("sounds/music.wav"));
 
-    assets->fonts[FontAsset_Arial] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 16); // not monospace
+    assets->fonts[FontAsset_Arial] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 16);
+    assets->fonts[FontAsset_Arial1] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 32);
+    assets->fonts[FontAsset_Arial2] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 16);
+    assets->fonts[FontAsset_Arial3] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 8);
+    assets->fonts[FontAsset_Arial4] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 4);
+    assets->fonts[FontAsset_Arial5] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 2);
+    assets->fonts[FontAsset_Arial6] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 1);
+
     assets->fonts[FontAsset_Golos] = font_ttf_read(arena, build_path, str8_literal("fonts/GolosText-Regular.ttf"), 16);
     assets->fonts[FontAsset_Consolas] = font_ttf_read(arena, build_path, str8_literal("fonts/consola.ttf"), 16); // monospace
 

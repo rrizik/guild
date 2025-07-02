@@ -249,6 +249,12 @@ static v2 m4_translate_v2(m4 mat, v2 value);
 static bool do_motion = true;
 static v2 min;
 static v2 max;
+static Font* font1;
+static Font* font2;
+static Font* font3;
+static Font* font4;
+static Font* font5;
+static Font* font6;
 
 
 #endif
