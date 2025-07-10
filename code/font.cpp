@@ -41,7 +41,7 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
 
     stbtt_pack_range range;
     range.chardata_for_range = result.packed_chars;
-    range.array_of_unicode_codepoints = NULL; // Indicates that we are using the range
+    range.array_of_unicode_codepoints = 0; // Indicates that we are using the range
     range.first_unicode_codepoint_in_range = 32;
     range.num_chars = 95;
     range.font_size = size;
@@ -53,7 +53,7 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     stbtt_PackEnd(&context);
 
     // u32 data 4 channel as rgba
-    // warning: incomplete: todo: we do this to avoide having to create anther shader for fonts. This is a huge waste of space and instead we should create the additional shader and keep it single byte
+    // warning: incomplete: todo: we do this to avoide having to create another shader for fonts. This is a huge waste of space and instead we should create the additional shader and keep it single byte.
     String8 bitmap_rgba;
     bitmap_rgba.size = (u64)(result.texture_w * result.texture_h * 4);
     bitmap_rgba.str = push_array(scratch.arena, u8, bitmap_rgba.size);

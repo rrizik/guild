@@ -17,8 +17,8 @@
     #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
     #pragma clang diagnostic ignored "-Wcomma"
 
-    #define STB_RECT_PACK_IMPLEMENTATION
-    #include "stb_rect_pack.h"
+    //#define STB_RECT_PACK_IMPLEMENTATION
+    //#include "stb_rect_pack.h"
     #define STB_TRUETYPE_IMPLEMENTATION
     #include "stb_truetype.h"
     #pragma clang diagnostic pop
@@ -26,8 +26,8 @@
 
 #if COMPILER_CL
     #pragma warning(push, 0)
-    #define STB_RECT_PACK_IMPLEMENTATION
-    #include "stb_rect_pack.h"
+    //#define STB_RECT_PACK_IMPLEMENTATION
+    //#include "stb_rect_pack.h"
     #define STB_TRUETYPE_IMPLEMENTATION
     #include "stb_truetype.h"
     #pragma warning(pop)

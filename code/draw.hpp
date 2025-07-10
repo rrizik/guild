@@ -32,7 +32,7 @@ global u32      r_transform_gen = 0;
 #define DEFAULT_BATCH_SIZE KB(100)
 typedef struct RenderBatch{
     RenderBatch* next;
-    Vertex3* buffer;
+    Vertex2* buffer;
     s32 id;
     s32 idx_in_vertex_buffer;
 

@@ -52,34 +52,31 @@ global ID3D11Texture2D* white_texture;
 global ID3D11ShaderResourceView* white_shader_resource;
 
 global D3D11_INPUT_ELEMENT_DESC il_2d_textured[] = {
-        // vertex data
         {"POS",  0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"COL",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"TEX",  0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-
-        // 4x4 matrix
-        {"TEX",  1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEX",  2, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEX",  3, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEX",  4, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 };
 
-typedef struct ConstantBuffer{
+typedef struct ConstantBuffer3D{
     XMMATRIX view;
     XMMATRIX projection;
-} ConstantBuffer;
+} ConstantBuffer3D;
 
+// note: Must be a multiple of 16, hence padding
 typedef struct ConstantBuffer2D{
-    v2s32 screen_res;
-    //m4 transform;
+    m4 transform;       // 64 bytes
+    v2s32 screen_res;   // 8 bytes
+    s64 padding;        // 8 bytes
 } ConstantBuffer2D;
 
+// cleanup: Not used.
 typedef struct InstanceData {
     XMMATRIX transform;
 } InstanceData;
 global u32 instance_count = 3;
 global InstanceData cube_instances[3];
 
+// cleanup: Not used.
 typedef struct Transform2D{
     DirectX::XMFLOAT2 translate;
     float rotate;
@@ -90,12 +87,11 @@ typedef struct Texture{
     ID3D11ShaderResourceView* view;
 } Texture;
 
-typedef struct Vertex3{
+typedef struct Vertex2{
     v2 position;
     RGBA color;
     v2 uv;
-    m4 transform;
-} Vertex3;
+} Vertex2;
 
 static void init_d3d(HWND handle, u32 width, u32 height);
 static void d3d_init_debug_stuff(void);
@@ -107,7 +103,7 @@ static ID3D11Buffer* d3d_make_vertex_buffer(s32 size);
 
 static void d3d_clear_color(RGBA color);
 static void d3d_resize_window(Window* window, f32 width, f32 height);
-static void d3d_draw(Vertex3* buffer, s32 count, Texture* texture);
+static void d3d_draw(Vertex2* buffer, s32 count, Texture* texture);
 static void d3d_update_vertex_buffer_size(s32 new_size);
 static void d3d_present(void);
 static void d3d_release(void);

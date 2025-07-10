@@ -179,7 +179,7 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     // ---------------------------------------------------------------------------------
     // Load Shaders
     // ---------------------------------------------------------------------------------
-	d3d_load_shader(str8_literal("shaders/2d_texture_shader.hlsl"), il_2d_textured, 7, &d3d_2d_textured_vs, &d3d_2d_textured_ps, &d3d_2d_textured_il);
+	d3d_load_shader(str8_literal("shaders/2d_texture_shader.hlsl"), il_2d_textured, array_count(il_2d_textured), &d3d_2d_textured_vs, &d3d_2d_textured_ps, &d3d_2d_textured_il);
 
     // ---------------------------------------------------------------------------------
     // Vertex Buffers
@@ -229,7 +229,7 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     // ---------------------------------------------------------------------------------
     {
         D3D11_BUFFER_DESC desc = {0};
-        desc.ByteWidth = sizeof(ConstantBuffer);
+        desc.ByteWidth = sizeof(ConstantBuffer2D);
         desc.Usage     = D3D11_USAGE_DYNAMIC;
         desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -332,17 +332,17 @@ d3d_resize_window(f32 width, f32 height){
 }
 
 static void
-d3d_draw(Vertex3* buffer, s32 count, Texture* texture){
+d3d_draw(Vertex2* buffer, s32 count, Texture* texture){
     {
         D3D11_MAPPED_SUBRESOURCE resource;
         hr = d3d_context->Map(d3d_vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
         assert_hr(hr);
 
-        memcpy(resource.pData, buffer, count * sizeof(Vertex3));
+        memcpy(resource.pData, buffer, count * sizeof(Vertex2));
         d3d_context->Unmap(d3d_vertex_buffer, 0);
 
         ID3D11Buffer* buffers[] = {d3d_vertex_buffer};
-        u32 strides[] = {sizeof(Vertex3)};
+        u32 strides[] = {sizeof(Vertex2)};
         u32 offset[] = {0};
 
         d3d_context->IASetVertexBuffers(0, 1, buffers, strides, offset);

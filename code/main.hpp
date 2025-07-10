@@ -41,10 +41,10 @@
 
 
 
-//#define SCREEN_WIDTH 1280
-//#define SCREEN_HEIGHT 720
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 1080
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 720
+//#define SCREEN_WIDTH 1920
+//#define SCREEN_HEIGHT 1080
 s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 window_type);
 static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param);
 static Window win32_window_create(const wchar* window_name, u32 width, u32 height);

@@ -117,13 +117,6 @@ ui_draw(UI_Box* box){
         return;
     }
 
-    if(has_flag(box->flags, UI_BoxFlag_World)){
-        set_transform(m4_screen_from_world());
-    }
-    else if(has_flag(box->flags, UI_BoxFlag_Screen)){
-        set_transform(make_m4_ident());
-    }
-
     if(has_flag(box->flags, UI_BoxFlag_DrawBackground)){
         if(ui_state->hot == box->key && ui_state->active == box->key){
             if(has_flag(box->flags, UI_BoxFlag_ActiveAnimation)){

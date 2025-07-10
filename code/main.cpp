@@ -157,18 +157,18 @@ sim_game(void){
 static m4
 m4_screen_from_world(){
     f32 sx =  window.width  / (2.0f * camera.size * window.aspect_ratio);
-    f32 sy = -window.height / (2.0f * camera.size);
+    f32 sy =  window.height / (2.0f * camera.size);
     f32 tx = (-camera.x / (2.0f * camera.size * window.aspect_ratio) + 0.5f) * window.width;
     f32 ty = ( camera.y / (2.0f * camera.size) + 0.5f) * window.height;
 
-    m4 world_to_screen = {
+    m4 screen_from_world = {
          sx, 0,  0, tx,
          0,  sy, 0, ty,
          0,  0,  1, 0,
          0,  0,  0, 1
     };
 
-    return(world_to_screen);
+    return(screen_from_world);
 }
 
 static m4
@@ -205,6 +205,7 @@ m4_translate_v2(m4 mat, v2 value){
     v2 result;
     result.x = x * mat._11 + y * mat._12 + z * mat._13 + w * mat._14;
     result.y = x * mat._21 + y * mat._22 + z * mat._23 + w * mat._24;
+    result.y = -result.y;
     return(result);
 }
 
@@ -893,12 +894,14 @@ draw_grid(f32 size, RGBA color){
 
 static void
 draw_world_terrain(void){
-    v2 low  = make_v2(floor_f32(camera.p3.x/state->world_cell_size) * state->world_cell_size, floor_f32(camera.p3.y/state->world_cell_size) * state->world_cell_size);
-    v2 high = make_v2( ceil_f32(camera.p1.x/state->world_cell_size) * state->world_cell_size,  ceil_f32(camera.p1.y/state->world_cell_size) * state->world_cell_size);
+    v2 low  = make_v2(floor_f32(camera.p3.x/state->world_cell_size) * state->world_cell_size,
+                      floor_f32(camera.p3.y/state->world_cell_size) * state->world_cell_size);
+    v2 high = make_v2(ceil_f32(camera.p1.x/state->world_cell_size) * state->world_cell_size,
+                      ceil_f32(camera.p1.y/state->world_cell_size) * state->world_cell_size);
 
     for(s32 i=1; i < TextureAsset_Count; ++i){
-        f32 y = low.y;
-        while(y < high.y){
+        f32 y = high.y;
+        while(y >= low.y){
 
             f32 x = low.x;
             while(x < high.x){
@@ -920,7 +923,7 @@ draw_world_terrain(void){
                 x += state->world_cell_size;
             }
 
-            y += state->world_cell_size;
+            y -= state->world_cell_size;
         }
     }
 }
@@ -1855,7 +1858,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->entities_selected_center.x = average_position.x/(f32)state->entities_selected_count;
         state->entities_selected_center.y = average_position.y/(f32)state->entities_selected_count;
 
-        v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
+        v2 world_mouse = controller.mouse.world_pos;
         for(s32 i=0; i < state->entities_selected_count; ++i){
             Entity* e = state->entities_selected[i];
 
@@ -1918,12 +1921,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         // rendering
         {
             begin_timed_scope("rendering");
-            //----constant buffer----
-            D3D11_MAPPED_SUBRESOURCE mapped_subresource;
-            d3d_context->Map(d3d_constant_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_subresource);
-            ConstantBuffer2D* constants = (ConstantBuffer2D*)mapped_subresource.pData;
-            constants->screen_res = make_v2s32((s32)window.width, (s32)window.height);
-            d3d_context->Unmap(d3d_constant_buffer, 0);
 
             render_batches_reset();
             //arena_free(ts->batch_arena);
@@ -2002,13 +1999,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
             if(state->selecting && !state->dragging_world){
                 draw_bounding_box(state->selection_rect, 0.1f, RED);
-                String8 fmt_str = str8_fmt(ts->frame_arena, "min(%f, %f) - max(%f, %f)", state->selection_rect.min.x, state->selection_rect.min.y,
-                                                                                         state->selection_rect.max.x, state->selection_rect.max.y);
-                set_transform(make_m4_ident());
-                draw_text(fmt_str, make_v2(10, 100), GREEN);
-                fmt_str = str8_fmt(ts->frame_arena, "min(%f, %f) - max(%f, %f)", min.x, min.y, max.x, max.y);
-                draw_text(fmt_str, make_v2(10, 120), GREEN);
-                set_transform(m4_screen_from_world());
             }
 
             // draw selected texture
@@ -2029,25 +2019,41 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             set_font(state->font);
             String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
 
-            String8 str = str8_literal("test test test test");
-            Rect r = make_rect(make_v2(0, 0), make_v2(100, 100));
-            draw_text(str, make_v2(0, 0), RED);
-            set_transform(m4_screen_from_world());
-            //draw_quad(r, YELLOW);
-            set_font(font1);
-            draw_text(str, make_v2(0, 0), GREEN);
-            set_font(font2);
-            draw_text(str, make_v2(0, -25), GREEN);
-            set_font(font3);
-            draw_text(str, make_v2(0, -40), GREEN);
-            set_font(font4);
-            draw_text(str, make_v2(0, -50), GREEN);
-            set_font(font5);
-            draw_text(str, make_v2(0, -60), GREEN);
-            set_font(font6);
-            draw_text(str, make_v2(0, -70), GREEN);
-            set_transform(make_m4_ident());
-            draw_quad(r, BLUE);
+            //String8 str = str8_literal("test test test test");
+            //Rect r = make_rect(make_v2(0, 0), make_v2(100, 100));
+            //draw_text(str, make_v2(0, 0), RED);
+            //set_transform(m4_screen_from_world());
+            ////draw_quad(r, YELLOW);
+            //set_font(font1);
+            //draw_text(str, make_v2(0, 0), GREEN);
+            //set_font(font2);
+            //draw_text(str, make_v2(0, -25), GREEN);
+            //set_font(font3);
+            //draw_text(str, make_v2(0, -40), GREEN);
+            //set_font(font4);
+            //draw_text(str, make_v2(0, -50), GREEN);
+            //set_font(font5);
+            //draw_text(str, make_v2(0, -60), GREEN);
+            //set_font(font6);
+            //draw_text(str, make_v2(0, -70), GREEN);
+            //set_transform(make_m4_ident());
+            //set_font(font1);
+            //draw_text(str, make_v2(0, 0), GREEN);
+            //set_font(font2);
+            //draw_text(str, make_v2(0, 25), GREEN);
+            //set_font(font3);
+            //draw_text(str, make_v2(0, 40), GREEN);
+            //set_font(font4);
+            //draw_text(str, make_v2(0, 50), GREEN);
+            //set_font(font5);
+            //draw_text(str, make_v2(0, 60), GREEN);
+            //set_font(font6);
+            //draw_text(str, make_v2(0, 70), GREEN);
+            //draw_quad(r, BLUE);
+
+            set_texture(&r_assets->textures[TextureAsset_Castle1]);
+            Rect rr = make_rect(make_v2(50, 50), make_v2(100, 100));
+            draw_texture(rr, WHITE);
 
 
             console_draw();
