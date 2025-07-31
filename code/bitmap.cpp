@@ -10,6 +10,7 @@ stb_load_image(Arena* arena, String8 dir, String8 file, bool vertical_flip){
     if(vertical_flip){
         stbi_set_flip_vertically_on_load(true);
     }
+
     int x,y,n;
     u8* base = (u8*)stbi_load((char const*)full_path.str, &x, &y, &n, 4); // specify 4 channels
 

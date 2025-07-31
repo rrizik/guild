@@ -46,7 +46,7 @@
 //#define SCREEN_WIDTH 1920
 //#define SCREEN_HEIGHT 1080
 s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 window_type);
-static LRESULT win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param);
+static LRESULT win_message_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param);
 static Window win32_window_create(const wchar* window_name, u32 width, u32 height);
 
 global Arena* global_arena = os_make_arena(MB(100));
@@ -237,10 +237,6 @@ static void load_state(void);
 static void partition_entities_in_bins(void);
 
 static void clear_entities_selected(void);
-
-static m4 m4_screen_from_world();
-static m4 m4_world_from_screen();
-static v2 m4_translate_v2(m4 mat, v2 value);
 
 #include "console.hpp"
 #include "command.hpp"

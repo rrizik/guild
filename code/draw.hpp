@@ -87,13 +87,15 @@ typedef struct RenderCommand{
 
 static RGBA brighten_color(RGBA color);
 static RGBA darken_color(RGBA color);
+
 static v2 v2_world_from_screen(v2 screen_pos, Camera2D* camera);
 static v2 v2_world_from_screen(v2 screen_pos);
-
-static v2 v2_screen_from_world(v2 world_pos);
-static Rect rect_screen_from_world(Rect rect);
-static Quad quad_screen_from_world(Quad rect);
+//static v2 v2_screen_from_world(v2 world_pos);
+//static Rect rect_screen_from_world(Rect rect);
+//static Quad quad_screen_from_world(Quad rect);
 static m4 m4_screen_from_world(void);
+static m4 m4_world_from_screen(void);
+static v2 m4_translate_v2(m4 mat, v2 value);
 
 static RGBA srgb_to_linear_approx(RGBA value);
 static RGBA linear_to_srgb_approx(RGBA value);

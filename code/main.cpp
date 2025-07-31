@@ -154,61 +154,6 @@ sim_game(void){
     //}
 }
 
-static m4
-m4_screen_from_world(){
-    f32 sx =  window.width  / (2.0f * camera.size * window.aspect_ratio);
-    f32 sy =  window.height / (2.0f * camera.size);
-    f32 tx = (-camera.x / (2.0f * camera.size * window.aspect_ratio) + 0.5f) * window.width;
-    f32 ty = ( camera.y / (2.0f * camera.size) + 0.5f) * window.height;
-
-    m4 screen_from_world = {
-         sx, 0,  0, tx,
-         0,  sy, 0, ty,
-         0,  0,  1, 0,
-         0,  0,  0, 1
-    };
-
-    return(screen_from_world);
-}
-
-static m4
-m4_world_from_screen(){
-    // recompute the same parameters:
-    f32 sx =  window.width  / (2.0f * camera.size * window.aspect_ratio);
-    f32 sy = -window.height / (2.0f * camera.size);
-    f32 tx = (-camera.x / (2.0f * camera.size * window.aspect_ratio) + 0.5f) * window.width;
-    f32 ty = ( camera.y / (2.0f * camera.size)                + 0.5f) * window.height;
-
-    // invert them:
-    f32 isx = 1.0f / sx;
-    f32 isy = 1.0f / sy;
-    f32 itx = -tx * isx;
-    f32 ity = -ty * isy;
-
-    m4 screen_to_world = {
-        isx, 0,   0,  itx,
-         0,  isy, 0,  ity,
-         0,  0,   1,   0,
-         0,  0,   0,   1
-    };
-
-    return(screen_to_world);
-}
-
-static v2
-m4_translate_v2(m4 mat, v2 value){
-    f32 x = value.x;
-    f32 y = value.y;
-    f32 z = 0.0f;
-    f32 w = 1.0f;
-
-    v2 result;
-    result.x = x * mat._11 + y * mat._12 + z * mat._13 + w * mat._14;
-    result.y = x * mat._21 + y * mat._22 + z * mat._23 + w * mat._24;
-    result.y = -result.y;
-    return(result);
-}
-
 static bool
 v2_close_enough(v2 p1, v2 p2, f32 epsilon){
     f32 x = abs_f32(p1.x - p2.x);
@@ -409,13 +354,16 @@ handle_controller_events(Event event){
         controller.mouse.y  = event.mouse_y;
         controller.mouse.dx = event.mouse_dx;
         controller.mouse.dy = event.mouse_dy;
-        controller.mouse.world_x  = event.world_mouse_x;
-        controller.mouse.world_y  = event.world_mouse_y;
         //controller.mouse.edge_left   = event.mouse_edge_left;
         //controller.mouse.edge_right  = event.mouse_edge_right;
         //controller.mouse.edge_top    = event.mouse_edge_top;
         //controller.mouse.edge_bottom = event.mouse_edge_bottom;
     }
+    m4 mat = m4_world_from_screen();
+    v2 pos = m4_translate_v2(mat, make_v2(controller.mouse.x, controller.mouse.y));
+    controller.mouse.world_x = pos.x;
+    controller.mouse.world_y = pos.y;
+
     if(event.type == EventType_KEYBOARD){
         controller.mouse.wheel_dir = event.mouse_wheel_dir;
         // todo(rr): change this to
@@ -433,6 +381,7 @@ handle_controller_events(Event event){
         controller.ctrl_pressed = event.ctrl_pressed;
         controller.alt_pressed = event.alt_pressed;
     }
+
     return(false);
 }
 
@@ -640,7 +589,7 @@ ui_editor(void){
 
     ui_end_panel();
 
-    ui_set_pos(SCREEN_WIDTH - 200, 10);
+    ui_set_pos(SCREEN_WIDTH - 400, 10);
     ui_set_size(ui_size_children(0), ui_size_children(0));
     ui_set_border_thickness(10);
     ui_set_background_color(DEFAULT);
@@ -1087,7 +1036,7 @@ win32_window_create(s32 width, s32 height, const wchar* window_name){
 
     WNDCLASSW window_class = {
         .style = CS_HREDRAW|CS_VREDRAW|CS_OWNDC,
-        .lpfnWndProc = win_message_handler_callback,
+        .lpfnWndProc = win_message_callback,
         .hInstance = GetModuleHandle(0),
         .hIcon = LoadIcon(0, IDI_APPLICATION),
         .hCursor = LoadCursor(0, IDC_ARROW),
@@ -1295,7 +1244,7 @@ clear_entities_selected(){
 }
 
 static LRESULT
-win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
+win_message_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
     LRESULT result = 0;
 
     switch(message){
@@ -1372,10 +1321,10 @@ win_message_handler_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param){
             event.type = EventType_MOUSE;
             event.mouse_x = (f32)((s16)(l_param & 0xFFFF));
             event.mouse_y = (f32)((s16)(l_param >> 16));
-            m4 mat = m4_world_from_screen();
-            v2 pos = m4_translate_v2(mat, make_v2(event.mouse_x, event.mouse_y));
-            event.world_mouse_x = pos.x;
-            event.world_mouse_y = pos.y;
+            //m4 mat = m4_world_from_screen();
+            //v2 pos = m4_translate_v2(mat, make_v2(event.mouse_x, event.mouse_y));
+            //event.mouse_world_x = pos.x;
+            //event.mouse_world_y = pos.y;
 
             // calc dx/dy and normalize from -1:1
             f32 dx = event.mouse_x - controller.mouse.x;
@@ -1669,7 +1618,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
 
-        state->scene_state = SceneState_Game;
+        state->scene_state = SceneState_Editor;
         //state->scene_state = SceneState_Editor;
         //init_camera_2d(&camera, make_v2((state->world_width_in_cells/2) * state->world_cell_size, (state->world_height_in_cells/2) * state->world_cell_size), 30);
         init_camera_2d(&camera, make_v2(10, 5), 15);
@@ -1785,8 +1734,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             if(state->selecting && controller_button_held(MOUSE_BUTTON_LEFT)){
                 min.x = state->selection_mouse_record.x <= controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
                 min.y = state->selection_mouse_record.y <= controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
-                max.x = state->selection_mouse_record.x > controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
-                max.y = state->selection_mouse_record.y > controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
+                max.x = state->selection_mouse_record.x >  controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
+                max.y = state->selection_mouse_record.y >  controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
                 state->selection_rect = make_rect(min, max);
             }
             if(controller_button_released(MOUSE_BUTTON_LEFT)){
@@ -1931,10 +1880,10 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                     draw_grid(state->world_cell_size, RED);
                 }
                 if(state->show_flocking_cells){
-                    draw_grid(state->flocking_cell_size, BLUE);
+                    //draw_grid(state->flocking_cell_size, BLUE);
                 }
                 if(state->show_pathing_cells){
-                    draw_grid(state->pathing_cell_size, GREEN);
+                    //draw_grid(state->pathing_cell_size, GREEN);
                 }
             }
             draw_entities(state);
@@ -1998,6 +1947,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             draw_line(tp, wm, 0.1f, RED);
 
             if(state->selecting && !state->dragging_world){
+                //state->selection_rect.min.y *= -1;
+                //state->selection_rect.max.y *= -1;
                 draw_bounding_box(state->selection_rect, 0.1f, RED);
             }
 
@@ -2052,8 +2003,11 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //draw_quad(r, BLUE);
 
             set_texture(&r_assets->textures[TextureAsset_Castle1]);
-            Rect rr = make_rect(make_v2(50, 50), make_v2(100, 100));
+            Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
             draw_texture(rr, WHITE);
+
+            //set_transform(m4_screen_from_world());
+            //draw_texture(rr, RED);
 
 
             console_draw();

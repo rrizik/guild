@@ -203,8 +203,8 @@ typedef struct Event{
     bool alt_pressed;
 
     s32 mouse_wheel_dir;
-    f32 world_mouse_x;
-    f32 world_mouse_y;
+    //f32 mouse_world_x;
+    //f32 mouse_world_y;
     f32 mouse_x;
     f32 mouse_y;
     f32 mouse_dx;
