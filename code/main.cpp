@@ -1535,6 +1535,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
     init_paths(global_arena);
     init_memory(MB(500), GB(4));
     init_clock(&clock);
+    // todo: define a wasapi struct here and pass it in for clarity
     wasapi_init(2, 48000, 32);
     init_events(&events);
 
