@@ -10,6 +10,40 @@ INFLUENCE & INSPIRATION:
     - Code Base (subscription required): https://git.rfleury.com/
 */
 
+typedef u32 Axis;
+enum{
+    Axis_X,
+    Axis_Y,
+    Axis_Count,
+};
+
+typedef struct BoxCache{
+    Rect rect;
+    f32 size[Axis_Count];
+    f32 pos[Axis_Count];
+    f32 rel_pos[Axis_Count];
+} BoxCache;
+
+// Hash Table
+typedef struct UIHashNode{
+    UIHashNode* next;
+    u64 hash;
+    String8 key;
+    BoxCache value;
+} UIHashNode;
+
+typedef struct UITable{
+    Arena* arena;
+    u64 slot_count;
+    UIHashNode** slots;
+} UITable;
+
+static u64 hash_from_string(String8 string);
+#define DEFAULT_UI_TABLE_COUNT 1024
+static UITable* ui_make_table(Arena* arena, u64 count=0);
+static BoxCache* ui_table_lookup(UITable* table, String8 key);
+static void ui_table_insert(UITable* table, String8 key, BoxCache value);
+
 typedef struct UI_Signal{
     bool pressed_left;
     bool pressed_middle;
@@ -17,13 +51,6 @@ typedef struct UI_Signal{
     bool mouse_hot;
     bool mouse_over;
 } UI_Signal;
-
-typedef u32 Axis;
-enum{
-    Axis_X,
-    Axis_Y,
-    Axis_Count,
-};
 
 typedef u32 UI_SizeType;
 enum {
@@ -120,13 +147,6 @@ typedef struct UI_Box{
 
 } UI_Box;
 
-typedef struct BoxCache{
-    Rect rect;
-    f32 size[Axis_Count];
-    f32 pos[Axis_Count];
-    f32 rel_pos[Axis_Count];
-} BoxCache;
-
 static void ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets);
 static void ui_begin(void);
 static void ui_end(void);
@@ -141,7 +161,7 @@ static UI_Signal ui_signal_from_box(UI_Box* box);
 static Arena*    ui_arena(void);
 static Window*   ui_window(void);
 static UI_Box*   ui_root(void);
-static HashTable ui_table(void);
+static UITable*  ui_table(void);
 static v2        ui_mouse_pos(void);
 static Mouse     ui_mouse(void);
 static String8   ui_text_part_from_key(String8 string);
@@ -210,7 +230,7 @@ typedef struct UI_State{
 
     UI_Box* root;
 
-    HashTable table;
+    UITable* table;
 
     u64 hot;
     u64 active;
@@ -365,4 +385,3 @@ root_function UI_FocusKind          UI_TopFocusActive(void);
 */
 
 #endif
-

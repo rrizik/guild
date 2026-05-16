@@ -12,7 +12,7 @@ ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
     ui_state->controller = controller;
     ui_state->default_font = &assets->fonts[FontAsset_Arial];
     //ui_state->generation = 0;
-    table_init(arena, &ui_state->table);
+    ui_state->table = ui_make_table(arena);
     ui_state->arena = make_arena(MB(100));
 
     ui_state->parent_stack.top = &ui_parent_null;
@@ -167,7 +167,7 @@ ui_root(void){
     return(ui_state->root);
 }
 
-static HashTable
+static UITable*
 ui_table(void){
     return(ui_state->table);
 }
@@ -185,8 +185,8 @@ ui_mouse(void){
 static String8
 ui_text_part_from_key(String8 string){
     String8 result = {0};
-    s64 idx = byte_index_from_left(string, '#');
-    result = str8_split_left(string, (u64)idx);
+    u64 idx = str8_index_from_left(string, '#');
+    result = str8_split_left(string, idx);
     return(result);
 }
 
@@ -246,7 +246,7 @@ ui_make_box(String8 string, UI_BoxFlags flags){
     result->border_thickness = ui_top_border_thickness();
     result->font = ui_top_font();
 
-    BoxCache* cache = table_lookup(BoxCache, &ui_state->table, string);
+    BoxCache* cache = ui_table_lookup(ui_state->table, string);
     if(cache){
         // todo(rr): I think I need a per cache item flag check, almost like auto_pop
         if(!has_flag(flags, UI_BoxFlag_NoCache)){
@@ -497,7 +497,7 @@ ui_traverse_rects(UI_Box* box){
     // cache rect
     if(!str8_compare(box->string, str8_literal(""))){
         BoxCache cache = cache_from_box(box);
-        table_insert(&ui_state->table, box->string, cache);
+        ui_table_insert(ui_state->table, box->string, cache);
     }
 
     if(box->first){
@@ -505,5 +505,75 @@ ui_traverse_rects(UI_Box* box){
     }
     ui_traverse_rects(box->next);
 }
+
+static u64 
+hash_from_string(String8 string){
+    u64 result = 5381;
+    
+    for(s32 i=0; i<string.count; ++i){
+        result = ((result << 5) + result) + string.base[i];
+    }
+
+    return(result);
+}
+
+static UITable* 
+ui_make_table(Arena* arena, u64 count){
+    UITable* table = push_struct(arena, UITable);
+    table->arena = arena;
+    table->slot_count = count == 0 ? DEFAULT_UI_TABLE_COUNT : count;
+    table->slots = push_array(table->arena, UIHashNode*, table->slot_count);
+    return(table);
+}
+
+static BoxCache*
+ui_table_lookup(UITable* table, String8 key){
+    u64 hash = hash_from_string(key);
+    u64 slot_idx = hash % table->slot_count;
+
+    for(UIHashNode* n = table->slots[slot_idx]; n != 0; n = n->next){
+        if(n->hash == hash && str8_compare(n->key, key)){
+            return(&n->value);
+        }
+    }
+    return(0);
+}
+
+
+static void 
+ui_table_insert(UITable* table, String8 key, BoxCache value){
+    u64 hash = hash_from_string(key);
+    u64 slot_idx = hash % table->slot_count;
+
+    for(UIHashNode* n = table->slots[slot_idx]; n != 0; n = n->next){
+        if(n->hash == hash && str8_compare(n->key, key)){
+            n->value = value;
+        }
+    }
+
+    UIHashNode* node = push_struct(table->arena, UIHashNode);
+    node->next = table->slots[slot_idx];
+    node->hash = hash;
+    node->key = key;
+    node->value = value;
+    table->slots[slot_idx] = node;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #endif

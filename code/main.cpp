@@ -1160,9 +1160,9 @@ deserialize_state(void){
 
     s32 count = 0;
     while(ptr->count){
-        String8 line = str8_eat_line(ptr);
+        String8 line = str8_next_line(ptr);
         while(line.size){
-            String8 word = str8_eat_word(&line);
+            String8 word = str8_next_word(&line);
             if(str8_starts_with(word, str8_literal("current_world"))){
                 String8Node* str8_node = {0};
                 str8_node = str8_split(scratch.arena, word, ':');

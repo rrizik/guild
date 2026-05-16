@@ -25,15 +25,13 @@ if "%1" == "" (
     exit /b 1
 )
 
-set cl_includes=-I ..\..\base\code
+set cl_includes=-I ..\base\code
 set cl_flags=-Zi -nologo -std:c++latest -Wall -WX 
 set cl_ignore_warnings=-wd4201 -wd4189 -wd4101 -wd4505 -wd4820 -wd5045 -wd4996 -wd4100 -wd4668 -wd4711 -wd4062 -wd4388 -wd4018 -wd4459 -wd4626 -wd4200 -wd4710 -wd4456 -wd5246 -wd4309
 
 
-IF NOT EXIST ..\build mkdir ..\build
-pushd ..\build
-cl %cl_flags% %cl_optimization% %cl_ignore_warnings% %cl_includes% ..\code\main.cpp 
-popd
+IF NOT EXIST build mkdir build
+cl %cl_flags% %cl_optimization% %cl_ignore_warnings% %cl_includes% code\main.cpp 
 
 
 :: C5246: the initialization of a sudobject should be wrapped in braces

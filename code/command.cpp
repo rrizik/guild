@@ -174,12 +174,12 @@ command_saves(String8* args){
     files.next = &files;
     files.prev = &files;
     os_dir_read(scratch.arena, &files, str8_literal("saves"));
-    dll_pop_front(&files);
-    dll_pop_front(&files);
+    //dll_pop_front(&files);
+    //dll_pop_front(&files);
 
-    for(String8Node* file = files.next; file != &files; file = file->next){
-        console.output_history[console.output_history_count++] = file->str;
-    }
+    //for(String8Node* file = files.next; file != &files; file = file->next){
+    //    console.output_history[console.output_history_count++] = file->str;
+    //}
     end_scratch(scratch);
 }
 
@@ -198,20 +198,20 @@ command_parse_args(String8 line){
     s32 args_count = 0;
     String8 remaining = line;
     while(remaining.size){
-        remaining = str8_eat_spaces(remaining);
+        str8_trim_spaces_left(&remaining);
         if(!remaining.size){ break; }
 
-        s64 index = byte_index_from_left(remaining, ' ');
+        u64 index = str8_index_from_left(remaining, ' ');
         if(index != -1){
-            String8 left_arg = str8_split_left(remaining, (u64)index);
+            String8 left_arg = str8_split_left(remaining, index);
             String8 arg = push_str8(console.arena, left_arg);
             command_args[command_args_count++] = arg;
-            remaining = str8_advance(remaining, (u64)index);
+            str8_advance(&remaining, index);
         }
         else{
             String8 arg = push_str8(console.arena, remaining);
             command_args[command_args_count++] = arg;
-            remaining = str8_advance(remaining, remaining.count);
+            str8_advance(&remaining, remaining.count);
         }
 
         args_count++;

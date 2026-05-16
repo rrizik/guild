@@ -1,6 +1,5 @@
-#ifndef PROFILER_TIMER
-#define PROFILER_TIMER __rdtsc()
-#endif
+#ifndef PROFILER_H
+#define PROFILER_H
 
 ///////////////////////////////
 // NOTE: Profiler
@@ -12,6 +11,10 @@
 
 #ifndef PROFILER
 #define PROFILER 0
+#endif
+
+#ifndef PROFILER_TIMER
+#define PROFILER_TIMER __rdtsc()
 #endif
 
 #if PROFILER
@@ -160,4 +163,6 @@ end_profiler_(void){
 
     print_anchor_data(total_cpu_elapsed, cpu_freq);
 }
+
+#endif
 
