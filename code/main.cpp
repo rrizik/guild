@@ -1147,36 +1147,37 @@ deserialize_world(String8 world){
 
 static void
 deserialize_state(void){
-    ScratchArena scratch = begin_scratch();
-    String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
-    File file = os_file_open(full_path, GENERIC_READ, OPEN_EXISTING);
-    if(!file.size){
-        os_file_close(file);
-        return;
-    }
+    //ScratchArena scratch = begin_scratch();
+    //String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
+    //File file = os_file_open(full_path, GENERIC_READ, OPEN_EXISTING);
+    //if(!file.size){
+    //    os_file_close(file);
+    //    return;
+    //}
 
-    String8 data = os_file_read(ts->data_arena, file);
-    String8* ptr = &data;
+    //String8 data = os_file_read(ts->data_arena, file);
+    //String8* ptr = &data;
 
-    s32 count = 0;
-    while(ptr->count){
-        String8 line = str8_next_line(ptr);
-        while(line.size){
-            String8 word = str8_next_word(&line);
-            if(str8_starts_with(word, str8_literal("current_world"))){
-                String8Node* str8_node = {0};
-                str8_node = str8_split(scratch.arena, word, ':');
-                if(str8_ends_with(str8_node->prev->str, str8_literal(".g"))){
-                    memcpy(state->current_world.str, str8_node->prev->str.str, str8_node->prev->str.count);
-                    state->current_world.count = str8_node->prev->str.count;
-                }
-            }
-        }
-    }
+    //s32 count = 0;
+    //while(ptr->count){
+    //    String8 line = str8_next_line(ptr);
+    //    while(line.size){
+    //        String8 word = str8_next_word(&line);
+    //        if(str8_starts_with(word, str8_literal("current_world"))){
+    //            String8Node* str8_node = {0};
+    //            str8_node = str8_split(scratch.arena, word, ':');
+    //            if(str8_ends_with(str8_node->prev->str, str8_literal(".g"))){
+    //                memcpy(state->current_world.str, str8_node->prev->str.str, str8_node->prev->str.count);
+    //                state->current_world.count = str8_node->prev->str.count;
+    //            }
+    //        }
+    //    }
+    //}
 
-    arena_free(ts->data_arena);
-    os_file_close(file);
-    end_scratch(scratch);
+    state->current_world = str8_lit("world5.g");
+    //arena_free(ts->data_arena);
+    //os_file_close(file);
+    //end_scratch(scratch);
 }
 
 static void
