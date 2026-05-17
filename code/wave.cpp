@@ -43,13 +43,13 @@ wave_file_read(Arena* arena, String8 dir, String8 filename){
             // todo: log error - failed to load wafvff file
             print("Error: Failed to load WAVE file\n");
             result = {0};
-            os_file_close(file);
+            os_file_close(&file);
             return(result);
         }
         chunk_inc += c->chunk_size + sizeof(WaveChunkInfo);
     }
     end_scratch(scratch);
-    os_file_close(file);
+    os_file_close(&file);
 
     return(result);
 }

@@ -92,7 +92,7 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     assert_hr(hr);
 
     texture->Release();
-    os_file_close(file);
+    os_file_close(&file);
     end_scratch(scratch);
     return(result);
 }

@@ -1100,9 +1100,9 @@ serialize_world(String8 world){
     ScratchArena scratch = begin_scratch();
     String8 full_path = str8_path_append(scratch.arena, saves_path, world);
     File file = os_file_open(full_path, GENERIC_WRITE, CREATE_ALWAYS);
-    os_file_write(file, arena->base, arena->at);
+    os_file_write(&file, arena->base, arena->at);
 
-    os_file_close(file);
+    os_file_close(&file);
     end_scratch(scratch);
     arena_free(ts->data_arena);
 }
@@ -1113,7 +1113,7 @@ deserialize_world(String8 world){
     String8 full_path = str8_path_append(scratch.arena, saves_path, world);
     File file = os_file_open(full_path, GENERIC_READ, OPEN_EXISTING);
     if(!file.size){
-        os_file_close(file);
+        os_file_close(&file);
         return;
     }
 
@@ -1141,43 +1141,33 @@ deserialize_world(String8 world){
     state->world_height = state->world_height_in_cells * state->world_cell_size;
 
     arena_free(ts->data_arena);
-    os_file_close(file);
+    os_file_close(&file);
     end_scratch(scratch);
 }
 
 static void
 deserialize_state(void){
-    //ScratchArena scratch = begin_scratch();
-    //String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
-    //File file = os_file_open(full_path, GENERIC_READ, OPEN_EXISTING);
-    //if(!file.size){
-    //    os_file_close(file);
-    //    return;
-    //}
+    ScratchArena scratch = begin_scratch();
+    String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
+    File file = os_file_open(full_path, GENERIC_READ, OPEN_EXISTING);
+    String8 data = os_file_read(ts->data_arena, file);
 
-    //String8 data = os_file_read(ts->data_arena, file);
-    //String8* ptr = &data;
+    String8* ptr = &data;
+    while(ptr->count){
+        String8 line = str8_next_line(ptr);
+        String8List list = str8_split(scratch.arena, line, ':');
 
-    //s32 count = 0;
-    //while(ptr->count){
-    //    String8 line = str8_next_line(ptr);
-    //    while(line.size){
-    //        String8 word = str8_next_word(&line);
-    //        if(str8_starts_with(word, str8_literal("current_world"))){
-    //            String8Node* str8_node = {0};
-    //            str8_node = str8_split(scratch.arena, word, ':');
-    //            if(str8_ends_with(str8_node->prev->str, str8_literal(".g"))){
-    //                memcpy(state->current_world.str, str8_node->prev->str.str, str8_node->prev->str.count);
-    //                state->current_world.count = str8_node->prev->str.count;
-    //            }
-    //        }
-    //    }
-    //}
+        String8 left = list.first->string;
+        String8 right = list.last->string;
+        if(str8_compare(left, str8_lit("current_world"))){
+            memcpy(state->current_world.str, right.str, right.count);
+            state->current_world.count = right.count;
+        }
+    }
 
-    state->current_world = str8_lit("world5.g");
-    //arena_free(ts->data_arena);
-    //os_file_close(file);
-    //end_scratch(scratch);
+    arena_free(ts->data_arena);
+    os_file_close(&file);
+    end_scratch(scratch);
 }
 
 static void
@@ -1193,10 +1183,10 @@ serialize_state(void){
     ScratchArena scratch = begin_scratch();
     String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
     File file = os_file_open(full_path, GENERIC_WRITE, CREATE_ALWAYS);
-    os_file_write(file, arena->base, arena->at);
+    os_file_write(&file, arena->base, arena->at);
 
     arena_free(ts->data_arena);
-    os_file_close(file);
+    os_file_close(&file);
     end_scratch(scratch);
 }
 
@@ -1624,7 +1614,9 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         //state->scene_state = SceneState_Editor;
         //init_camera_2d(&camera, make_v2((state->world_width_in_cells/2) * state->world_cell_size, (state->world_height_in_cells/2) * state->world_cell_size), 30);
         init_camera_2d(&camera, make_v2(10, 5), 15);
-        init_console(global_arena, &camera, &window, &assets);
+
+        Arena* arena = push_arena(&state->arena, MB(8));
+        init_console(arena, &camera, &window, &assets);
 
         memory.initialized = true;
     }
@@ -2053,3 +2045,4 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
     return(0);
 }
+

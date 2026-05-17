@@ -34,7 +34,6 @@ init_console(Arena* arena, Camera2D* camera, Window* window, Assets* assets){ //
 
     console.input.count = 0;
     console.input.str = push_array(console.arena, u8, INPUT_COUNT_MAX);
-    //console.input_count = 0;
     console.cursor_index = 0;
 
     init_console_commands();
@@ -63,7 +62,7 @@ console_char_at_cursor(void){
 }
 
 static void
-input_add_char(u8 c){
+console_input_add_char(u8 c){
     if(console.input.count < INPUT_COUNT_MAX){
         if(console.cursor_index < console.input.count){
             for(s32 i=(s32)console.input.count; i > console.cursor_index; --i){
@@ -79,7 +78,7 @@ input_add_char(u8 c){
 }
 
 static void
-input_remove_char(void){
+console_input_remove_char(void){
     u8 c = 0;
     if(console.input.count > 0 && console.cursor_index > 0){
         if(console.cursor_index < console.input.count){
@@ -118,7 +117,7 @@ handle_console_events(Event event){
     if(event.type == EventType_TEXT_INPUT){
         if(event.keycode != '`' && event.keycode != '~'){
             u8 c = (u8)event.keycode;
-            input_add_char(c);
+            console_input_add_char(c);
             console.cursor_index++;
             return(true);
         }
@@ -148,7 +147,7 @@ handle_console_events(Event event){
             }
             if(event.keycode == KeyCode_BACKSPACE){
                 if(console.cursor_index > 0){
-                    input_remove_char();
+                    console_input_remove_char();
 
                     console.cursor_index--;
                 }
@@ -163,7 +162,7 @@ handle_console_events(Event event){
                     String8 command = console.input_history[console.input_history_count - console.input_history_index];
                     for(u32 i=0; i < command.size; ++i){
                         u8 c = command.str[i];
-                        input_add_char(c);
+                        console_input_add_char(c);
                         console.cursor_index++;
                     }
                     console.input.count = command.size;
@@ -178,7 +177,7 @@ handle_console_events(Event event){
                     String8 command = console.input_history[console.input_history_count - console.input_history_index];
                     for(u32 i=0; i < command.size; ++i){
                         u8 c = command.str[i];
-                        input_add_char(c);
+                        console_input_add_char(c);
                         console.cursor_index++;
                     }
                     console.input.count = command.size;
@@ -213,6 +212,15 @@ handle_console_events(Event event){
 }
 
 static void
+console_push_output(String8 text){
+    String8 copy = str8_push_copy(console.arena, text);
+
+    u64 index = console.output_history_count % CONSOLE_OUTPUT_HISTORY_MAX;;
+    console.output_history[index] = copy;
+    console.output_history_count++;
+}
+
+static void
 console_update(void){
     f32 epsilon = 0.001f;
     f32 open_d = console.open_dt * (f32)clock.dt;
@@ -228,6 +236,32 @@ console_update(void){
             console.open_t = 0;
         }
     }
+}
+
+static void
+console_push_outputf(const char* fmt, ...){
+    va_list args;
+    va_start(args, fmt);
+
+    va_list args_copy;
+    va_start(args_copy, fmt);
+
+    // calc count, consumes args_copy
+    u64 count = (u64)vsnprintf(0, 0, fmt, args_copy);
+    va_end(args_copy);
+
+    if(count){
+        String8 string = {0};
+        string.count = count;
+        string.data = push_array(console.arena, u8, string.count + 1);
+
+        vsnprintf((char*)string.data, string.count + 1, fmt, args);
+        string.data[string.count] = 0;
+
+        console_push_output(string);
+    }
+
+    va_end(args);
 }
 
 static void
@@ -272,7 +306,7 @@ console_draw(void){
         // draw text history (in reverse order and only if its on screen)
         if(console.output_history_count > 0){
             f32 output_pos_y = output_p2.y + ((f32)font->descent * font->scale);
-            for(s32 i=console.output_history_count-1; i >= 0; --i){
+            for(u64 i=console.output_history_count-1; i < CONSOLE_OUTPUT_HISTORY_MAX; --i){
                 if(output_pos_y < (f32)console.window->height){
                     String8 next_string = console.output_history[i];
                     draw_text(next_string, make_v2(console.text_left_pad, output_pos_y), console.output_color);

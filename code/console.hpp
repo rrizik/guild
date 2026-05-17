@@ -13,6 +13,7 @@ typedef enum ConsoleState{
     OPEN_BIG,
 } ConsoleState;
 
+#define CONSOLE_TEXT_BUFFER_SIZE MB(8)
 typedef struct Console{
     ConsoleState state;
     Font* font;
@@ -39,12 +40,12 @@ typedef struct Console{
     RGBA output_color;
     RGBA cursor_color;
 
-#define OUTPUT_HISTORY_COUNT_MAX KB(1)
-    String8 output_history[OUTPUT_HISTORY_COUNT_MAX];
-    s32 output_history_count;
+#define CONSOLE_OUTPUT_HISTORY_MAX 4096
+    String8 output_history[CONSOLE_OUTPUT_HISTORY_MAX];
+    u64 output_history_count;
 
-#define INPUT_HISTORY_COUNT_MAX KB(1)
-    String8 input_history[INPUT_HISTORY_COUNT_MAX];
+#define CONSOLE_INPUT_HISTORY_MAX KB(1)
+    String8 input_history[CONSOLE_INPUT_HISTORY_MAX];
     s32 input_history_count;
     s32 input_history_index;
 
@@ -62,8 +63,11 @@ static bool console_is_visible(void);
 static   u8 console_char_at_cursor(void);
 static   u8 console_char_at_cursor(void);
 
-static void input_add_char(u8 c);
-static void input_remove_char(void);
+static void console_input_add_char(u8 c);
+static void console_input_remove_char(void);
+
+static void console_push_output(String8 text);
+static void console_push_outputf(const char* fmt, ...);
 
 static void console_set_state(ConsoleState state);
 static bool handle_console_events(Event event);
