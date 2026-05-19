@@ -191,12 +191,7 @@ handle_console_events(Event event){
                 str8_trim_left(&view, (u64)index);
                 s32 args_count = command_parse_args(view);
 
-                String8 input = {0};
-                input.str = (u8*)push_array(console.arena, u8, console.input.count);
-                input.count = console.input.count;
-                memcpy(input.str, console.input.str, console.input.count);
-
-                console.input_history[console.input_history_count++] = input;
+                console_push_input(console.input);
                 run_command(command);
 
                 // clear_input
@@ -262,6 +257,15 @@ console_push_outputf(const char* fmt, ...){
     }
 
     va_end(args);
+}
+
+static void
+console_push_input(String8 text){
+    String8 copy = str8_push_copy(console.arena, text);
+
+    u64 index = console.input_history_count % CONSOLE_INPUT_HISTORY_MAX;;
+    console.input_history[index] = copy;
+    console.input_history_count++;
 }
 
 static void

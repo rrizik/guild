@@ -505,30 +505,30 @@ draw_entities(State* state){
                         }
                     }
 
-                    if(state->scene_state == SceneState_Editor){
-                        if(state->show_entity_info){
-                            v2 pos = e->pos;
-                            ui_set_pos(pos.x + 20, pos.y);
-                            ui_set_size(ui_size_children(0), ui_size_children(0));
-                            ui_set_border_thickness(10);
-                            ui_set_background_color(DEFAULT);
+                    //if(state->scene_state == SceneState_Editor){
+                    //    if(state->show_entity_info){
+                    //        v2 pos = e->pos;
+                    //        ui_set_pos(pos.x + 20, pos.y);
+                    //        ui_set_size(ui_size_children(0), ui_size_children(0));
+                    //        ui_set_border_thickness(10);
+                    //        ui_set_background_color(DEFAULT);
 
-                            String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
-                            ui_begin_panel(box_name, ui_floating_panel_world);
+                    //        String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
+                    //        ui_begin_panel(box_name, ui_floating_panel_world);
 
-                            String8 fmt_str;
-                            //ui_font(font);
-                            ui_size(ui_size_text(0), ui_size_text(0))
-                            ui_text_color(LIGHT_GRAY)
-                            {
-                                fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
-                                ui_label(fmt_str);
-                                fmt_str = str8_formatted(ts->frame_arena, "pos: %f, %f", e->pos.x, e->pos.y);
-                                ui_label(fmt_str);
-                            }
-                            ui_end_panel();
-                        }
-                    }
+                    //        String8 fmt_str;
+                    //        //ui_font(font);
+                    //        ui_size(ui_size_text(0), ui_size_text(0))
+                    //        ui_text_color(LIGHT_GRAY)
+                    //        {
+                    //            fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
+                    //            ui_label(fmt_str);
+                    //            fmt_str = str8_formatted(ts->frame_arena, "pos: %f, %f", e->pos.x, e->pos.y);
+                    //            ui_label(fmt_str);
+                    //        }
+                    //        ui_end_panel();
+                    //    }
+                    //}
                 } break;
             }
         }
@@ -546,6 +546,7 @@ debug_draw_mouse_cell_pos(void){
 
 static void
 ui_editor(void){
+    set_transform(m4_make_ident());
 
     ui_set_pos(20, 20);
     ui_set_size(ui_size_children(0), ui_size_children(0));
@@ -696,99 +697,99 @@ ui_editor(void){
     ui_end_panel();
 }
 
-static void
-ui_structure_castle(void){
-    ui_layout_axis(Axis_X)
-    {
-        ui_set_border_thickness(10);
-        ui_set_background_color(DEFAULT);
-        ui_set_pos(20, window.height - 300);
-        ui_set_size(ui_size_children(0), ui_size_children(0));
-        ui_begin_panel(str8_literal("box1##4"), ui_floating_panel);
-
-        ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
-        ui_background_color(DARK_GRAY)
-        {
-            if(ui_button(str8_literal("skeleton")).pressed_left){
-                Entity* castle = state->entities_selected[0];
-
-                v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(1, 1), dir);
-                e->origin = castle;
-                e->rallypoint = castle->rallypoint;
-                e->rallypoint_cell = castle->rallypoint_cell;
-                entity_commands_move(e, e->rallypoint, e->rallypoint);
-            }
-
-            ui_spacer(10);
-            if(ui_button(str8_literal("skeleton - 15")).pressed_left){
-                Entity* castle = state->entities_selected[0];
-                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
-                v2 a = grid_cell_from_pos(castle->pos, 1);
-                v2 b = grid_pos_from_cell(castle->pos, state->world_cell_size);
-                v2 c = grid_pos_from_cell(castle->pos, 1);
-                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
-                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
-                f32 projected_rad = rad_from_dir(projected_direction);
-
-                f32 y = -1;
-                for(s32 i=0; i<3; ++i){
-                    f32 x = -2;
-                    for(s32 j=0; j<5; ++j){
-                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
-
-                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
-                        e->origin = castle;
-
-                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
-                        f32 target_rad = rad_from_dir(target_direction);
-
-                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
-                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
-                        v2 target_pos = e->pos + projected_offset;
-
-                        entity_commands_move(e, target_pos, target_pos);
-                        x += 1;
-                    }
-                    y += 1;
-                }
-            }
-            ui_spacer(10);
-            if(ui_button(str8_literal("skeleton - 50")).pressed_left){
-                Entity* castle = state->entities_selected[0];
-                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
-                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
-                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
-                f32 projected_rad = rad_from_dir(projected_direction);
-                f32 y = -2;
-                for(s32 i=0; i<5; ++i){
-                    f32 x = -4;
-                    for(s32 j=0; j<10; ++j){
-                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
-
-                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
-                        e->origin = castle;
-
-                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
-                        f32 target_rad = rad_from_dir(target_direction);
-
-                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
-                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
-                        v2 target_pos = e->pos + projected_offset;
-
-                        entity_commands_move(e, target_pos, target_pos);
-                        x += 1;
-                    }
-                    y += 1;
-                }
-            }
-        }
-    }
-
-    ui_end_panel();
-}
+//static void
+//ui_structure_castle(void){
+//    ui_layout_axis(Axis_X)
+//    {
+//        ui_set_border_thickness(10);
+//        ui_set_background_color(DEFAULT);
+//        ui_set_pos(20, window.height - 300);
+//        ui_set_size(ui_size_children(0), ui_size_children(0));
+//        ui_begin_panel(str8_literal("box1##4"), ui_floating_panel);
+//
+//        ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
+//        ui_background_color(DARK_GRAY)
+//        {
+//            if(ui_button(str8_literal("skeleton")).pressed_left){
+//                Entity* castle = state->entities_selected[0];
+//
+//                v2 dir = direction_v2(castle->pos, castle->rallypoint);
+//                Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(1, 1), dir);
+//                e->origin = castle;
+//                e->rallypoint = castle->rallypoint;
+//                e->rallypoint_cell = castle->rallypoint_cell;
+//                entity_commands_move(e, e->rallypoint, e->rallypoint);
+//            }
+//
+//            ui_spacer(10);
+//            if(ui_button(str8_literal("skeleton - 15")).pressed_left){
+//                Entity* castle = state->entities_selected[0];
+//                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
+//                v2 a = grid_cell_from_pos(castle->pos, 1);
+//                v2 b = grid_pos_from_cell(castle->pos, state->world_cell_size);
+//                v2 c = grid_pos_from_cell(castle->pos, 1);
+//                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
+//                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
+//                f32 projected_rad = rad_from_dir(projected_direction);
+//
+//                f32 y = -1;
+//                for(s32 i=0; i<3; ++i){
+//                    f32 x = -2;
+//                    for(s32 j=0; j<5; ++j){
+//                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
+//
+//                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
+//                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
+//                        e->origin = castle;
+//
+//                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
+//                        f32 target_rad = rad_from_dir(target_direction);
+//
+//                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
+//                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
+//                        v2 target_pos = e->pos + projected_offset;
+//
+//                        entity_commands_move(e, target_pos, target_pos);
+//                        x += 1;
+//                    }
+//                    y += 1;
+//                }
+//            }
+//            ui_spacer(10);
+//            if(ui_button(str8_literal("skeleton - 50")).pressed_left){
+//                Entity* castle = state->entities_selected[0];
+//                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
+//                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
+//                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
+//                f32 projected_rad = rad_from_dir(projected_direction);
+//                f32 y = -2;
+//                for(s32 i=0; i<5; ++i){
+//                    f32 x = -4;
+//                    for(s32 j=0; j<10; ++j){
+//                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
+//
+//                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
+//                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
+//                        e->origin = castle;
+//
+//                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
+//                        f32 target_rad = rad_from_dir(target_direction);
+//
+//                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
+//                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
+//                        v2 target_pos = e->pos + projected_offset;
+//
+//                        entity_commands_move(e, target_pos, target_pos);
+//                        x += 1;
+//                    }
+//                    y += 1;
+//                }
+//            }
+//        }
+//    }
+//
+//    ui_end_panel();
+//}
 
 static void
 draw_grid(f32 size, RGBA color){
@@ -1811,7 +1812,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                         e->rallypoint = world_mouse;
                         e->rallypoint_cell = grid_cell_from_pos(world_mouse, state->world_cell_size);
                     }
-                    ui_structure_castle();
+                    //ui_structure_castle();
                 }
             }
 
@@ -1953,7 +1954,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
             }
 
-            set_transform(make_m4_ident());
+            set_transform(m4_make_ident());
             ui_end();
 
             //set_transform(m4_screen_from_world());

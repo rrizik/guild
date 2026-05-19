@@ -46,13 +46,11 @@ typedef struct Console{
 
 #define CONSOLE_INPUT_HISTORY_MAX KB(1)
     String8 input_history[CONSOLE_INPUT_HISTORY_MAX];
-    s32 input_history_count;
-    s32 input_history_index;
+    u64 input_history_count;
+    u64 input_history_index;
 
 #define INPUT_COUNT_MAX KB(1)
     String8 input;
-    //u8 input[INPUT_COUNT_MAX];
-    //s32 input_count;
     s32 cursor_index;
 } Console;
 global Console console;
@@ -65,6 +63,7 @@ static   u8 console_char_at_cursor(void);
 
 static void console_input_add_char(u8 c);
 static void console_input_remove_char(void);
+static void console_push_input(String8 text);
 
 static void console_push_output(String8 text);
 static void console_push_outputf(const char* fmt, ...);
