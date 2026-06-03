@@ -6,16 +6,16 @@ sim_game(void){
     // camera
     {
         // movement
-        if(controller_button_held(KeyCode_UP)){
+        if(controller_button_held(KeyCode_UP) || controller_button_held(KeyCode_W)){
             camera.y += ((camera.size) + 50) * (f32)clock.dt;
         }
-        if(controller_button_held(KeyCode_DOWN)){
+        if(controller_button_held(KeyCode_DOWN) || controller_button_held(KeyCode_S)){
             camera.y -= ((camera.size) + 50) * (f32)clock.dt;
         }
-        if(controller_button_held(KeyCode_LEFT)){
+        if(controller_button_held(KeyCode_LEFT) || controller_button_held(KeyCode_A)){
             camera.x -= ((camera.size) + 50) * (f32)clock.dt;
         }
-        if(controller_button_held(KeyCode_RIGHT)){
+        if(controller_button_held(KeyCode_RIGHT) || controller_button_held(KeyCode_D)){
             camera.x += ((camera.size) + 50) * (f32)clock.dt;
         }
     }
@@ -260,6 +260,7 @@ add_castle(TextureAsset texture, v2 cell, v2 dim, RGBA color, u32 flags){
         e->deg = 0;
         e->rot = dir_from_deg(e->deg);
         e->structure_type = StructureType_Castle;
+        set_flag(&e->flags, EntityFlag_Active);
     }
     else{
         print("Failed to add entity: Castle\n");
@@ -281,6 +282,7 @@ add_skeleton(TextureAsset texture, v2 cell, v2 dim, v2 dir, RGBA color, u32 flag
         e->rot = make_v2(1, 0);
         e->deg = deg_from_dir(e->rot);
         set_flag(&e->flags, EntityFlag_MoveWithPhys);
+        set_flag(&e->flags, EntityFlag_Active);
     }
     else{
         print("Failed to add entity: Quad\n");
@@ -548,11 +550,11 @@ static void
 ui_editor(void){
     set_transform(m4_make_ident());
 
-    ui_set_pos(20, 20);
+    ui_set_pos(20, 200);
     ui_set_size(ui_size_children(0), ui_size_children(0));
     ui_set_border_thickness(10);
     ui_set_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##2"), ui_floating_panel);
+    ui_begin_panel(str8_literal("tile_panel##2"), ui_floating_panel);
 
     ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
     ui_background_color(DARK_GRAY)
@@ -594,7 +596,7 @@ ui_editor(void){
     ui_set_size(ui_size_children(0), ui_size_children(0));
     ui_set_border_thickness(10);
     ui_set_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##render_batches"), ui_floating_panel);
+    ui_begin_panel(str8_literal("info_panel##info_panel"), ui_floating_panel);
 
     ui_size(ui_size_text(0), ui_size_text(0))
     ui_text_color(LIGHT_GRAY)
@@ -641,11 +643,11 @@ ui_editor(void){
 
     ui_end_panel();
 
-    ui_set_pos(200, 20);
+    ui_set_pos(200, 200);
     ui_set_size(ui_size_children(0), ui_size_children(0));
     ui_set_border_thickness(5);
     ui_set_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##3"), ui_floating_panel);
+    ui_begin_panel(str8_literal("grid_panel##3"), ui_floating_panel);
 
     ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
     ui_background_color(DARK_GRAY)
@@ -676,7 +678,7 @@ ui_editor(void){
     ui_set_size(ui_size_children(0), ui_size_children(0));
     ui_set_border_thickness(5);
     ui_set_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("box1##5"), ui_floating_panel);
+    ui_begin_panel(str8_literal("cell_size##5"), ui_floating_panel);
 
     ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
     ui_background_color(DARK_GRAY)
@@ -697,99 +699,99 @@ ui_editor(void){
     ui_end_panel();
 }
 
-//static void
-//ui_structure_castle(void){
-//    ui_layout_axis(Axis_X)
-//    {
-//        ui_set_border_thickness(10);
-//        ui_set_background_color(DEFAULT);
-//        ui_set_pos(20, window.height - 300);
-//        ui_set_size(ui_size_children(0), ui_size_children(0));
-//        ui_begin_panel(str8_literal("box1##4"), ui_floating_panel);
-//
-//        ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
-//        ui_background_color(DARK_GRAY)
-//        {
-//            if(ui_button(str8_literal("skeleton")).pressed_left){
-//                Entity* castle = state->entities_selected[0];
-//
-//                v2 dir = direction_v2(castle->pos, castle->rallypoint);
-//                Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(1, 1), dir);
-//                e->origin = castle;
-//                e->rallypoint = castle->rallypoint;
-//                e->rallypoint_cell = castle->rallypoint_cell;
-//                entity_commands_move(e, e->rallypoint, e->rallypoint);
-//            }
-//
-//            ui_spacer(10);
-//            if(ui_button(str8_literal("skeleton - 15")).pressed_left){
-//                Entity* castle = state->entities_selected[0];
-//                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
-//                v2 a = grid_cell_from_pos(castle->pos, 1);
-//                v2 b = grid_pos_from_cell(castle->pos, state->world_cell_size);
-//                v2 c = grid_pos_from_cell(castle->pos, 1);
-//                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
-//                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
-//                f32 projected_rad = rad_from_dir(projected_direction);
-//
-//                f32 y = -1;
-//                for(s32 i=0; i<3; ++i){
-//                    f32 x = -2;
-//                    for(s32 j=0; j<5; ++j){
-//                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
-//
-//                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
-//                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
-//                        e->origin = castle;
-//
-//                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
-//                        f32 target_rad = rad_from_dir(target_direction);
-//
-//                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
-//                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
-//                        v2 target_pos = e->pos + projected_offset;
-//
-//                        entity_commands_move(e, target_pos, target_pos);
-//                        x += 1;
-//                    }
-//                    y += 1;
-//                }
-//            }
-//            ui_spacer(10);
-//            if(ui_button(str8_literal("skeleton - 50")).pressed_left){
-//                Entity* castle = state->entities_selected[0];
-//                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
-//                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
-//                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
-//                f32 projected_rad = rad_from_dir(projected_direction);
-//                f32 y = -2;
-//                for(s32 i=0; i<5; ++i){
-//                    f32 x = -4;
-//                    for(s32 j=0; j<10; ++j){
-//                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
-//
-//                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
-//                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
-//                        e->origin = castle;
-//
-//                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
-//                        f32 target_rad = rad_from_dir(target_direction);
-//
-//                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
-//                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
-//                        v2 target_pos = e->pos + projected_offset;
-//
-//                        entity_commands_move(e, target_pos, target_pos);
-//                        x += 1;
-//                    }
-//                    y += 1;
-//                }
-//            }
-//        }
-//    }
-//
-//    ui_end_panel();
-//}
+static void
+ui_castle(void){
+    ui_layout_axis(Axis_X)
+    {
+        ui_set_border_thickness(10);
+        ui_set_background_color(DEFAULT);
+        ui_set_pos(20, window.height - 100);
+        ui_set_size(ui_size_children(0), ui_size_children(0));
+        ui_begin_panel(str8_literal("castle_panel##4"), ui_floating_panel);
+
+        ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
+        ui_background_color(DARK_GRAY)
+        {
+            if(ui_button(str8_literal("skeleton")).pressed_left){
+                Entity* castle = state->entities_selected[0];
+
+                v2 dir = direction_v2(castle->pos, castle->rallypoint);
+                Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(1, 1), dir);
+                e->origin = castle;
+                e->rallypoint = castle->rallypoint;
+                e->rallypoint_cell = castle->rallypoint_cell;
+                entity_commands_move(e, e->rallypoint, e->rallypoint);
+            }
+
+            ui_spacer(10);
+            if(ui_button(str8_literal("skeleton - 15")).pressed_left){
+                Entity* castle = state->entities_selected[0];
+                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
+                v2 a = grid_cell_from_pos(castle->pos, 1);
+                v2 b = grid_pos_from_cell(castle->pos, state->world_cell_size);
+                v2 c = grid_pos_from_cell(castle->pos, 1);
+                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
+                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
+                f32 projected_rad = rad_from_dir(projected_direction);
+
+                f32 y = -1;
+                for(s32 i=0; i<3; ++i){
+                    f32 x = -2;
+                    for(s32 j=0; j<5; ++j){
+                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
+
+                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
+                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
+                        e->origin = castle;
+
+                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
+                        f32 target_rad = rad_from_dir(target_direction);
+
+                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
+                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
+                        v2 target_pos = e->pos + projected_offset;
+
+                        entity_commands_move(e, target_pos, target_pos);
+                        x += 1;
+                    }
+                    y += 1;
+                }
+            }
+            ui_spacer(10);
+            if(ui_button(str8_literal("skeleton - 50")).pressed_left){
+                Entity* castle = state->entities_selected[0];
+                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
+                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
+                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
+                f32 projected_rad = rad_from_dir(projected_direction);
+                f32 y = -2;
+                for(s32 i=0; i<5; ++i){
+                    f32 x = -4;
+                    for(s32 j=0; j<10; ++j){
+                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
+
+                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
+                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
+                        e->origin = castle;
+
+                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
+                        f32 target_rad = rad_from_dir(target_direction);
+
+                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
+                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
+                        v2 target_pos = e->pos + projected_offset;
+
+                        entity_commands_move(e, target_pos, target_pos);
+                        x += 1;
+                    }
+                    y += 1;
+                }
+            }
+        }
+    }
+
+    ui_end_panel();
+}
 
 static void
 draw_grid(f32 size, RGBA color){
@@ -1528,7 +1530,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
     init_memory(MB(500), GB(4));
     init_clock(&clock);
     // todo: define a wasapi struct here and pass it in for clarity
-    wasapi_init(2, 48000, 32);
+    audio_init(2, 48000, 32);
     init_events(&events);
 
     // note: sim measurements
@@ -1741,7 +1743,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 bool selected_new_units = false;
                 for(s32 i=0; i < array_count(state->entities); ++i){
                     Entity* e = state->entities + i;
-                    if(e->type == EntityType_Structure) continue;
+                    //if(e->type == EntityType_Structure) continue;
+                    if(!has_flag(e->flags, EntityFlag_Active)) continue;
 
                     if(rect_contains_point(state->selection_rect, e->pos)){
                         selected_new_units = true;
@@ -1812,7 +1815,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                         e->rallypoint = world_mouse;
                         e->rallypoint_cell = grid_cell_from_pos(world_mouse, state->world_cell_size);
                     }
-                    //ui_structure_castle();
+                    ui_castle();
                 }
             }
 
@@ -1860,7 +1863,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         }
 
         camera_2d_update(&camera, window.aspect_ratio);
-        wasapi_play_cursors();
+        audio_update();
 
         // rendering
         {
@@ -1869,10 +1872,10 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             render_batches_reset();
             //arena_free(ts->batch_arena);
             set_transform(m4_screen_from_world());
-            draw_world_terrain();
+            //draw_world_terrain();
             if(state->scene_state == SceneState_Editor){
                 if(state->show_world_cells){
-                    draw_grid(state->world_cell_size, RED);
+                    //draw_grid(state->world_cell_size, RED);
                 }
                 if(state->show_flocking_cells){
                     //draw_grid(state->flocking_cell_size, BLUE);
@@ -1939,15 +1942,13 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             // no
             //debug_draw_mouse_cell_pos();
 
-            draw_line(tp, wm, 0.1f, RED);
+            //draw_line(tp, wm, 0.1f, RED);
 
             if(state->selecting && !state->dragging_world){
                 //state->selection_rect.min.y *= -1;
                 //state->selection_rect.max.y *= -1;
                 draw_bounding_box(state->selection_rect, 0.1f, RED);
             }
-
-            // draw selected texture
             if(state->terrain_selected){
                 set_texture(&r_assets->textures[state->terrain_selected_id]);
                 draw_texture(controller.mouse.pos, make_v2(50, 50));
@@ -2042,7 +2043,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
     serialize_state();
     d3d_release();
     end_profiler();
-    wasapi_release();
+    audio_release();
 
     return(0);
 }

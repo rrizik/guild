@@ -223,9 +223,10 @@ get_font(void){
 
 static void
 set_transform(m4 transform){
-    r_transform = transform; if(!m4_equal(r_transform, transform, 0.1f)){
+    if(!m4_equal(r_transform, transform, 0.1f)){
         r_transform_gen++;
     }
+    r_transform = transform; 
 }
 
 static m4

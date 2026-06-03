@@ -75,6 +75,7 @@ typedef struct Entity{
     u32 collision_type;
     u32 index;
     u32 generation;
+    bool active;
 
     union{
         struct{
