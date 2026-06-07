@@ -98,15 +98,15 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
     swapChainDesc.Width              = 0; // use window width
     swapChainDesc.Height             = 0; // use window height
-    swapChainDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    swapChainDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM;
     swapChainDesc.Stereo             = FALSE;
     swapChainDesc.SampleDesc.Count   = 1;
     swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.BufferCount        = 2;
     swapChainDesc.Scaling            = DXGI_SCALING_STRETCH;
-    swapChainDesc.SwapEffect         = DXGI_SWAP_EFFECT_DISCARD;
-    swapChainDesc.AlphaMode          = DXGI_ALPHA_MODE_UNSPECIFIED;
+    swapChainDesc.SwapEffect         = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    swapChainDesc.AlphaMode          = DXGI_ALPHA_MODE_IGNORE;
     swapChainDesc.Flags              = 0;
 
     dxgiFactory->CreateSwapChainForHwnd(d3d_device, window_handle, &swapChainDesc, 0, 0, &d3d_swapchain);
@@ -117,7 +117,12 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     hr = d3d_swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&d3d_framebuffer);
     assert_hr(hr);
 
-    hr = d3d_device->CreateRenderTargetView(d3d_framebuffer, 0, &d3d_framebuffer_view);
+    // needed for SRGB framebuffer when using FLIP model swap effect
+    D3D11_RENDER_TARGET_VIEW_DESC framebufferRTVdesc = {}; 
+    framebufferRTVdesc.Format        = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    framebufferRTVdesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+
+    hr = d3d_device->CreateRenderTargetView(d3d_framebuffer, &framebufferRTVdesc, &d3d_framebuffer_view);
     assert_hr(hr);
 
     // ---------------------------------------------------------------------------------
@@ -134,15 +139,28 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     // ---------------------------------------------------------------------------------
     // Sampler State for textures
     // ---------------------------------------------------------------------------------
+#if DEBUG
     D3D11_SAMPLER_DESC sampler_desc = {
         .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
-        .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
-        .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-        .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
-        .MipLODBias = 2.0f,
+        .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+        .AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
+        .AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
+        .MipLODBias = 0.0f,
+        .BorderColor = {1.0f, 0.0f, 1.0f, 1.0f},
         .MinLOD = 0.0f,
         .MaxLOD = FLT_MAX,
     };
+#else
+    D3D11_SAMPLER_DESC sampler_desc = {
+        .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
+        .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+        .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+        .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+        .MipLODBias = 0.0f,
+        .MinLOD = 0.0f,
+        .MaxLOD = FLT_MAX,
+    };
+#endif
     hr = d3d_device->CreateSamplerState(&sampler_desc, &d3d_sampler_state);
     assert_hr(hr);
 
@@ -153,13 +171,22 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     blend_desc.AlphaToCoverageEnable = false;
     blend_desc.IndependentBlendEnable = false;
     blend_desc.RenderTarget[0].BlendEnable = true;
-    blend_desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-    blend_desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-    blend_desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-    blend_desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-    blend_desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+    // Textures with non-multiplied alphas
+    blend_desc.RenderTarget[0].BlendOp        = D3D11_BLEND_OP_ADD;
+    blend_desc.RenderTarget[0].SrcBlend       = D3D11_BLEND_SRC_ALPHA;
+    blend_desc.RenderTarget[0].DestBlend      = D3D11_BLEND_INV_SRC_ALPHA;
+    blend_desc.RenderTarget[0].BlendOpAlpha   = D3D11_BLEND_OP_ADD;
+    blend_desc.RenderTarget[0].SrcBlendAlpha  = D3D11_BLEND_ONE;
     blend_desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+    // Textures with pre-multiplied alphas
+    // blend_desc.RenderTarget[0].BlendOp        = D3D11_BLEND_ONE, 
+    // blend_desc.RenderTarget[0].SrcBlend       = D3D11_BLEND_INV_SRC_ALPHA, 
+    // blend_desc.RenderTarget[0].DestBlend      = D3D11_BLEND_OP_ADD, 
+    // blend_desc.RenderTarget[0].BlendOpAlpha   = D3D11_BLEND_ZERO, 
+    // blend_desc.RenderTarget[0].SrcBlendAlpha  = D3D11_BLEND_ZERO, 
+    // blend_desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_OP_ADD, 
     blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
 
     hr = d3d_device->CreateBlendState(&blend_desc, &d3d_blend_state);
     assert_hr(hr);
@@ -184,8 +211,8 @@ init_d3d(HWND window_handle, u32 width, u32 height){
     // ---------------------------------------------------------------------------------
     // Vertex Buffers
     // ---------------------------------------------------------------------------------
-    d3d_vertex_buffer_size = KB(100);
     {
+        d3d_vertex_buffer_size = KB(100);
         D3D11_BUFFER_DESC desc = {0};
         desc.ByteWidth = (u32)d3d_vertex_buffer_size;
         desc.Usage     = D3D11_USAGE_DYNAMIC;

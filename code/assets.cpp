@@ -9,6 +9,15 @@ assets_load(Arena* arena, Assets* assets){
     String8 build_path = os_application_path(scratch.arena);
 
     Bitmap bm;
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/isometric_character_idle.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Char_Idle].view, &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/isometric_character_punch.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Char_Punch].view, &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/isometric_character_run.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Char_Run].view, &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/isometric_character_walk.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Char_Walk].view, &bm);
+
     bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass1.png"));
     d3d_init_texture_resource(&assets->textures[TextureAsset_Grass1].view, &bm);
     //bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass2.bmp"));

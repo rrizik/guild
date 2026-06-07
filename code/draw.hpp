@@ -1,6 +1,7 @@
 #ifndef DRAW_H
 #define DRAW_H
 
+static RGBA TEST_COLOR =   {34/255.0f, 177/255.0f, 76/255.0f,  1.0f};
 static RGBA CLEAR =   {1.0f, 1.0f, 1.0f,  0.0f};
 static RGBA RED =     {1.0f, 0.0f, 0.0f,  1.0f};
 static RGBA GREEN =   {0.0f, 1.0f, 0.0f,  1.0f};
@@ -104,27 +105,29 @@ static RGBA srgb_from_linear(RGBA value);
 
 static void init_draw(Arena* arena);
 
-static void draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color);
-static void draw_quad(v2 pos, v2 dim, RGBA color);
-static void draw_quad(Rect rect, RGBA color);
-static void draw_quad(Quad quad, RGBA color);
-
 // todo: not implemented yet
 static void draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color);
 static void draw_quad(v2 pos, v2 dim, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color);
 static void draw_quad(Rect rect, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color);
 static void draw_quad(Quad quad, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color);
 
+static void draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color);
+static void draw_quad(v2 pos, v2 dim, RGBA color);
+static void draw_quad(Rect rect, RGBA color);
+static void draw_quad(Quad quad, RGBA color);
+
+static void draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color);
+static void draw_bounding_box(v2 pos, v2 dim, f32 width, RGBA color);
+static void draw_bounding_box(Quad quad, f32 width, RGBA color);
+static void draw_bounding_box(Rect rect, f32 width, RGBA color);
+
+static void draw_line(v2 p0, v2 p1, f32 width, RGBA color);
+static void draw_text(String8 text, v2 pos, RGBA color);
+
 static void draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color=WHITE);
 static void draw_texture(v2 pos, v2 dim, RGBA color=WHITE);
 static void draw_texture(Rect rect, RGBA color=WHITE);
 static void draw_texture(Quad quad, RGBA color=WHITE);
-
-static void draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color);
-static void draw_bounding_box(Quad quad, f32 width, RGBA color);
-static void draw_bounding_box(Rect rect, f32 width, RGBA color);
-static void draw_line(v2 p0, v2 p1, f32 width, RGBA color);
-static void draw_text(String8 text, v2 pos, RGBA color);
 
 static void draw_render_batches(void);
 static void render_batches_reset(void);

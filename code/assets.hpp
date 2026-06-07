@@ -55,6 +55,10 @@ typedef enum TextureAsset{
     TextureAsset_Lava1,
     TextureAsset_Wood1,
     TextureAsset_Skeleton1,
+    TextureAsset_Char_Idle,
+    TextureAsset_Char_Punch,
+    TextureAsset_Char_Run,
+    TextureAsset_Char_Walk,
 
     TextureAsset_Castle1,
 

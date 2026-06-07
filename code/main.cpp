@@ -260,7 +260,6 @@ add_castle(TextureAsset texture, v2 cell, v2 dim, RGBA color, u32 flags){
         e->deg = 0;
         e->rot = dir_from_deg(e->deg);
         e->structure_type = StructureType_Castle;
-        set_flag(&e->flags, EntityFlag_Active);
     }
     else{
         print("Failed to add entity: Castle\n");
@@ -282,7 +281,6 @@ add_skeleton(TextureAsset texture, v2 cell, v2 dim, v2 dir, RGBA color, u32 flag
         e->rot = make_v2(1, 0);
         e->deg = deg_from_dir(e->rot);
         set_flag(&e->flags, EntityFlag_MoveWithPhys);
-        set_flag(&e->flags, EntityFlag_Active);
     }
     else{
         print("Failed to add entity: Quad\n");
@@ -1613,7 +1611,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
 
-        state->scene_state = SceneState_Editor;
+        state->scene_state = SceneState_Game;
         //state->scene_state = SceneState_Editor;
         //init_camera_2d(&camera, make_v2((state->world_width_in_cells/2) * state->world_cell_size, (state->world_height_in_cells/2) * state->world_cell_size), 30);
         init_camera_2d(&camera, make_v2(10, 5), 15);
@@ -1691,7 +1689,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         }
 
-        if(controller_button_pressed(KeyCode_8)){
+        if(controller_button_pressed(KeyCode_F1)){
             if(state->scene_state == SceneState_Editor){
                 state->scene_state = SceneState_Game;
                 state->terrain_selected = false;
@@ -1743,7 +1741,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 bool selected_new_units = false;
                 for(s32 i=0; i < array_count(state->entities); ++i){
                     Entity* e = state->entities + i;
-                    //if(e->type == EntityType_Structure) continue;
                     if(!has_flag(e->flags, EntityFlag_Active)) continue;
 
                     if(rect_contains_point(state->selection_rect, e->pos)){
@@ -1998,9 +1995,11 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //draw_text(str, make_v2(0, 70), GREEN);
             //draw_quad(r, BLUE);
 
-            set_texture(&r_assets->textures[TextureAsset_Castle1]);
-            Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
-            draw_texture(rr, WHITE);
+            if(state->scene_state == SceneState_Editor){
+                set_texture(&r_assets->textures[TextureAsset_Castle1]);
+                Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
+                draw_texture(rr, WHITE);
+            }
 
             //set_transform(m4_screen_from_world());
             //draw_texture(rr, RED);
@@ -2012,6 +2011,9 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //draw_line(camera.p1, camera.p2, 5, RED);
             //draw_line(camera.p2, camera.p3, 5, RED);
             //draw_line(camera.p3, camera.p0, 5, RED);
+            set_texture(&r_assets->textures[TextureAsset_Char_Idle]);
+            //draw_texture(make_v2(window.width/2, window.height/2), make_v2(100, 100), TEST_COLOR);
+            draw_quad(make_v2(window.width/2, window.height/2), make_v2(100, 100), TEST_COLOR);
 
             {
                 d3d_clear_color(BACKGROUND_COLOR);
