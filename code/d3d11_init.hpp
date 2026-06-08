@@ -53,8 +53,8 @@ global ID3D11ShaderResourceView* white_shader_resource;
 
 global D3D11_INPUT_ELEMENT_DESC il_2d_textured[] = {
         {"POS",  0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COL",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"TEX",  0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COL",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 };
 
 typedef struct ConstantBuffer3D{
@@ -89,8 +89,8 @@ typedef struct Texture{
 
 typedef struct Vertex2{
     v2 position;
-    RGBA color;
     v2 uv;
+    RGBA color;
 } Vertex2;
 
 static void init_d3d(HWND handle, u32 width, u32 height);
