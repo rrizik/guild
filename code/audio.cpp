@@ -79,7 +79,7 @@ audio_init(u16 channels, u32 samples_per_sec, u16 bits_per_sample){
         return;
     }
 
-    audio_stream_start();
+    //audio_stream_start();
 }
 
 static void
@@ -109,9 +109,9 @@ audio_play(Wave* wave, f32 volume, bool loop){
         cursor->volume = volume;
         cursor->loop = loop;
 
-        //if(audio.cursor_count == 0){
-        //    audio_start_stream();
-        //}
+        if(audio.cursor_count == 0){
+            audio_stream_start();
+        }
         audio.cursor_count++;
     }
     return(cursor);
@@ -121,9 +121,6 @@ static bool
 audio_stop(Audio_Cursor* cursor){
     if(cursor && cursor->active){
         audio_cursor_remove(cursor);
-        //if(audio.cursor_count <= 0){
-        //    audio_stop_stream();
-        //}
         return(true);
     }
     return(false);
@@ -158,6 +155,7 @@ audio_update(void){
         if (FAILED(hr)) {
             assert_hr(hr);
         }
+        audio_stream_stop();
         return;
     }
 
@@ -260,6 +258,10 @@ audio_cursor_remove(Audio_Cursor* cursor){
         assert(audio.cursor_count > 0);
         audio.cursor_count--;
         *cursor = {0};
+
+        if(audio.cursor_count <= 0){
+            audio_stream_stop();
+        }
     }
 }
 

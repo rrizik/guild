@@ -48,8 +48,8 @@ sim_game(void){
         begin_timed_scope("flocking");
         for(s32 i = 0; i < array_count(state->entities); ++i){
             Entity *e = state->entities + i;
-            if(!has_flag(e->flags, EntityFlag_Active)) continue;
-            if(!has_flag(e->flags, EntityFlag_MoveWithPhys)) continue;
+            if(!has_flags(e->flags, EntityFlag_Active)) continue;
+            if(!has_flags(e->flags, EntityFlag_MoveWithPhys)) continue;
 
             // All 9 surrounding cells.
             v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
@@ -84,7 +84,7 @@ sim_game(void){
                 for(BinNode* bin = cell->bin; bin != 0; bin = bin->next){
                     for(s32 k = 0; k < bin->at; ++k){
                         Entity* other = bin->entities[k];
-                        if(!has_flag(other->flags, EntityFlag_MoveWithPhys)) continue;
+                        if(!has_flags(other->flags, EntityFlag_MoveWithPhys)) continue;
                         if(e == other) continue;
 
                         f32 distance_squared = distance_squared_v2(e->pos, other->pos);
@@ -188,7 +188,7 @@ handle_from_entity(Entity *e){
 static void
 remove_entity(Entity* e){
     e->type = EntityType_None;
-    clear_flag(&e->flags, EntityFlag_Active);
+    clear_flags(&e->flags, EntityFlag_Active);
     state->free_entities[++state->free_entities_at] = e->index;
     state->entities_count--;
     *e = {0};
@@ -200,7 +200,7 @@ add_entity(EntityType type){
         u32 free_entity_index = state->free_entities[state->free_entities_at--];
         Entity *e = state->entities + free_entity_index;
         e->index = free_entity_index;
-        set_flag(&e->flags, EntityFlag_Active);
+        set_flags(&e->flags, EntityFlag_Active);
         state->generation[e->index]++;
         state->entities_count++;
         e->generation = state->generation[e->index]; // CONSIDER: this might not be necessary
@@ -280,7 +280,7 @@ add_skeleton(TextureAsset texture, v2 cell, v2 dim, v2 dir, RGBA color, u32 flag
         e->dir = dir;
         e->rot = make_v2(1, 0);
         e->deg = deg_from_dir(e->rot);
-        set_flag(&e->flags, EntityFlag_MoveWithPhys);
+        set_flags(&e->flags, EntityFlag_MoveWithPhys);
     }
     else{
         print("Failed to add entity: Quad\n");
@@ -294,7 +294,7 @@ entities_clear(void){
     for(u32 i = state->free_entities_at; i <= state->free_entities_at; --i){
         Entity* e = state->entities + i;
         e->type = EntityType_None;
-        clear_flag(&e->flags, EntityFlag_Active);
+        clear_flags(&e->flags, EntityFlag_Active);
         state->free_entities[i] = state->free_entities_at - i;
         state->generation[i] = 0;
     }
@@ -427,13 +427,12 @@ draw_entities(State* state){
     for(s32 idx = 0; idx < array_count(state->entities); ++idx){
         Entity *e = state->entities + idx;
 
-        Quad quad = quad_from_entity(e);
-        if(has_flag(e->flags, EntityFlag_Active)){
+        Quad quad = quad_from_entity_world(e);
+        if(has_flags(e->flags, EntityFlag_Active)){
 
             switch(e->type){
                 case EntityType_Quad:{
                     quad = rotate_quad(quad, e->deg, e->pos);
-
                     draw_quad(quad, e->color);
                 } break;
             }
@@ -442,8 +441,8 @@ draw_entities(State* state){
     for(s32 idx = 0; idx < array_count(state->entities); ++idx){
         Entity *e = state->entities + idx;
 
-        Quad quad = quad_from_entity(e);
-        if(has_flag(e->flags, EntityFlag_Active)){
+        Quad quad = quad_from_entity_world(e);
+        if(has_flags(e->flags, EntityFlag_Active)){
 
             switch(e->type){
                 case EntityType_Structure:{
@@ -451,7 +450,7 @@ draw_entities(State* state){
 
                     switch(e->structure_type){
                         case StructureType_Castle:{
-                            set_texture(&r_assets->textures[e->texture]);
+                            set_texture(e->texture);
                             draw_texture(quad, e->color);
 
                             if(e->selected){
@@ -471,20 +470,20 @@ draw_entities(State* state){
     for(s32 idx = 0; idx < array_count(state->entities); ++idx){
         Entity *e = state->entities + idx;
 
-        Quad quad = quad_from_entity(e);
-        if(has_flag(e->flags, EntityFlag_Active)){
+        Quad quad = quad_from_entity_world(e);
+        if(has_flags(e->flags, EntityFlag_Active)){
 
             switch(e->type){
                 case EntityType_Texture:{
                     quad = rotate_quad(quad, e->deg, e->pos);
 
-                    set_texture(&r_assets->textures[e->texture]);
+                    set_texture(e->texture);
                     draw_texture(quad, e->color);
                 } break;
                 case EntityType_Skeleton1:{
                     quad = rotate_quad(quad, e->deg, e->pos);
 
-                    set_texture(&r_assets->textures[e->texture]);
+                    set_texture(e->texture);
                     draw_texture(quad, e->color);
 
 
@@ -863,7 +862,7 @@ draw_world_terrain(void){
                         s32 idx = (s32)(((y/state->world_cell_size) * state->world_width_in_cells) + (x/state->world_cell_size));
                         s32 cell_tex = state->world_grid[idx];
                         if(cell_tex == i){
-                            set_texture(&r_assets->textures[cell_tex]);
+                            set_texture(cell_tex);
                             Rect tex_rect = make_rect_size(cell, make_v2(state->world_cell_size, state->world_cell_size));
                             draw_texture(tex_rect);
                         }
@@ -1196,7 +1195,7 @@ partition_entities_in_bins(){
     memset(state->cells, 0, sizeof(state->cells));
     for(s32 i=0; i < array_count(state->entities); ++i){
         Entity* e = state->entities + i;
-        if(!has_flag(e->flags, EntityFlag_Active)) continue;
+        if(!has_flags(e->flags, EntityFlag_Active)) continue;
 
         v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
         if(!grid_cell_coords_in_bounds(cell_coords)) continue;
@@ -1741,7 +1740,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 bool selected_new_units = false;
                 for(s32 i=0; i < array_count(state->entities); ++i){
                     Entity* e = state->entities + i;
-                    if(!has_flag(e->flags, EntityFlag_Active)) continue;
+                    if(!has_flags(e->flags, EntityFlag_Active)) continue;
 
                     if(rect_contains_point(state->selection_rect, e->pos)){
                         selected_new_units = true;
@@ -1947,8 +1946,9 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 draw_bounding_box(state->selection_rect, 0.1f, RED);
             }
             if(state->terrain_selected){
-                set_texture(&r_assets->textures[state->terrain_selected_id]);
+                set_texture(state->terrain_selected_id);
                 draw_texture(controller.mouse.pos, make_v2(50, 50));
+
                 draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
             }
 
@@ -1996,7 +1996,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //draw_quad(r, BLUE);
 
             if(state->scene_state == SceneState_Editor){
-                set_texture(&r_assets->textures[TextureAsset_Castle1]);
+                set_texture(TextureAsset_Castle1);
                 Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
                 draw_texture(rr, WHITE);
             }
@@ -2011,9 +2011,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //draw_line(camera.p1, camera.p2, 5, RED);
             //draw_line(camera.p2, camera.p3, 5, RED);
             //draw_line(camera.p3, camera.p0, 5, RED);
-            set_texture(&r_assets->textures[TextureAsset_Char_Idle]);
-            //draw_texture(make_v2(window.width/2, window.height/2), make_v2(100, 100), TEST_COLOR);
-            draw_quad(make_v2(window.width/2, window.height/2), make_v2(100, 100), TEST_COLOR);
+            set_texture(TextureAsset_Human_Walk);
+            draw_texture(make_v2(window.width/2, window.height/2), make_v2(200, 200), WHITE);
 
             {
                 d3d_clear_color(BACKGROUND_COLOR);

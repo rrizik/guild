@@ -2,18 +2,18 @@
 #define ENTITY_C
 
 static bool
-has_flag(u32 lflags, u32 rflags){
+has_flags(u32 lflags, u32 rflags){
     bool result = (lflags & rflags) == rflags;
     return(result);
 }
 
 static void
-set_flag(u32* lflags, u32 rflags){
+set_flags(u32* lflags, u32 rflags){
     *lflags |= rflags;
 }
 
 static void
-clear_flag(u32* lflags, u32 rflags){
+clear_flags(u32* lflags, u32 rflags){
     *lflags &= ~rflags;
 }
 
@@ -40,12 +40,22 @@ collision_box_from_entity(Entity* e){
 }
 
 static Quad
-quad_from_entity(Entity* e){
+quad_from_entity_world(Entity* e){
+    Quad result = {0};
+    result.p0 = make_v2(e->pos.x - e->dim.w/2, e->pos.y + e->dim.h/2);
+    result.p1 = make_v2(e->pos.x + e->dim.w/2, e->pos.y + e->dim.h/2);
+    result.p2 = make_v2(e->pos.x + e->dim.w/2, e->pos.y - e->dim.h/2);
+    result.p3 = make_v2(e->pos.x - e->dim.w/2, e->pos.y - e->dim.h/2);
+    return(result);
+}
+
+static Quad
+quad_from_entity_screen(Entity* e){
     Quad result = {0};
     result.p0 = make_v2(e->pos.x - e->dim.w/2, e->pos.y - e->dim.h/2);
     result.p1 = make_v2(e->pos.x + e->dim.w/2, e->pos.y - e->dim.h/2);
     result.p2 = make_v2(e->pos.x + e->dim.w/2, e->pos.y + e->dim.h/2);
-    result.p3 = make_v2(e->pos.x - e->dim.w/2, e->pos.y + e->dim.h/2);
+    result.p3 = make_v2(e->pos.x - e->dim.w/2, e->pos.y + e->dim.h/1);
     return(result);
 }
 

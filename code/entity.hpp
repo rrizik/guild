@@ -126,9 +126,9 @@ typedef struct Entity{
     TextureAsset texture;
 } Entity;
 
-static bool has_flag(u32 lflags, u32 rflags);
-static void set_flag(u32* lflags, u32 rflags);
-static void clear_flag(u32* lflags, u32 rflags);
+static bool has_flags(u32 lflags, u32 rflags);
+static void set_flags(u32* lflags, u32 rflags);
+static void clear_flags(u32* lflags, u32 rflags);
 
 typedef struct EntityHandle{
     u32 index;
@@ -140,7 +140,9 @@ static EntityHandle zero_entity_handle(void);
 //static EntityHandle handle_from_entity(PermanentMemory* pm, Entity *e);
 static Rect rect_from_entity(Entity* e);
 static Rect collision_box_from_entity(Entity* e);
-static Quad bounding_box_from_entity(Entity* e);
+
+static Quad quad_from_entity_world(Entity* e);
+static Quad quad_from_entity_screen(Entity* e);
 
 static u32 entity_commands_count(Entity* e);
 static bool entity_commands_empty(Entity* e);
@@ -148,6 +150,7 @@ static bool entity_commands_full(Entity* e);
 static void entity_commands_clear(Entity* e);
 
 static void entity_commands_add(Entity* e, EntityCommand c);
+static EntityCommand* entity_commands_read(Entity* e, u32 read);
 static EntityCommand* entity_commands_next(Entity* e);
 
 static void entity_commands_move(Entity* e, v2 move_to, v2 clicked_at);

@@ -47,7 +47,7 @@
 //#define SCREEN_HEIGHT 1080
 s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 window_type);
 static LRESULT win_message_callback(HWND hwnd, u32 message, u64 w_param, s64 l_param);
-static Window win32_window_create(const wchar* window_name, u32 width, u32 height);
+static Window win32_window_create(s32 width, s32 height, const wchar* window_name);
 
 global Arena* global_arena = os_make_arena(MB(100));
 typedef struct Memory{
@@ -212,12 +212,12 @@ static bool handle_game_events(Event event);
 
 static void generate_new_world(f32 width, f32 height);
 
-static void draw_grid(f32 size);
+static void draw_grid(f32 size, RGBA color);
 static void draw_world_terrain(void);
 static void draw_entities(State* state);
 static void debug_draw_mouse_cell_pos(void);
 static void ui_editor(void);
-static void ui_structure_castle(void);
+static void ui_castle(void);
 
 static bool mouse_in_cell(v2 cell);
 static bool mouse_in_boundingbox(Entity* e);
@@ -229,10 +229,13 @@ static v2 grid_cell_center(v2 pos);
 static bool grid_cell_coords_in_bounds(v2 coords);
 static bool v2_close_enough(v2 p1, v2 p2, f32 epsilon);
 
+static Entity* entity_from_handle(EntityHandle handle);
+static EntityHandle handle_from_entity(Entity *e);
+
 static void serialize_world(String8 world);
 static void deserialize_world(String8 world);
-static void save_state(void);
-static void load_state(void);
+static void deserialize_state(void);
+static void serialize_state(void);
 
 static void partition_entities_in_bins(void);
 

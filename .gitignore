@@ -6,3 +6,5 @@ todo
 tags
 .tags
 \*.pdb
+*.md
+*.png

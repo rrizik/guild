@@ -17,6 +17,8 @@ assets_load(Arena* arena, Assets* assets){
     d3d_init_texture_resource(&assets->textures[TextureAsset_Char_Run].view, &bm);
     bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/isometric_character_walk.png"));
     d3d_init_texture_resource(&assets->textures[TextureAsset_Char_Walk].view, &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/human_walk.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Human_Walk].view, &bm);
 
     bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass1.png"));
     d3d_init_texture_resource(&assets->textures[TextureAsset_Grass1].view, &bm);
@@ -68,7 +70,7 @@ assets_load(Arena* arena, Assets* assets){
     assets->waves[WaveAsset_ShipExplode] = wave_file_read(arena, build_path, str8_literal("sounds/ship_explode.wav"));
     assets->waves[WaveAsset_Music] = wave_file_read(arena, build_path, str8_literal("sounds/music.wav"));
 
-    assets->fonts[FontAsset_Arial] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 16);
+    assets->fonts[FontAsset_Arial]  = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 16);
     assets->fonts[FontAsset_Arial1] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 32);
     assets->fonts[FontAsset_Arial2] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 16);
     assets->fonts[FontAsset_Arial3] = font_ttf_read(arena, build_path, str8_literal("fonts/arial.ttf"), 8);

@@ -37,4 +37,6 @@ static void init_console_commands(void);
 static s32  command_parse_args(String8 line);
 static void run_command(String8 line);
 
+static String8 push_str8(Arena* arena, String8 value);
+
 #endif

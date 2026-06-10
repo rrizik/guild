@@ -277,15 +277,15 @@ console_draw(void){
 
         // rect setup
         f32 y = (f32)(-font->vertical_offset);
-        v2 output_p0 = make_v2(0                , y);
+        v2 output_p0 = make_v2(0, y);
         v2 output_p1 = make_v2((f32)console.window->width, y);
         v2 output_p2 = make_v2((f32)console.window->width, (console.open_t * (f32)console.window->height) + y);
-        v2 output_p3 = make_v2(0                , (console.open_t * (f32)console.window->height) + y);
+        v2 output_p3 = make_v2(0, (console.open_t * (f32)console.window->height) + y);
 
-        v2 input_p0 = make_v2(0                , output_p2.y);
+        v2 input_p0 = make_v2(0, output_p2.y);
         v2 input_p1 = make_v2((f32)console.window->width, output_p2.y);
         v2 input_p2 = make_v2((f32)console.window->width, output_p2.y + (f32)font->vertical_offset);
-        v2 input_p3 = make_v2(0                , output_p2.y + (f32)font->vertical_offset);
+        v2 input_p3 = make_v2(0, output_p2.y + (f32)font->vertical_offset);
 
         String8 str = str8(console.input.data, (u64)console.cursor_index);
 

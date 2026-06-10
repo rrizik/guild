@@ -102,9 +102,8 @@ static void d3d_release_vertex_buffer(ID3D11Buffer* vertex_buffer);
 static ID3D11Buffer* d3d_make_vertex_buffer(s32 size);
 
 static void d3d_clear_color(RGBA color);
-static void d3d_resize_window(Window* window, f32 width, f32 height);
+static void d3d_resize_window(f32 width, f32 height);
 static void d3d_draw(Vertex2* buffer, s32 count, Texture* texture);
-static void d3d_update_vertex_buffer_size(s32 new_size);
 static void d3d_present(void);
 static void d3d_release(void);
 

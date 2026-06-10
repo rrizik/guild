@@ -46,7 +46,7 @@ typedef struct Font{
     stbtt_packedchar packed_chars[256];
 
     Texture texture;
-    u32 texture_id;
+    s32 texture_id;
     bool succeed;
 } Font;
 

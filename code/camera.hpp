@@ -16,7 +16,7 @@ typedef struct Camera{
 } Camera;
 
 static void init_camera(Camera* camera);
-static void update_camera(Camera* camera, f32 dx, f32 dy, f32 dt);
+static void camera_update(Camera* camera, f32 dx, f32 dy, f32 dt);
 
 typedef struct Camera2D{
     union{
@@ -45,5 +45,6 @@ static Camera2D camera;
 
 static void camera_2d_reset(Camera2D* camera);
 static void init_camera_2d(Camera2D* camera, v2 pos, f32 size);
+static void camera_2d_update(Camera2D* camera, f32 aspect_ratio);
 
 #endif

@@ -52,7 +52,8 @@ typedef struct RenderBatchNode{
 } RenderBatchNode;
 global RenderBatchNode render_batches = {0};
 
-static void set_texture(Texture* texture);
+static void set_texture(s32 texture_id);
+static void set_texture_explicit(s32 texture_id);
 static Texture* get_texture(void);
 static void set_font(Font* font);
 static Font* get_font(void);
@@ -86,8 +87,8 @@ typedef struct RenderCommand{
     String8 text;
 } RenderCommand;
 
-static RGBA brighten_color(RGBA color);
-static RGBA darken_color(RGBA color);
+static RGBA brighten_color(RGBA color, float factor);
+static RGBA darken_color(RGBA color, float factor);
 
 static v2 v2_world_from_screen(v2 screen_pos, Camera2D* camera);
 static v2 v2_world_from_screen(v2 screen_pos);
@@ -103,18 +104,29 @@ static RGBA linear_to_srgb_approx(RGBA value);
 static RGBA linear_from_srgb(RGBA value);
 static RGBA srgb_from_linear(RGBA value);
 
-static void init_draw(Arena* arena);
+static void init_draw(Arena* arena, Assets* assets);
 
-// todo: not implemented yet
-static void draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color);
-static void draw_quad(v2 pos, v2 dim, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color);
-static void draw_quad(Rect rect, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color);
-static void draw_quad(Quad quad, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color);
+static void push_texture_quad();
 
-static void draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color);
-static void draw_quad(v2 pos, v2 dim, RGBA color);
-static void draw_quad(Rect rect, RGBA color);
-static void draw_quad(Quad quad, RGBA color);
+static void draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color=WHITE);
+static void draw_quad(v2 pos, v2 dim, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color=WHITE);
+static void draw_quad(Rect rect, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color=WHITE);
+static void draw_quad(Quad quad, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color=WHITE);
+
+static void draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color=WHITE);
+static void draw_quad(v2 pos, v2 dim, RGBA color=WHITE);
+static void draw_quad(Rect rect, RGBA color=WHITE);
+static void draw_quad(Quad quad, RGBA color=WHITE);
+
+static void draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color=WHITE);
+static void draw_texture(v2 pos, v2 dim, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color=WHITE);
+static void draw_texture(Rect rect, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color=WHITE);
+static void draw_texture(Quad quad, v2 uv0, v2 uv1, v2 uv2, v2 uv3, RGBA color=WHITE);
+
+static void draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color=WHITE);
+static void draw_texture(v2 pos, v2 dim, RGBA color=WHITE);
+static void draw_texture(Rect rect, RGBA color=WHITE);
+static void draw_texture(Quad quad, RGBA color=WHITE);
 
 static void draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color);
 static void draw_bounding_box(v2 pos, v2 dim, f32 width, RGBA color);
@@ -122,15 +134,16 @@ static void draw_bounding_box(Quad quad, f32 width, RGBA color);
 static void draw_bounding_box(Rect rect, f32 width, RGBA color);
 
 static void draw_line(v2 p0, v2 p1, f32 width, RGBA color);
-static void draw_text(String8 text, v2 pos, RGBA color);
 
-static void draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color=WHITE);
-static void draw_texture(v2 pos, v2 dim, RGBA color=WHITE);
-static void draw_texture(Rect rect, RGBA color=WHITE);
-static void draw_texture(Quad quad, RGBA color=WHITE);
+static void draw_text(String8 text, v2 pos, RGBA color);
 
 static void draw_render_batches(void);
 static void render_batches_reset(void);
+
+//v2 uv0 = make_v2(0.0f, 0.0f)
+//v2 uv1 = make_v2(1.0f, 0.0f)
+//v2 uv2 = make_v2(1.0f, 1.0f)
+//v2 uv3 = make_v2(0.0f, 1.0f)
 
 
 #endif

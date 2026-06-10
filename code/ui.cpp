@@ -117,20 +117,20 @@ ui_draw(UI_Box* box){
         return;
     }
 
-    if(has_flag(box->flags, UI_BoxFlag_DrawBackground)){
+    if(has_flags(box->flags, UI_BoxFlag_DrawBackground)){
         if(ui_state->hot == box->key && ui_state->active == box->key){
-            if(has_flag(box->flags, UI_BoxFlag_ActiveAnimation)){
+            if(has_flags(box->flags, UI_BoxFlag_ActiveAnimation)){
                 box->background_color = darken_color(box->background_color, 0.2f);
             }
         }
         if(ui_state->hot == box->key && ui_state->active == 0){
-            if(has_flag(box->flags, UI_BoxFlag_HotAnimation)){
+            if(has_flags(box->flags, UI_BoxFlag_HotAnimation)){
                 box->background_color = brighten_color(box->background_color, 0.2f);
             }
         }
         draw_quad(box->rect, box->background_color);
     }
-    if(has_flag(box->flags, UI_BoxFlag_DrawText)){
+    if(has_flags(box->flags, UI_BoxFlag_DrawText)){
         set_font(box->font);
 
         String8 text = ui_text_part_from_key(box->string);
@@ -249,7 +249,7 @@ ui_make_box(String8 string, UI_BoxFlags flags){
     BoxCache* cache = ui_table_lookup(ui_state->table, string);
     if(cache){
         // todo(rr): I think I need a per cache item flag check, almost like auto_pop
-        if(!has_flag(flags, UI_BoxFlag_NoCache)){
+        if(!has_flags(flags, UI_BoxFlag_NoCache)){
             result->rect = cache->rect;
             result->size[Axis_X] = cache->size[Axis_X];
             result->size[Axis_Y] = cache->size[Axis_Y];
@@ -319,7 +319,7 @@ ui_signal_from_box(UI_Box* box){
     }
 
     v2 mouse_pos = ui_mouse_pos();
-    if(has_flag(box->flags, UI_BoxFlag_Clickable)){
+    if(has_flags(box->flags, UI_BoxFlag_Clickable)){
 
         if(rect_contains_point(box->rect, mouse_pos)){
             if(ui_state->hot == 0){
@@ -347,7 +347,7 @@ ui_signal_from_box(UI_Box* box){
         }
     }
 
-    if(has_flag(box->flags, UI_BoxFlag_Draggable)){
+    if(has_flags(box->flags, UI_BoxFlag_Draggable)){
         if(ui_state->active == box->key && controller_button_held(MOUSE_BUTTON_LEFT)){
             box->rel_pos[Axis_X] = (f32)(mouse_pos.x - ui_state->mouse_pos_record.x);
             box->rel_pos[Axis_Y] = (f32)(mouse_pos.y - ui_state->mouse_pos_record.y);
@@ -439,7 +439,7 @@ ui_traverse_positions(UI_Box* box, Axis axis){
     // TODO(rr): why do I have this here?
     //if(!box->prev){
     if(box->layout_axis == axis){
-        if(has_flag(box->flags, UI_BoxFlag_NoSiblings)){
+        if(has_flags(box->flags, UI_BoxFlag_NoSiblings)){
             if(box->parent){
                 box->pos[axis] = box->parent->pos[axis] + box->rel_pos[axis] + box->border_thickness;
             }
@@ -456,7 +456,7 @@ ui_traverse_positions(UI_Box* box, Axis axis){
         }
     }
     else{
-        if(has_flag(box->flags, UI_BoxFlag_NoSiblings)){
+        if(has_flags(box->flags, UI_BoxFlag_NoSiblings)){
             if(box->parent){
                 box->pos[axis] = box->parent->pos[axis] + box->rel_pos[axis] + box->border_thickness;
             }
