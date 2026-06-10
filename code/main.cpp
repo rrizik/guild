@@ -6,16 +6,16 @@ sim_game(void){
     // camera
     {
         // movement
-        if(controller_button_held(KeyCode_UP) || controller_button_held(KeyCode_W)){
+        if(controller_button_held(KeyCode_UP)){ //|| controller_button_held(KeyCode_W)){
             camera.y += ((camera.size) + 50) * (f32)clock.dt;
         }
-        if(controller_button_held(KeyCode_DOWN) || controller_button_held(KeyCode_S)){
+        if(controller_button_held(KeyCode_DOWN)){ //|| controller_button_held(KeyCode_S)){
             camera.y -= ((camera.size) + 50) * (f32)clock.dt;
         }
-        if(controller_button_held(KeyCode_LEFT) || controller_button_held(KeyCode_A)){
+        if(controller_button_held(KeyCode_LEFT)){ //|| controller_button_held(KeyCode_A)){
             camera.x -= ((camera.size) + 50) * (f32)clock.dt;
         }
-        if(controller_button_held(KeyCode_RIGHT) || controller_button_held(KeyCode_D)){
+        if(controller_button_held(KeyCode_RIGHT)){// || controller_button_held(KeyCode_D)){
             camera.x += ((camera.size) + 50) * (f32)clock.dt;
         }
     }
@@ -238,7 +238,7 @@ add_texture(TextureAsset texture, v2 pos, v2 dim, RGBA color, u32 flags){
         e->dim = dim;
         e->rot = make_v2(0, 1);
         e->deg = 90;
-        e->texture = texture;
+        e->texture_id = texture;
     }
     else{
         print("Failed to add entity: Quad\n");
@@ -256,7 +256,7 @@ add_castle(TextureAsset texture, v2 cell, v2 dim, RGBA color, u32 flags){
         e->rallypoint_cell = make_v2(e->cell.x, e->cell.y - 1);
         e->rallypoint = grid_cell_center(e->rallypoint_cell);
         e->dim = dim;
-        e->texture = texture;
+        e->texture_id = texture;
         e->deg = 0;
         e->rot = dir_from_deg(e->deg);
         e->structure_type = StructureType_Castle;
@@ -274,10 +274,38 @@ add_skeleton(TextureAsset texture, v2 cell, v2 dim, v2 dir, RGBA color, u32 flag
         e->color = color;
         e->pos = grid_pos_from_cell(cell, state->world_cell_size);
         e->dim = dim;
-        e->texture = texture;
+        e->texture_id = texture;
         e->velocity = {0};
         e->speed = 1000.0f;
         e->dir = dir;
+        e->rot = make_v2(1, 0);
+        e->deg = deg_from_dir(e->rot);
+        set_flags(&e->flags, EntityFlag_MoveWithPhys);
+    }
+    else{
+        print("Failed to add entity: Quad\n");
+    }
+    return(e);
+}
+
+static Entity*
+add_human(TextureAsset texture_id, v2 cell, v2 dim, f32 col, f32 row, f32 anim_speed, RGBA color, u32 flags){
+    Entity* e = add_entity(EntityType_Player);
+    if(e){
+        Texture* tex = &r_assets->textures[texture_id];
+        e->sprite.col = col;
+        e->sprite.row = row;
+        e->sprite.width = tex->width;
+        e->sprite.height = tex->height;
+        e->sprite.inc = (f32)tex->width / col;
+        e->sprite.anim_speed = anim_speed;
+
+        e->color = color;
+        e->pos = grid_pos_from_cell(cell, state->world_cell_size);
+        e->dim = dim;
+        e->texture_id = texture_id;
+        e->velocity = {0};
+        e->speed = 1000.0f;
         e->rot = make_v2(1, 0);
         e->deg = deg_from_dir(e->rot);
         set_flags(&e->flags, EntityFlag_MoveWithPhys);
@@ -424,6 +452,10 @@ generate_new_world(f32 width, f32 height){
 
 static void
 draw_entities(State* state){
+    set_texture(state->player->texture_id);
+    Quad quad = quad_from_entity_world(state->player);
+    draw_sprite(state->player->sprite, quad, WALK_RIGHT_FRONT);
+
     for(s32 idx = 0; idx < array_count(state->entities); ++idx){
         Entity *e = state->entities + idx;
 
@@ -450,7 +482,7 @@ draw_entities(State* state){
 
                     switch(e->structure_type){
                         case StructureType_Castle:{
-                            set_texture(e->texture);
+                            set_texture(e->texture_id);
                             draw_texture(quad, e->color);
 
                             if(e->selected){
@@ -477,13 +509,13 @@ draw_entities(State* state){
                 case EntityType_Texture:{
                     quad = rotate_quad(quad, e->deg, e->pos);
 
-                    set_texture(e->texture);
+                    set_texture(e->texture_id);
                     draw_texture(quad, e->color);
                 } break;
                 case EntityType_Skeleton1:{
                     quad = rotate_quad(quad, e->deg, e->pos);
 
-                    set_texture(e->texture);
+                    set_texture(e->texture_id);
                     draw_texture(quad, e->color);
 
 
@@ -713,7 +745,7 @@ ui_castle(void){
                 Entity* castle = state->entities_selected[0];
 
                 v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(1, 1), dir);
+                Entity* e = add_skeleton(TextureAsset_Human_Walk, grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(1, 1), dir);
                 e->origin = castle;
                 e->rallypoint = castle->rallypoint;
                 e->rallypoint_cell = castle->rallypoint_cell;
@@ -738,7 +770,7 @@ ui_castle(void){
                         v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
 
                         v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
+                        Entity* e = add_skeleton(TextureAsset_Human_Walk, new_coords, make_v2(1, 1), dir);
                         e->origin = castle;
 
                         v2 target_direction = direction_v2(e->pos, castle->rallypoint);
@@ -768,7 +800,7 @@ ui_castle(void){
                         v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
 
                         v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                        Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
+                        Entity* e = add_skeleton(TextureAsset_Human_Walk, new_coords, make_v2(1, 1), dir);
                         e->origin = castle;
 
                         v2 target_direction = direction_v2(e->pos, castle->rallypoint);
@@ -1190,6 +1222,7 @@ serialize_state(void){
     end_scratch(scratch);
 }
 
+// incomplete
 static void
 partition_entities_in_bins(){
     memset(state->cells, 0, sizeof(state->cells));
@@ -1559,6 +1592,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         //ts->ui_arena       = push_arena(&ts->arena, MB(100));
         ts->ui_state_arena = push_arena(&ts->arena, MB(100));
         ts->batch_arena    = push_arena(&ts->arena, GB(1));
+        ts->sprite_arena   = push_arena(&ts->arena, MB(100));
         ts->data_arena     = push_arena(&ts->arena, KB(1024));
         ts->bin_arena      = push_arena(&ts->arena, MB(512));
 
@@ -1575,7 +1609,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->show_pathing_cells = true;
 
         ui_init(ts->ui_state_arena, &window, &controller, &assets);
-        init_draw(ts->batch_arena, &assets);
+        init_draw(ts->batch_arena, ts->sprite_arena, &assets);
+        //sprite = push_spritesheet(TextureAsset_Human_Walk, 4, 4, 1);
 
         state->font = &assets.fonts[FontAsset_Arial];
         font1 = &assets.fonts[FontAsset_Arial1];
@@ -1597,6 +1632,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         //state->castle_cell = make_v2(10, 5);
         state->castle_cell = make_v2(0, 0);
         state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(2, 2));
+        state->player = add_human(TextureAsset_Human_Walk, make_v2(1, 1), make_v2(300, 300), 4, 4, 1);
+
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
@@ -1657,6 +1694,20 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             handled = handle_camera_events(event);
             handled = handle_controller_events(event);
             handled = handle_game_events(event);
+        }
+
+        if(controller_button_held(KeyCode_D)){ 
+            //state->player.sprite.anim_at 
+            //draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_RIGHT_FRONT);
+        }
+        if(controller_button_held(KeyCode_A)){ 
+            //draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_LEFT_FRONT);
+        }
+        if(controller_button_held(KeyCode_W)){ 
+            //draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_RIGHT_BACK);
+        }
+        if(controller_button_held(KeyCode_S)){ 
+            //draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_LEFT_BACK);
         }
 
         partition_entities_in_bins();
@@ -2011,8 +2062,64 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //draw_line(camera.p1, camera.p2, 5, RED);
             //draw_line(camera.p2, camera.p3, 5, RED);
             //draw_line(camera.p3, camera.p0, 5, RED);
-            set_texture(TextureAsset_Human_Walk);
-            draw_texture(make_v2(window.width/2, window.height/2), make_v2(200, 200), WHITE);
+
+            {
+                set_texture(TextureAsset_Human_Walk);
+                //set_texture(sprite->textured_id);
+                //draw_texture(make_v2(window.width/2, window.height/2), make_v2(200, 200), WHITE);
+                if(controller_button_pressed(KeyCode_4)){
+                    //sprite->animation.x = (s32)(sprite->animation.x + 1) % sprite->col;
+                    //pos.x = (s32)(pos.x + increment) % 128;
+                }
+                if(controller_button_pressed(KeyCode_5)){
+                    //sprite->animation.y = abs_f32((s32)(sprite->animation.y + 1) % sprite->row);
+                    //print("%f\n", sprite->animation.y);
+                    //if(pos.y + increment < 128){
+                    //    pos.y = pos.y + increment;
+                    //}
+                }
+                if(controller_button_pressed(KeyCode_6)){
+                    //sprite->animation.y = abs_f32((s32)(sprite->animation.y - 1) % sprite->row);
+                    //print("%f\n", sprite->animation.y);
+                    //if(pos.y - increment >= 0){
+                    //    pos.y = pos.y - increment;
+                    //}
+                }
+
+                //v2 anim = sprite->animation;
+
+                //f32 left   =  (anim.x * sprite->inc) / sprite->width;
+                //f32 top    =  (anim.y * sprite->inc) / sprite->height;
+                //f32 right  = ((anim.x * sprite->inc) + sprite->inc) / sprite->width;
+                //f32 bottom = ((anim.y * sprite->inc) + sprite->inc) / sprite->height;
+
+                //f32 left   =  pos.x / 128.0f;
+                //f32 top    =  pos.y / 128.0f;
+                //f32 right  = (pos.x + sprite->inc) / 128.0f;
+                //f32 bottom = (pos.y + sprite->inc) / 128.0f;
+                //
+                //f32 right  = (pos.x + dim.w) / 128.0f;
+                //f32 bottom = (pos.y + dim.h) / 128.0f;
+
+                //v2 u0 = make_v2(left,  top);
+                //v2 u1 = make_v2(right, top);
+                //v2 u2 = make_v2(right, bottom);
+                //v2 u3 = make_v2(left,  bottom);
+
+                //if(controller_button_held(KeyCode_D)){ 
+                //    draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_RIGHT_FRONT);
+                //}
+                //if(controller_button_held(KeyCode_A)){ 
+                //    draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_LEFT_FRONT);
+                //}
+                //if(controller_button_held(KeyCode_W)){ 
+                //    draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_RIGHT_BACK);
+                //}
+                //if(controller_button_held(KeyCode_S)){ 
+                //    draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_LEFT_BACK);
+                //}
+                //draw_texture(make_v2(window.width/2, window.height/2), make_v2(300, 300), u0, u1, u2, u3, WHITE);
+            }
 
             {
                 d3d_clear_color(BACKGROUND_COLOR);

@@ -129,6 +129,7 @@ typedef struct State{
     Entity* castle;
     v2 castle_cell;
 
+    Entity* player;
     //bool is_entity_selected;
     Entity* entity_selected;
     Entity* entity_hovered;
@@ -177,6 +178,7 @@ typedef struct TransientMemory{
     Arena *ui_arena;
     Arena *ui_state_arena;
     Arena *batch_arena;
+    Arena *sprite_arena;
     Arena *data_arena;
     Arena *bin_arena;
 } TransientMemory, TState;
@@ -200,9 +202,10 @@ global f32 text_padding = 20;
 static    void remove_entity(Entity* e);
 static Entity* add_entity(EntityType type);
 static Entity* add_quad(v2 pos, v2 dim, RGBA color);
-static Entity* add_texture(TextureAsset texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags = 0);
-static Entity* add_castle(TextureAsset texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags = 0);
-static Entity* add_skeleton(TextureAsset texture, v2 pos, v2 dim, v2 dir, RGBA color=WHITE, u32 flags = 0);
+static Entity* add_texture(TextureAsset texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags=0);
+static Entity* add_castle(TextureAsset texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags=0);
+static Entity* add_skeleton(TextureAsset texture, v2 pos, v2 dim, v2 dir, RGBA color=WHITE, u32 flags=0);
+static Entity* add_human(TextureAsset texture_id, v2 cell, v2 dim, f32 col, f32 row, f32 anim_speed, RGBA color=WHITE, u32 flags=0);
 static void entities_clear(void);
 
 static bool handle_global_events(Event event);
@@ -255,7 +258,17 @@ static Font* font4;
 static Font* font5;
 static Font* font6;
 
+bool l_bool = false;
+bool r_bool = false;
+bool t_bool = false;
+bool b_bool = false;
 
+v2 pos = make_v2(0, 0);
+v2 dim = make_v2(32, 32);
+f32 increment = 32.0f;
+
+
+Spritesheet* sprite;
 #endif
 
 

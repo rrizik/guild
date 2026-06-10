@@ -1,6 +1,32 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+
+typedef enum Sprite_Animation_Kind{
+    WALK_RIGHT_FRONT,
+    WALK_LEFT_FRONT,
+    WALK_RIGHT_BACK,
+    WALK_LEFT_BACK,
+
+    COUNT,
+} Sprite_Animation_Kind;
+
+typedef struct Spritesheet{
+    Sprite_Animation_Kind kind;
+
+    f32 width;
+    f32 height;
+
+    s32 col;
+    s32 row;
+    f32 inc;
+
+    f32 anim_speed;
+    f32 anim_at;
+    f32 anim_row;
+    f32 anim_col;
+} Spritesheet;
+
 // originator of another entity
 // handle to originator, entity cant collide with its originator
 // collision layers (1,2,3,4,5)
@@ -35,7 +61,7 @@ typedef enum ParticleType{
     ParticleType_Bullet,
 } ParticleType;
 
-typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Structure, EntityType_Skeleton1} EntityType;
+typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Structure, EntityType_Skeleton1, EntityType_Player} EntityType;
 
 typedef enum StructureType{
     StructureType_None,
@@ -123,7 +149,8 @@ typedef struct Entity{
 
     //bool dead;
     bool selected;
-    TextureAsset texture;
+    TextureAsset texture_id;
+    Spritesheet sprite;
 } Entity;
 
 static bool has_flags(u32 lflags, u32 rflags);

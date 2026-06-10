@@ -198,16 +198,68 @@ srgb_from_linear(RGBA color){
 
 // todo: revisit this, I don't like that I'm passing in assets here...
 static void
-init_draw(Arena* arena_b, Assets* assets){
-    r_arena = arena_b;
+init_draw(Arena* batch_arena, Arena* sprite_arena, Assets* assets){
+    r_arena = batch_arena;
+    r_arena_spritesheets = sprite_arena;
     r_assets = assets;
 }
+
+static Spritesheet*
+push_spritesheet(s32 texture_id, f32 col, f32 row, f32 anim_speed){
+    Texture* tex = &r_assets->textures[texture_id];
+    
+    Spritesheet* result = push_struct(r_arena_spritesheets, Spritesheet);
+    result->col = col;
+    result->row = row;
+    result->width = tex->width;
+    result->height = tex->height;
+    result->inc = (f32)tex->width / col;
+    result->anim_speed = anim_speed;
+
+    return(result);
+}
+
+static void
+draw_sprite(Spritesheet sprite, Quad quad, Sprite_Animation_Kind kind, RGBA color){
+    RGBA linear_color = linear_from_srgb(color); 
+
+    sprite.anim_row = kind;
+    
+    f32 left   =  (sprite.anim_col * sprite.inc) / sprite.width;
+    f32 top    =  (sprite.anim_row * sprite.inc) / sprite.height;
+    f32 right  = ((sprite.anim_col * sprite.inc) + sprite.inc) / sprite.width;
+    f32 bottom = ((sprite.anim_row * sprite.inc) + sprite.inc) / sprite.height;
+
+    v2 u0 = make_v2(left,  top);
+    v2 u1 = make_v2(right, top);
+    v2 u2 = make_v2(right, bottom);
+    v2 u3 = make_v2(left,  bottom);
+                                                
+    //v2 p0 = make_v2(pos.x - dim.w/2, pos.y - dim.h/2);
+    //v2 p1 = make_v2(pos.x + dim.w/2, pos.y - dim.h/2);
+    //v2 p2 = make_v2(pos.x + dim.w/2, pos.y + dim.h/2);
+    //v2 p3 = make_v2(pos.x - dim.w/2, pos.y + dim.h/2);
+
+    RenderBatch *batch = get_render_batch(6);
+    batch->buffer[batch->vertex_count++] = { quad.p0, u0, linear_color };
+    batch->buffer[batch->vertex_count++] = { quad.p1, u1, linear_color };
+    batch->buffer[batch->vertex_count++] = { quad.p2, u2, linear_color };
+    batch->buffer[batch->vertex_count++] = { quad.p0, u0, linear_color };
+    batch->buffer[batch->vertex_count++] = { quad.p2, u2, linear_color };
+    batch->buffer[batch->vertex_count++] = { quad.p3, u3, linear_color };
+    
+    //sprite.anim_col = (s32)(sprite.anim_col + 1) % sprite.col;
+}
+
+
+//r_init_spritesheet(TextureAsset_Human_Walk, 4, 4, 1);
 
 static void
 set_texture(s32 texture_id){
     r_texture = &r_assets->textures[texture_id];
 }
 
+// todo: revisit this, yuck
 static void
 set_texture_explicit(Texture* texture){
     r_texture = texture;
@@ -595,4 +647,5 @@ render_batches_reset(void){
     render_batches.count = 0;
     arena_free(r_arena);
 }
+
 #endif
