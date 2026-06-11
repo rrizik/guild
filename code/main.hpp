@@ -243,7 +243,7 @@ static void serialize_state(void);
 
 static void partition_entities_in_bins(void);
 
-static void update_entity_sprites(void);
+static void entity_sprite_update(void);
 static void clear_entities_selected(void);
 
 #include "console.hpp"

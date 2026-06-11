@@ -178,22 +178,50 @@ static bool
 entity_is_moving(Entity* e){
     f32 deadzone = 0.1f;
 
-    bool result = (abs_f32(e->velocity.x) > deadzone || 
-                   abs_f32(e->velocity.y) > deadzone);
+    f32 x = abs_f32(e->velocity.x);
+    f32 y = abs_f32(e->velocity.y);
+    bool result = (x > deadzone || y > deadzone);
 
     return(result);
 }
 
 static void
-update_sprite(Spritesheet* sprite, f32 dt){
+entity_sprite_anim_reset(Spritesheet* sprite, Sprite_Animation_Kind kind){
+    Sprite_Animation* anim = sprite->animations + kind;
+    Sprite_Sequence* sequence = anim->directions + sprite->direction;
+
+    anim = sprite->animations + kind;
+    anim->started = false;
+    anim->col = sequence->col_start;
+    anim->done_once = false;
+    anim->time_at = 0;
+}
+
+static bool
+sprite_update(Spritesheet* sprite, f32 dt){
     Sprite_Animation* anim = sprite->animations + sprite->kind;
     Sprite_Sequence* sequence = anim->directions + sprite->direction;
-    anim->time += anim->speed * dt;
-    if(anim->time >= anim->anim_time){
-        anim->time = 0;
-        anim->col = (s32)(anim->col + 1) % sequence->frame_count;
+
+
+    if(anim->col < sequence->col_start){
+        anim->col = sequence->col_start;
     }
 
+    anim->time_at += anim->speed * dt;
+    if(anim->time_at >= anim->time_max){
+        if(anim->do_once && anim->done_once){
+            return(true);
+        }
+
+        anim->col = (s32)(anim->col + 1) % sequence->frame_count;
+        anim->time_at = 0;
+
+        if(anim->col == sequence->frame_count - 1){
+            anim->done_once = true;
+            return(true);
+        }
+    }
+    return(false);
 }
 
 //static Vec4F32

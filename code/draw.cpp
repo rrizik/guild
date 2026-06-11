@@ -225,7 +225,7 @@ draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
 
     Sprite_Animation anim = sprite.animations[sprite.kind];
     Sprite_Sequence sequence = anim.directions[sprite.direction];
-    
+
     f32 left   =  (anim.col     * anim.inc)             / anim.width;
     f32 top    =  (sequence.row * anim.inc)             / anim.height;
     f32 right  = ((anim.col     * anim.inc) + anim.inc) / anim.width;

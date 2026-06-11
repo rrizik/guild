@@ -318,7 +318,7 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         Texture* tex = &r_assets->textures[TextureAsset_Orc_Idle];
         e->sprite.animations[SPRITE_ANIM_IDLE].texture_id = TextureAsset_Orc_Idle;
         e->sprite.animations[SPRITE_ANIM_IDLE].speed = 6.0f;
-        e->sprite.animations[SPRITE_ANIM_IDLE].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_IDLE].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_IDLE].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_IDLE].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_IDLE].inc = tex->width / 16;
@@ -329,8 +329,8 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
 
         tex = &r_assets->textures[TextureAsset_Orc_Walk];
         e->sprite.animations[SPRITE_ANIM_WALK].texture_id = TextureAsset_Orc_Walk;
-        e->sprite.animations[SPRITE_ANIM_WALK].speed = 12.0f;
-        e->sprite.animations[SPRITE_ANIM_WALK].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_WALK].speed = 18.0f;
+        e->sprite.animations[SPRITE_ANIM_WALK].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_WALK].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_WALK].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_WALK].inc = tex->width / 4;
@@ -341,23 +341,25 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
 
         tex = &r_assets->textures[TextureAsset_Orc_Attack];
         e->sprite.animations[SPRITE_ANIM_ATTACK].texture_id = TextureAsset_Orc_Attack;
-        e->sprite.animations[SPRITE_ANIM_ATTACK].speed = 6.0f;
-        e->sprite.animations[SPRITE_ANIM_ATTACK].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].speed = 20.0f;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_ATTACK].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_ATTACK].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_ATTACK].inc = tex->width / 4;
-        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_FRONT] = {0, 0, 4};
-        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_FRONT]  = {0, 1, 4};
-        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_BACK]  = {0, 2, 4};
-        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_BACK]   = {0, 3, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].do_once = true;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_FRONT] = {1, 0, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_FRONT]  = {1, 1, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_BACK]  = {1, 2, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_BACK]   = {1, 3, 4};
 
         tex = &r_assets->textures[TextureAsset_Orc_Jump];
         e->sprite.animations[SPRITE_ANIM_JUMP].texture_id = TextureAsset_Orc_Jump;
-        e->sprite.animations[SPRITE_ANIM_JUMP].speed = 6.0f;
-        e->sprite.animations[SPRITE_ANIM_JUMP].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_JUMP].speed = 20.0f;
+        e->sprite.animations[SPRITE_ANIM_JUMP].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_JUMP].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_JUMP].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_JUMP].inc = tex->width / 4;
+        e->sprite.animations[SPRITE_ANIM_JUMP].do_once = true;
         e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_FRONT] = {0, 0, 4};
         e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_FRONT]  = {0, 0, 4};
         e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_BACK]  = {0, 1, 4};
@@ -365,11 +367,12 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
 
         tex = &r_assets->textures[TextureAsset_Orc_Die];
         e->sprite.animations[SPRITE_ANIM_DIE].texture_id = TextureAsset_Orc_Die;
-        e->sprite.animations[SPRITE_ANIM_DIE].speed = 6.0f;
-        e->sprite.animations[SPRITE_ANIM_DIE].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_DIE].speed = 20.0f;
+        e->sprite.animations[SPRITE_ANIM_DIE].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_DIE].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_DIE].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_DIE].inc = tex->width / 12;
+        e->sprite.animations[SPRITE_ANIM_DIE].do_once = true;
         e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_FRONT] = {0, 3, 12};
         e->sprite.animations[SPRITE_ANIM_DIE].directions[LEFT_FRONT]  = {0, 0, 0};
         e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_BACK]  = {0, 0, 0};
@@ -402,7 +405,7 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         Texture* tex = &r_assets->textures[TextureAsset_Human_Idle];
         e->sprite.animations[SPRITE_ANIM_IDLE].texture_id = TextureAsset_Human_Idle;
         e->sprite.animations[SPRITE_ANIM_IDLE].speed = 6.0f;
-        e->sprite.animations[SPRITE_ANIM_IDLE].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_IDLE].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_IDLE].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_IDLE].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_IDLE].inc = tex->width / 16;
@@ -413,8 +416,8 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
 
         tex = &r_assets->textures[TextureAsset_Human_Walk];
         e->sprite.animations[SPRITE_ANIM_WALK].texture_id = TextureAsset_Human_Walk;
-        e->sprite.animations[SPRITE_ANIM_WALK].speed = 12.0f;
-        e->sprite.animations[SPRITE_ANIM_WALK].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_WALK].speed = 18.0f;
+        e->sprite.animations[SPRITE_ANIM_WALK].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_WALK].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_WALK].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_WALK].inc = tex->width / 4;
@@ -425,36 +428,39 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
 
         tex = &r_assets->textures[TextureAsset_Human_Attack];
         e->sprite.animations[SPRITE_ANIM_ATTACK].texture_id = TextureAsset_Human_Attack;
-        e->sprite.animations[SPRITE_ANIM_ATTACK].speed = 6.0f;
-        e->sprite.animations[SPRITE_ANIM_ATTACK].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].speed = 20.0f;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_ATTACK].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_ATTACK].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_ATTACK].inc = tex->width / 4;
-        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_FRONT] = {0, 0, 4};
-        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_FRONT]  = {0, 1, 4};
-        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_BACK]  = {0, 2, 4};
-        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_BACK]   = {0, 3, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].do_once = true;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_FRONT] = {1, 0, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_FRONT]  = {1, 1, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_BACK]  = {1, 2, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_BACK]   = {1, 3, 4};
 
         tex = &r_assets->textures[TextureAsset_Human_Jump];
         e->sprite.animations[SPRITE_ANIM_JUMP].texture_id = TextureAsset_Human_Jump;
-        e->sprite.animations[SPRITE_ANIM_JUMP].speed = 6.0f;
-        e->sprite.animations[SPRITE_ANIM_JUMP].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_JUMP].speed = 20.0f;
+        e->sprite.animations[SPRITE_ANIM_JUMP].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_JUMP].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_JUMP].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_JUMP].inc = tex->width / 4;
+        e->sprite.animations[SPRITE_ANIM_JUMP].do_once = true;
         e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_FRONT] = {0, 0, 4};
-        e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_FRONT]  = {0, 0, 4};
-        e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_BACK]  = {0, 1, 4};
-        e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_BACK]   = {0, 2, 4};
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_FRONT]  = {0, 1, 4};
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_BACK]  = {0, 2, 4};
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_BACK]   = {0, 3, 4};
 
         tex = &r_assets->textures[TextureAsset_Human_Die];
         e->sprite.animations[SPRITE_ANIM_DIE].texture_id = TextureAsset_Human_Die;
-        e->sprite.animations[SPRITE_ANIM_DIE].speed = 6.0f;
-        e->sprite.animations[SPRITE_ANIM_DIE].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_DIE].speed = 12.0f;
+        e->sprite.animations[SPRITE_ANIM_DIE].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_DIE].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_DIE].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_DIE].inc = tex->width / 12;
-        e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_FRONT] = {0, 3, 12};
+        e->sprite.animations[SPRITE_ANIM_DIE].do_once = true;
+        e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_FRONT] = {0, 0, 8};
         e->sprite.animations[SPRITE_ANIM_DIE].directions[LEFT_FRONT]  = {0, 0, 0};
         e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_BACK]  = {0, 0, 0};
         e->sprite.animations[SPRITE_ANIM_DIE].directions[LEFT_BACK]   = {0, 0, 0};
@@ -546,7 +552,7 @@ handle_controller_events(Event event){
         // todo(rr): change this to
         // controller.button[event.keycode].pressed = event.key_pressed;
         // and check for repeat for held.
-        if(event.key_pressed){
+        if(event.key_pressed && !controller.button[event.keycode].held){
             controller.button[event.keycode].pressed = true;
             controller.button[event.keycode].held = true;
         }
@@ -600,19 +606,50 @@ generate_new_world(f32 width, f32 height){
 }
 
 static void
-update_entity_sprites(){
+entity_sprite_update(){
     for(s32 idx = 0; idx < array_count(state->entities); ++idx){
         Entity *e = state->entities + idx;
 
         if(has_flags(e->flags, EntityFlag_Active|EntityFlag_HasSprite)){
-            if(entity_is_moving(e)){
-                e->sprite.direction = entity_direction_from_velocity(e); 
-                e->sprite.kind = SPRITE_ANIM_WALK;
+            e->sprite.direction = entity_direction_from_velocity(e); 
+
+            if(e->dead){
+                if(e->sprite.kind != SPRITE_ANIM_DIE){
+                    e->sprite.kind = SPRITE_ANIM_DIE;
+                    e->sprite.direction = RIGHT_FRONT;
+                    entity_sprite_anim_reset(&e->sprite, e->sprite.kind);
+                }
+            }
+            else if(e->attacking){
+                if(e->sprite.kind != SPRITE_ANIM_ATTACK){
+                    e->sprite.kind = SPRITE_ANIM_ATTACK;
+                    entity_sprite_anim_reset(&e->sprite, e->sprite.kind);
+                }
+            }
+            else if(e->jumping){
+                if(e->sprite.kind != SPRITE_ANIM_JUMP){
+                    e->sprite.kind = SPRITE_ANIM_JUMP;
+                    entity_sprite_anim_reset(&e->sprite, e->sprite.kind);
+                }
+            }
+            else if(entity_is_moving(e)){
+                if(e->sprite.kind != SPRITE_ANIM_WALK){
+                    e->sprite.kind = SPRITE_ANIM_WALK;
+                    entity_sprite_anim_reset(&e->sprite, e->sprite.kind);
+                }
             }
             else{
-                e->sprite.kind = SPRITE_ANIM_IDLE;
+                if(e->sprite.kind != SPRITE_ANIM_IDLE){
+                    e->sprite.kind = SPRITE_ANIM_IDLE;
+                    entity_sprite_anim_reset(&e->sprite, e->sprite.kind);
+                }
             }
-            update_sprite(&e->sprite, (f32)clock.dt);
+            bool anim_done = sprite_update(&e->sprite, (f32)clock.dt);
+            if(anim_done){
+                e->attacking = false;
+                e->jumping = false;
+                e->moving = false;
+            }
         }
     }
 }
@@ -1901,6 +1938,10 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             handled = handle_game_events(event);
         }
 
+        if(controller_button_held(KeyCode_Q)){ 
+            state->player->dead = true;
+        }
+
         if(controller_button_held(KeyCode_D)){ 
             state->player->velocity.x = state->player->speed;
             state->player->left_right = 1;
@@ -1918,37 +1959,31 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             state->player->up_down = -1;
         }
 
+        if(controller_button_pressed(KeyCode_SPACEBAR)){ 
+            state->player->jumping = true;
+        }
+        if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){ 
+            state->player->attacking = true;
+        }
+
+        // note(rr): Digonal movement adjustment.
         if(state->player->left_right != 0 && state->player->up_down != 0){
-            print("aolksdj\n");
             state->player->velocity.x *= 0.707f;
             state->player->velocity.y *= 0.707f;
         }
         state->player->left_right = 0;
         state->player->up_down = 0;
 
-        //state->player->pos.x += state->player->velocity.x * (f32)clock.dt;
-        //state->player->pos.y += state->player->velocity.y * (f32)clock.dt;
-        //print("%f, %f\n", 
-        //        state->player->velocity.x,
-        //        state->player->velocity.y);
-
         partition_entities_in_bins();
-
-        //print("53 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 53)].bin_count, state->cells[49 + (1000 * 53)].bin_count, state->cells[50 + (1000 * 53)].bin_count, state->cells[51 + (1000 * 53)].bin_count, state->cells[52 + (1000 * 53)].bin_count, state->cells[53 + (1000 * 53)].bin_count);
-        //print("52 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 52)].bin_count, state->cells[49 + (1000 * 52)].bin_count, state->cells[50 + (1000 * 52)].bin_count, state->cells[51 + (1000 * 52)].bin_count, state->cells[52 + (1000 * 52)].bin_count, state->cells[53 + (!v!5<Mouse>C!w!5
-        //print("51 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 51)].bin_count, state->cells[49 + (1000 * 51)].bin_count, state->cells[50 + (1000 * 51)].bin_count, state->cells[51 + (1000 * 51)].bin_count, state->cells[52 + (1000 * 51)].bin_count, state->cells[53 + (1000 * 51)].bin_count);
-        //print("50 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 50)].bin_count, state->cells[49 + (1000 * 50)].bin_count, state->cells[50 + (1000 * 50)].bin_count, state->cells[51 + (1000 * 50)].bin_count, state->cells[52 + (1000 * 50)].bin_count, state->cells[53 + (1000 * 50)].bin_count);
-        //print("49 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 49)].bin_count, state->cells[49 + (1000 * 49)].bin_count, state->cells[50 + (1000 * 49)].bin_count, state->cells[51 + (1000 * 49)].bin_count, state->cells[52 + (1000 * 49)].bin_count, state->cells[53 + (1000 * 49)].bin_count);
-        //print("48 | %i, %i, %i, %i, %i, %i\n", state->cells[48 + (1000 * 48)].bin_count, state->cells[49 + (1000 * 48)].bin_count, state->cells[50 + (1000 * 48)].bin_count, state->cells[51 + (1000 * 48)].bin_count, state->cells[52 + (1000 * 48)].bin_count, state->cells[53 + (1000 * 48)].bin_count);
-        //print("     --------------\n");
-        //print("     48 49 50 51 52 53\n");
-        //print("-------------------------------------------------------\n");
 
         // note: consumes input so needs to be here
         if(state->scene_state == SceneState_Editor){
             ui_editor();
         }
 
+        entity_sprite_update();
+
+        // SIM GAME HERE
         simulations = 0;
         accumulator += frame_time;
         while(accumulator >= clock.dt){
@@ -1984,7 +2019,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             state->selecting = false;
             camera.x = world_camera_record.x + world_rel_pos.x;
             camera.y = world_camera_record.y + world_rel_pos.y;
-
         }
         if(state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT)){
             world_camera_record = {0};
@@ -2140,7 +2174,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         }
 
         console_update();
-        update_entity_sprites();
 
         // zoom
         if(camera.size > 30){

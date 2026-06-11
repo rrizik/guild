@@ -27,13 +27,20 @@ typedef struct Sprite_Sequence{
 } Sprite_Sequence;
 
 typedef struct Sprite_Animation{
-    f32 time;
-    f32 anim_time;
+    f32 time_at;
+    f32 time_max;
     f32 speed;
+
     s32 col;
     s32 inc;
+
     f32 width;
     f32 height;
+
+    bool loop;
+    bool done_once;
+    bool do_once;
+    bool started;
     TextureAsset texture_id;
     Sprite_Sequence directions[SPRITE_DIRECTION_COUNT];
 } Sprite_Animation;
@@ -42,15 +49,6 @@ typedef struct Spritesheet{
     Sprite_Animation_Kind kind;
     Sprite_Direction direction;
     Sprite_Animation animations[SPRITE_ANIM_COUNT];
-
-
-    s32 max_col;
-    s32 max_row;
-
-    f32 anim_speed;
-    f32 anim_at;
-    f32 anim_row;
-    f32 anim_col;
 } Spritesheet;
 
 // originator of another entity
@@ -179,6 +177,9 @@ typedef struct Entity{
     //bool dead;
     bool selected;
     bool moving;
+    bool jumping;
+    bool attacking;
+    bool dead;
     TextureAsset texture_id;
     Spritesheet sprite;
 } Entity;
@@ -213,6 +214,6 @@ static EntityCommand* entity_commands_next(Entity* e);
 static void entity_commands_move(Entity* e, v2 move_to, v2 clicked_at);
 static Sprite_Direction entity_direction_from_velocity(Entity* e);
 static bool entity_is_moving(Entity* e);
-static void update_sprite(Entity* e, f32 dt);
+static bool sprite_update(Entity* e, f32 dt);
 
 #endif
