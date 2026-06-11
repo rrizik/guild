@@ -96,6 +96,9 @@ sim_game(void){
                             dir.y /= distance;
 
                             f32 push_strength = 1.0f;
+                            if(e == state->player){
+                                push_strength = 10.0f;
+                            }
                             if(e != state->player){
                                 e->velocity.x += (dir.x * push_strength * (f32)clock.dt) / distance;
                                 e->velocity.y += (dir.y * push_strength * (f32)clock.dt) / distance;
@@ -138,14 +141,6 @@ sim_game(void){
             e->velocity.x *= 0.75f;
             e->velocity.y *= 0.75f;
 
-            //f64 deadzone = 0.01;
-            //if(e->velocity.x < deadzone){
-            //    e->velocity.x = 0;
-            //}
-            //if(e->velocity.y < deadzone){
-            //    e->velocity.y = 0;
-            //}
-            // Apply motion.
             e->pos.x += e->velocity.x * (f32)clock.dt;
             e->pos.y += e->velocity.y * (f32)clock.dt;
         }
@@ -395,7 +390,7 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->dim = dim;
         e->texture_id = TextureAsset_Human_Idle;
         e->velocity = {0};
-        e->speed = 1.5f;
+        e->speed = 3.5f;
         e->dir = dir;
         e->rot = make_v2(1, 0);
         e->deg = deg_from_dir(e->rot);
@@ -1843,7 +1838,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->castle_cell = make_v2(198, 98);
         state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(2, 2));
         state->player = add_human(make_v2(200, 100), make_v2(2, 2));
-        state->player->speed = 2.5f;
 
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
@@ -1908,21 +1902,35 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         }
 
         if(controller_button_held(KeyCode_D)){ 
-            state->player->velocity.x += state->player->speed;
+            state->player->velocity.x = state->player->speed;
+            state->player->left_right = 1;
         }
         if(controller_button_held(KeyCode_A)){ 
-            state->player->velocity.x -= state->player->speed;
+            state->player->velocity.x = -state->player->speed;
+            state->player->left_right = -1;
         }
         if(controller_button_held(KeyCode_W)){ 
-            state->player->velocity.y += state->player->speed;
+            state->player->velocity.y = state->player->speed;
+            state->player->up_down = 1;
         }
         if(controller_button_held(KeyCode_S)){ 
-            state->player->velocity.y -= state->player->speed;
+            state->player->velocity.y = -state->player->speed;
+            state->player->up_down = -1;
         }
-        state->player->pos.x += state->player->velocity.x * (f32)clock.dt;
-        state->player->pos.y += state->player->velocity.y * (f32)clock.dt;
-        state->player->velocity.x *= 0.75f;
-        state->player->velocity.y *= 0.75f;
+
+        if(state->player->left_right != 0 && state->player->up_down != 0){
+            print("aolksdj\n");
+            state->player->velocity.x *= 0.707f;
+            state->player->velocity.y *= 0.707f;
+        }
+        state->player->left_right = 0;
+        state->player->up_down = 0;
+
+        //state->player->pos.x += state->player->velocity.x * (f32)clock.dt;
+        //state->player->pos.y += state->player->velocity.y * (f32)clock.dt;
+        //print("%f, %f\n", 
+        //        state->player->velocity.x,
+        //        state->player->velocity.y);
 
         partition_entities_in_bins();
 
@@ -2250,47 +2258,11 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             set_font(state->font);
             String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
 
-            //String8 str = str8_literal("test test test test");
-            //Rect r = make_rect(make_v2(0, 0), make_v2(100, 100));
-            //draw_text(str, make_v2(0, 0), RED);
-            //set_transform(m4_screen_from_world());
-            ////draw_quad(r, YELLOW);
-            //set_font(font1);
-            //draw_text(str, make_v2(0, 0), GREEN);
-            //set_font(font2);
-            //draw_text(str, make_v2(0, -25), GREEN);
-            //set_font(font3);
-            //draw_text(str, make_v2(0, -40), GREEN);
-            //set_font(font4);
-            //draw_text(str, make_v2(0, -50), GREEN);
-            //set_font(font5);
-            //draw_text(str, make_v2(0, -60), GREEN);
-            //set_font(font6);
-            //draw_text(str, make_v2(0, -70), GREEN);
-            //set_transform(make_m4_ident());
-            //set_font(font1);
-            //draw_text(str, make_v2(0, 0), GREEN);
-            //set_font(font2);
-            //draw_text(str, make_v2(0, 25), GREEN);
-            //set_font(font3);
-            //draw_text(str, make_v2(0, 40), GREEN);
-            //set_font(font4);
-            //draw_text(str, make_v2(0, 50), GREEN);
-            //set_font(font5);
-            //draw_text(str, make_v2(0, 60), GREEN);
-            //set_font(font6);
-            //draw_text(str, make_v2(0, 70), GREEN);
-            //draw_quad(r, BLUE);
-
             if(state->scene_state == SceneState_Editor){
                 set_texture(TextureAsset_Castle1);
                 Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
                 draw_texture(rr, WHITE);
             }
-
-            //set_transform(m4_screen_from_world());
-            //draw_texture(rr, RED);
-
 
             console_draw();
             // draw border
@@ -2298,64 +2270,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //draw_line(camera.p1, camera.p2, 5, RED);
             //draw_line(camera.p2, camera.p3, 5, RED);
             //draw_line(camera.p3, camera.p0, 5, RED);
-
-            {
-                set_texture(TextureAsset_Human_Walk);
-                //set_texture(sprite->textured_id);
-                //draw_texture(make_v2(window.width/2, window.height/2), make_v2(200, 200), WHITE);
-                if(controller_button_pressed(KeyCode_4)){
-                    //sprite->animation.x = (s32)(sprite->animation.x + 1) % sprite->col;
-                    //pos.x = (s32)(pos.x + increment) % 128;
-                }
-                if(controller_button_pressed(KeyCode_5)){
-                    //sprite->animation.y = abs_f32((s32)(sprite->animation.y + 1) % sprite->row);
-                    //print("%f\n", sprite->animation.y);
-                    //if(pos.y + increment < 128){
-                    //    pos.y = pos.y + increment;
-                    //}
-                }
-                if(controller_button_pressed(KeyCode_6)){
-                    //sprite->animation.y = abs_f32((s32)(sprite->animation.y - 1) % sprite->row);
-                    //print("%f\n", sprite->animation.y);
-                    //if(pos.y - increment >= 0){
-                    //    pos.y = pos.y - increment;
-                    //}
-                }
-
-                //v2 anim = sprite->animation;
-
-                //f32 left   =  (anim.x * sprite->inc) / sprite->width;
-                //f32 top    =  (anim.y * sprite->inc) / sprite->height;
-                //f32 right  = ((anim.x * sprite->inc) + sprite->inc) / sprite->width;
-                //f32 bottom = ((anim.y * sprite->inc) + sprite->inc) / sprite->height;
-
-                //f32 left   =  pos.x / 128.0f;
-                //f32 top    =  pos.y / 128.0f;
-                //f32 right  = (pos.x + sprite->inc) / 128.0f;
-                //f32 bottom = (pos.y + sprite->inc) / 128.0f;
-                //
-                //f32 right  = (pos.x + dim.w) / 128.0f;
-                //f32 bottom = (pos.y + dim.h) / 128.0f;
-
-                //v2 u0 = make_v2(left,  top);
-                //v2 u1 = make_v2(right, top);
-                //v2 u2 = make_v2(right, bottom);
-                //v2 u3 = make_v2(left,  bottom);
-
-                //if(controller_button_held(KeyCode_D)){ 
-                //    draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_RIGHT_FRONT);
-                //}
-                //if(controller_button_held(KeyCode_A)){ 
-                //    draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_LEFT_FRONT);
-                //}
-                //if(controller_button_held(KeyCode_W)){ 
-                //    draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_RIGHT_BACK);
-                //}
-                //if(controller_button_held(KeyCode_S)){ 
-                //    draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_LEFT_BACK);
-                //}
-                //draw_texture(make_v2(window.width/2, window.height/2), make_v2(300, 300), u0, u1, u2, u3, WHITE);
-            }
 
             {
                 d3d_clear_color(BACKGROUND_COLOR);

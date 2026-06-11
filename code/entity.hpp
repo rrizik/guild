@@ -130,6 +130,8 @@ typedef struct Entity{
     u32 generation;
     bool active;
 
+    s32 left_right;
+    s32 up_down;
     union{
         struct{
             f32 x;

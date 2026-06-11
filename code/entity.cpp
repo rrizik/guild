@@ -118,57 +118,47 @@ static Sprite_Direction
 entity_direction_from_velocity(Entity* e){
     Sprite_Direction result = e->sprite.direction;
 
-    f32 deadzone = 0.001f;
-    f32 x = e->velocity.x;
-    f32 y = e->velocity.y;
+    f32 deadzone = 0.1f;
+    bool moving_right = e->velocity.x > deadzone;
+    bool moving_left =  e->velocity.x < -deadzone;
+    bool moving_up =    e->velocity.y > deadzone;
+    bool moving_down =  e->velocity.y < -deadzone;
 
-    if(abs_f32(x) < deadzone && abs_f32(y) < deadzone){
-      return(result);
+    if(moving_right && moving_up){
+        result = RIGHT_BACK;
+    }
+    else if(moving_right && moving_down){
+        result = RIGHT_FRONT;
+    }
+    else if(moving_left && moving_up){
+        result = LEFT_BACK;
+    }
+    else if(moving_left && moving_down){
+        result = LEFT_FRONT;
     }
 
-    if(x >= deadzone){
-      if(y >= deadzone){
-          result = RIGHT_BACK;
-      }
-      else if(y <= -deadzone){
-          result = RIGHT_FRONT;
-      }
-      else{
-          if(result != RIGHT_BACK){
-              result = RIGHT_FRONT;
-          }
-      }
+    else if(moving_right){
+        result = RIGHT_FRONT;
     }
-    else if(x <= -deadzone){
-      if(y >= deadzone){
-          result = LEFT_BACK;
-      }
-      else if(y <= -deadzone){
-          result = LEFT_FRONT;
-      }
-      else{
-          if(result != LEFT_BACK){
-              result = LEFT_FRONT;
-          }
-      }
+    else if(moving_left){
+        result = LEFT_FRONT;
     }
-    else{
-      if(y >= deadzone){
-          if(result == LEFT_FRONT || result == LEFT_BACK){
-              result = LEFT_BACK;
-          }
-          else{
-              result = RIGHT_BACK;
-          }
-      }
-      else if(y <= -deadzone){
-          if(result == LEFT_FRONT || result == LEFT_BACK){
-              result = LEFT_FRONT;
-          }
-          else{
-              result = RIGHT_FRONT;
-          }
-      }
+
+    else if(moving_up){
+        if(result == LEFT_FRONT || result == LEFT_BACK){
+            result = LEFT_BACK;
+        }
+        else{
+            result = RIGHT_BACK;
+        }
+    }
+    else if(moving_down){
+        if(result == LEFT_BACK || result == LEFT_FRONT){
+            result = LEFT_FRONT;
+        }
+        else{
+            result = RIGHT_FRONT;
+        }
     }
 
     return(result);
@@ -183,23 +173,16 @@ entity_commands_move(Entity* e, v2 move_to, v2 clicked_at){
 
     entity_commands_add(e, c);
 }
+
 static bool
 entity_is_moving(Entity* e){
     f32 deadzone = 0.1f;
-    f32 speed_sq = square_f32(e->velocity.x) + square_f32(e->velocity.y);
 
-    bool result = speed_sq > square_f32(deadzone);
+    bool result = (abs_f32(e->velocity.x) > deadzone || 
+                   abs_f32(e->velocity.y) > deadzone);
+
     return(result);
 }
-//static bool
-//entity_is_moving(Entity* e){
-//    f32 deadzone = 0.01f;
-//
-//    bool result = (abs_f32(e->velocity.x) > deadzone || 
-//                   abs_f32(e->velocity.y) > deadzone);
-//
-//    return(result);
-//}
 
 static void
 update_sprite(Spritesheet* sprite, f32 dt){
