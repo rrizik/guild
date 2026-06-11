@@ -106,7 +106,7 @@ static void draw_texture(v2 pos, v2 dim, RGBA color=WHITE);
 static void draw_texture(Rect rect, RGBA color=WHITE);
 static void draw_texture(Quad quad, RGBA color=WHITE);
 
-static void draw_sprite(Spritesheet sprite, Quad quad, Sprite_Animation_Kind kind, RGBA color=WHITE);
+static void draw_sprite(Spritesheet sprite, Quad quad, RGBA color=WHITE);
 
 static void draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color);
 static void draw_bounding_box(v2 pos, v2 dim, f32 width, RGBA color);

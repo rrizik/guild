@@ -204,31 +204,32 @@ init_draw(Arena* batch_arena, Arena* sprite_arena, Assets* assets){
     r_assets = assets;
 }
 
-static Spritesheet*
-push_spritesheet(s32 texture_id, f32 col, f32 row, f32 anim_speed){
-    Texture* tex = &r_assets->textures[texture_id];
-    
-    Spritesheet* result = push_struct(r_arena_spritesheets, Spritesheet);
-    result->col = col;
-    result->row = row;
-    result->width = tex->width;
-    result->height = tex->height;
-    result->inc = (f32)tex->width / col;
-    result->anim_speed = anim_speed;
-
-    return(result);
-}
+//static Spritesheet*
+//push_spritesheet(s32 texture_id, f32 col, f32 row, f32 anim_speed){
+//    Texture* tex = &r_assets->textures[texture_id];
+//    
+//    Spritesheet* result = push_struct(r_arena_spritesheets, Spritesheet);
+//    result->max_col = col;
+//    result->max_row = row;
+//    result->width = tex->width;
+//    result->height = tex->height;
+//    //result->inc = (f32)tex->width / col;
+//    result->anim_speed = anim_speed;
+//
+//    return(result);
+//}
 
 static void
-draw_sprite(Spritesheet sprite, Quad quad, Sprite_Animation_Kind kind, RGBA color){
+draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
     RGBA linear_color = linear_from_srgb(color); 
 
-    sprite.anim_row = kind;
+    Sprite_Animation anim = sprite.animations[sprite.kind];
+    Sprite_Sequence sequence = anim.directions[sprite.direction];
     
-    f32 left   =  (sprite.anim_col * sprite.inc) / sprite.width;
-    f32 top    =  (sprite.anim_row * sprite.inc) / sprite.height;
-    f32 right  = ((sprite.anim_col * sprite.inc) + sprite.inc) / sprite.width;
-    f32 bottom = ((sprite.anim_row * sprite.inc) + sprite.inc) / sprite.height;
+    f32 left   =  (anim.col     * anim.inc)             / anim.width;
+    f32 top    =  (sequence.row * anim.inc)             / anim.height;
+    f32 right  = ((anim.col     * anim.inc) + anim.inc) / anim.width;
+    f32 bottom = ((sequence.row * anim.inc) + anim.inc) / anim.height;
 
     v2 u0 = make_v2(left,  top);
     v2 u1 = make_v2(right, top);
@@ -492,6 +493,8 @@ draw_bounding_box(Rect rect, f32 thickness, RGBA color){
 
 static void
 draw_line(v2 p0, v2 p1, f32 thickness, RGBA color){
+    set_texture(TextureAsset_White);
+
     v2 dir = direction_v2(p0, p1);
     v2 perp = perpendicular(dir);
     v2 p2 = p1 + (perp * thickness);

@@ -59,7 +59,19 @@ typedef enum TextureAsset{
     TextureAsset_Char_Punch,
     TextureAsset_Char_Run,
     TextureAsset_Char_Walk,
+
+    TextureAsset_Human_Idle,
     TextureAsset_Human_Walk,
+    TextureAsset_Human_Attack,
+    TextureAsset_Human_Jump,
+    TextureAsset_Human_Die,
+
+    TextureAsset_Orc_Idle,
+    TextureAsset_Orc_Walk,
+    TextureAsset_Orc_Attack,
+    TextureAsset_Orc_Jump,
+    TextureAsset_Orc_Die,
+
 
     TextureAsset_Castle1,
 

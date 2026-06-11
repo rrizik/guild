@@ -16,8 +16,28 @@ assets_load(Arena* arena, Assets* assets){
     d3d_init_texture_resource(&assets->textures[TextureAsset_Char_Run], &bm);
     bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/isometric_character_walk.png"));
     d3d_init_texture_resource(&assets->textures[TextureAsset_Char_Walk], &bm);
+
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/human_idle.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Human_Idle], &bm);
     bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/human_walk.png"));
     d3d_init_texture_resource(&assets->textures[TextureAsset_Human_Walk], &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/human_attack.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Human_Attack], &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/human_jump.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Human_Jump], &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/human_die.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Human_Die], &bm);
+
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/orc_idle.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Orc_Idle], &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/orc_walk.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Orc_Walk], &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/orc_attack.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Orc_Attack], &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/orc_jump.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Orc_Jump], &bm);
+    bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/orc_die.png"));
+    d3d_init_texture_resource(&assets->textures[TextureAsset_Orc_Die], &bm);
 
     bm = stb_load_image(scratch.arena, build_path, str8_literal("sprites/grass1.png"));
     d3d_init_texture_resource(&assets->textures[TextureAsset_Grass1], &bm);

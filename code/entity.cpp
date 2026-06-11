@@ -114,6 +114,66 @@ entity_commands_next(Entity* e){
     return(c);
 }
 
+static Sprite_Direction 
+entity_direction_from_velocity(Entity* e){
+    Sprite_Direction result = e->sprite.direction;
+
+    f32 deadzone = 0.001f;
+    f32 x = e->velocity.x;
+    f32 y = e->velocity.y;
+
+    if(abs_f32(x) < deadzone && abs_f32(y) < deadzone){
+      return(result);
+    }
+
+    if(x >= deadzone){
+      if(y >= deadzone){
+          result = RIGHT_BACK;
+      }
+      else if(y <= -deadzone){
+          result = RIGHT_FRONT;
+      }
+      else{
+          if(result != RIGHT_BACK){
+              result = RIGHT_FRONT;
+          }
+      }
+    }
+    else if(x <= -deadzone){
+      if(y >= deadzone){
+          result = LEFT_BACK;
+      }
+      else if(y <= -deadzone){
+          result = LEFT_FRONT;
+      }
+      else{
+          if(result != LEFT_BACK){
+              result = LEFT_FRONT;
+          }
+      }
+    }
+    else{
+      if(y >= deadzone){
+          if(result == LEFT_FRONT || result == LEFT_BACK){
+              result = LEFT_BACK;
+          }
+          else{
+              result = RIGHT_BACK;
+          }
+      }
+      else if(y <= -deadzone){
+          if(result == LEFT_FRONT || result == LEFT_BACK){
+              result = LEFT_FRONT;
+          }
+          else{
+              result = RIGHT_FRONT;
+          }
+      }
+    }
+
+    return(result);
+}
+
 static void
 entity_commands_move(Entity* e, v2 move_to, v2 clicked_at){
     EntityCommand c = {0};
@@ -122,6 +182,35 @@ entity_commands_move(Entity* e, v2 move_to, v2 clicked_at){
     c.clicked_at = clicked_at;
 
     entity_commands_add(e, c);
+}
+static bool
+entity_is_moving(Entity* e){
+    f32 deadzone = 0.1f;
+    f32 speed_sq = square_f32(e->velocity.x) + square_f32(e->velocity.y);
+
+    bool result = speed_sq > square_f32(deadzone);
+    return(result);
+}
+//static bool
+//entity_is_moving(Entity* e){
+//    f32 deadzone = 0.01f;
+//
+//    bool result = (abs_f32(e->velocity.x) > deadzone || 
+//                   abs_f32(e->velocity.y) > deadzone);
+//
+//    return(result);
+//}
+
+static void
+update_sprite(Spritesheet* sprite, f32 dt){
+    Sprite_Animation* anim = sprite->animations + sprite->kind;
+    Sprite_Sequence* sequence = anim->directions + sprite->direction;
+    anim->time += anim->speed * dt;
+    if(anim->time >= anim->anim_time){
+        anim->time = 0;
+        anim->col = (s32)(anim->col + 1) % sequence->frame_count;
+    }
+
 }
 
 //static Vec4F32

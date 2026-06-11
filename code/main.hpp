@@ -205,7 +205,8 @@ static Entity* add_quad(v2 pos, v2 dim, RGBA color);
 static Entity* add_texture(TextureAsset texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags=0);
 static Entity* add_castle(TextureAsset texture, v2 pos, v2 dim, RGBA color=WHITE, u32 flags=0);
 static Entity* add_skeleton(TextureAsset texture, v2 pos, v2 dim, v2 dir, RGBA color=WHITE, u32 flags=0);
-static Entity* add_human(TextureAsset texture_id, v2 cell, v2 dim, f32 col, f32 row, f32 anim_speed, RGBA color=WHITE, u32 flags=0);
+static Entity* add_human(v2 cell, v2 dim, v2 dir={0, 0}, RGBA color=WHITE, u32 flags=0);
+static Entity* add_monster(v2 cell, v2 dim, v2 dir={0, 0}, RGBA color=WHITE, u32 flags=0);
 static void entities_clear(void);
 
 static bool handle_global_events(Event event);
@@ -242,6 +243,7 @@ static void serialize_state(void);
 
 static void partition_entities_in_bins(void);
 
+static void update_entity_sprites(void);
 static void clear_entities_selected(void);
 
 #include "console.hpp"
@@ -258,17 +260,6 @@ static Font* font4;
 static Font* font5;
 static Font* font6;
 
-bool l_bool = false;
-bool r_bool = false;
-bool t_bool = false;
-bool b_bool = false;
-
-v2 pos = make_v2(0, 0);
-v2 dim = make_v2(32, 32);
-f32 increment = 32.0f;
-
-
-Spritesheet* sprite;
 #endif
 
 

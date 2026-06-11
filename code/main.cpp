@@ -58,22 +58,22 @@ sim_game(void){
                 make_v2(cell_coords.x - 1, cell_coords.y - 1),
                 make_v2(cell_coords.x - 1, cell_coords.y),
                 make_v2(cell_coords.x - 1, cell_coords.y + 1),
-                make_v2(cell_coords.x, cell_coords.y - 1),
-                make_v2(cell_coords.x, cell_coords.y + 1),
+                make_v2(cell_coords.x,     cell_coords.y - 1),
+                make_v2(cell_coords.x,     cell_coords.y + 1),
                 make_v2(cell_coords.x + 1, cell_coords.y - 1),
                 make_v2(cell_coords.x + 1, cell_coords.y),
                 make_v2(cell_coords.x + 1, cell_coords.y + 1),
             };
 
-            if(controller_button_pressed(KeyCode_1)){
-                do_motion = !do_motion;
-            }
-            if(controller_button_pressed(KeyCode_2)){
-                for(s32 i=0; i < array_count(state->entities_selected); ++i){
-                    Entity* e = state->entities_selected[i];
-                    entity_commands_clear(e);
-                }
-            }
+            //if(controller_button_pressed(KeyCode_1)){
+            //    do_motion = !do_motion;
+            //}
+            //if(controller_button_pressed(KeyCode_2)){
+            //    for(s32 i=0; i < array_count(state->entities_selected); ++i){
+            //        Entity* e = state->entities_selected[i];
+            //        entity_commands_clear(e);
+            //    }
+            //}
 
             // Flocking, cumulative velocity.
             for(s32 j=0; j < array_count(all_coords); ++j){
@@ -87,16 +87,23 @@ sim_game(void){
                         if(!has_flags(other->flags, EntityFlag_MoveWithPhys)) continue;
                         if(e == other) continue;
 
+                        f32 separation_radius = 0.45f;
                         f32 distance_squared = distance_squared_v2(e->pos, other->pos);
-                        if(distance_squared > 0 && distance_squared < 1){
+                        if(distance_squared > 0 && distance_squared < separation_radius){
                             f32 distance = sqrtf(distance_squared);
                             v2 dir = (e->pos - other->pos);
                             dir.x /= distance;
                             dir.y /= distance;
-                            e->velocity.x     += (dir.x * 50 * (f32)clock.dt) / distance;
-                            e->velocity.y     += (dir.y * 50 * (f32)clock.dt) / distance;
-                            other->velocity.x -= (dir.x * 50 * (f32)clock.dt) / distance;
-                            other->velocity.y -= (dir.y * 50 * (f32)clock.dt) / distance;
+
+                            f32 push_strength = 1.0f;
+                            if(e != state->player){
+                                e->velocity.x += (dir.x * push_strength * (f32)clock.dt) / distance;
+                                e->velocity.y += (dir.y * push_strength * (f32)clock.dt) / distance;
+                            }
+                            if(other != state->player){
+                                other->velocity.x -= (dir.x * push_strength * (f32)clock.dt) / distance;
+                                other->velocity.y -= (dir.y * push_strength * (f32)clock.dt) / distance;
+                            }
                         }
                     }
                 }
@@ -116,7 +123,7 @@ sim_game(void){
                     case EntityCommandType_Move:{
                         v2 move_dir = direction_v2(e->pos, c->move_to);
                         e->dir = move_dir;
-                        if(!v2_close_enough(e->pos, c->move_to, 0.1f)){
+                        if(!v2_close_enough(e->pos, c->move_to, 0.01f)){
                             e->velocity.x += (move_dir.x * e->speed) * (f32)clock.dt;
                             e->velocity.y += (move_dir.y * e->speed) * (f32)clock.dt;
                         }
@@ -130,6 +137,14 @@ sim_game(void){
             // Apply friction.
             e->velocity.x *= 0.75f;
             e->velocity.y *= 0.75f;
+
+            //f64 deadzone = 0.01;
+            //if(e->velocity.x < deadzone){
+            //    e->velocity.x = 0;
+            //}
+            //if(e->velocity.y < deadzone){
+            //    e->velocity.y = 0;
+            //}
             // Apply motion.
             e->pos.x += e->velocity.x * (f32)clock.dt;
             e->pos.y += e->velocity.y * (f32)clock.dt;
@@ -289,26 +304,165 @@ add_skeleton(TextureAsset texture, v2 cell, v2 dim, v2 dir, RGBA color, u32 flag
 }
 
 static Entity*
-add_human(TextureAsset texture_id, v2 cell, v2 dim, f32 col, f32 row, f32 anim_speed, RGBA color, u32 flags){
-    Entity* e = add_entity(EntityType_Player);
+add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
+    Entity* e = add_entity(EntityType_Monster);
     if(e){
-        Texture* tex = &r_assets->textures[texture_id];
-        e->sprite.col = col;
-        e->sprite.row = row;
-        e->sprite.width = tex->width;
-        e->sprite.height = tex->height;
-        e->sprite.inc = (f32)tex->width / col;
-        e->sprite.anim_speed = anim_speed;
-
         e->color = color;
         e->pos = grid_pos_from_cell(cell, state->world_cell_size);
         e->dim = dim;
-        e->texture_id = texture_id;
         e->velocity = {0};
-        e->speed = 1000.0f;
+        e->speed = 250.0f;
+        e->dir = dir;
         e->rot = make_v2(1, 0);
         e->deg = deg_from_dir(e->rot);
-        set_flags(&e->flags, EntityFlag_MoveWithPhys);
+        set_flags(&e->flags, EntityFlag_MoveWithPhys|EntityFlag_HasSprite);
+
+        e->sprite.kind = SPRITE_ANIM_IDLE;
+        e->sprite.direction = RIGHT_FRONT;
+
+        Texture* tex = &r_assets->textures[TextureAsset_Orc_Idle];
+        e->sprite.animations[SPRITE_ANIM_IDLE].texture_id = TextureAsset_Orc_Idle;
+        e->sprite.animations[SPRITE_ANIM_IDLE].speed = 6.0f;
+        e->sprite.animations[SPRITE_ANIM_IDLE].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_IDLE].width = tex->width;
+        e->sprite.animations[SPRITE_ANIM_IDLE].height = tex->height;
+        e->sprite.animations[SPRITE_ANIM_IDLE].inc = tex->width / 16;
+        e->sprite.animations[SPRITE_ANIM_IDLE].directions[RIGHT_FRONT] = {0, 0, 16};
+        e->sprite.animations[SPRITE_ANIM_IDLE].directions[LEFT_FRONT]  = {0, 1, 16};
+        e->sprite.animations[SPRITE_ANIM_IDLE].directions[RIGHT_BACK]  = {0, 2, 16};
+        e->sprite.animations[SPRITE_ANIM_IDLE].directions[LEFT_BACK]   = {0, 3, 16};
+
+        tex = &r_assets->textures[TextureAsset_Orc_Walk];
+        e->sprite.animations[SPRITE_ANIM_WALK].texture_id = TextureAsset_Orc_Walk;
+        e->sprite.animations[SPRITE_ANIM_WALK].speed = 12.0f;
+        e->sprite.animations[SPRITE_ANIM_WALK].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_WALK].width = tex->width;
+        e->sprite.animations[SPRITE_ANIM_WALK].height = tex->height;
+        e->sprite.animations[SPRITE_ANIM_WALK].inc = tex->width / 4;
+        e->sprite.animations[SPRITE_ANIM_WALK].directions[RIGHT_FRONT] = {0, 0, 4};
+        e->sprite.animations[SPRITE_ANIM_WALK].directions[LEFT_FRONT]  = {0, 1, 4};
+        e->sprite.animations[SPRITE_ANIM_WALK].directions[RIGHT_BACK]  = {0, 2, 4};
+        e->sprite.animations[SPRITE_ANIM_WALK].directions[LEFT_BACK]   = {0, 3, 4};
+
+        tex = &r_assets->textures[TextureAsset_Orc_Attack];
+        e->sprite.animations[SPRITE_ANIM_ATTACK].texture_id = TextureAsset_Orc_Attack;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].speed = 6.0f;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].width = tex->width;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].height = tex->height;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].inc = tex->width / 4;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_FRONT] = {0, 0, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_FRONT]  = {0, 1, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_BACK]  = {0, 2, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_BACK]   = {0, 3, 4};
+
+        tex = &r_assets->textures[TextureAsset_Orc_Jump];
+        e->sprite.animations[SPRITE_ANIM_JUMP].texture_id = TextureAsset_Orc_Jump;
+        e->sprite.animations[SPRITE_ANIM_JUMP].speed = 6.0f;
+        e->sprite.animations[SPRITE_ANIM_JUMP].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_JUMP].width = tex->width;
+        e->sprite.animations[SPRITE_ANIM_JUMP].height = tex->height;
+        e->sprite.animations[SPRITE_ANIM_JUMP].inc = tex->width / 4;
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_FRONT] = {0, 0, 4};
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_FRONT]  = {0, 0, 4};
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_BACK]  = {0, 1, 4};
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_BACK]   = {0, 2, 4};
+
+        tex = &r_assets->textures[TextureAsset_Orc_Die];
+        e->sprite.animations[SPRITE_ANIM_DIE].texture_id = TextureAsset_Orc_Die;
+        e->sprite.animations[SPRITE_ANIM_DIE].speed = 6.0f;
+        e->sprite.animations[SPRITE_ANIM_DIE].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_DIE].width = tex->width;
+        e->sprite.animations[SPRITE_ANIM_DIE].height = tex->height;
+        e->sprite.animations[SPRITE_ANIM_DIE].inc = tex->width / 12;
+        e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_FRONT] = {0, 3, 12};
+        e->sprite.animations[SPRITE_ANIM_DIE].directions[LEFT_FRONT]  = {0, 0, 0};
+        e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_BACK]  = {0, 0, 0};
+        e->sprite.animations[SPRITE_ANIM_DIE].directions[LEFT_BACK]   = {0, 0, 0};
+    }
+    else{
+        print("Failed to add entity: Quad\n");
+    }
+    return(e);
+}
+
+static Entity*
+add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
+    Entity* e = add_entity(EntityType_Player);
+    if(e){
+        e->color = color;
+        e->pos = grid_pos_from_cell(cell, state->world_cell_size);
+        e->dim = dim;
+        e->texture_id = TextureAsset_Human_Idle;
+        e->velocity = {0};
+        e->speed = 1.5f;
+        e->dir = dir;
+        e->rot = make_v2(1, 0);
+        e->deg = deg_from_dir(e->rot);
+        set_flags(&e->flags, EntityFlag_MoveWithPhys|EntityFlag_HasSprite);
+
+        e->sprite.kind = SPRITE_ANIM_IDLE;
+        e->sprite.direction = RIGHT_FRONT;
+
+        Texture* tex = &r_assets->textures[TextureAsset_Human_Idle];
+        e->sprite.animations[SPRITE_ANIM_IDLE].texture_id = TextureAsset_Human_Idle;
+        e->sprite.animations[SPRITE_ANIM_IDLE].speed = 6.0f;
+        e->sprite.animations[SPRITE_ANIM_IDLE].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_IDLE].width = tex->width;
+        e->sprite.animations[SPRITE_ANIM_IDLE].height = tex->height;
+        e->sprite.animations[SPRITE_ANIM_IDLE].inc = tex->width / 16;
+        e->sprite.animations[SPRITE_ANIM_IDLE].directions[RIGHT_FRONT] = {0, 0, 16};
+        e->sprite.animations[SPRITE_ANIM_IDLE].directions[LEFT_FRONT]  = {0, 1, 16};
+        e->sprite.animations[SPRITE_ANIM_IDLE].directions[RIGHT_BACK]  = {0, 2, 16};
+        e->sprite.animations[SPRITE_ANIM_IDLE].directions[LEFT_BACK]   = {0, 3, 16};
+
+        tex = &r_assets->textures[TextureAsset_Human_Walk];
+        e->sprite.animations[SPRITE_ANIM_WALK].texture_id = TextureAsset_Human_Walk;
+        e->sprite.animations[SPRITE_ANIM_WALK].speed = 12.0f;
+        e->sprite.animations[SPRITE_ANIM_WALK].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_WALK].width = tex->width;
+        e->sprite.animations[SPRITE_ANIM_WALK].height = tex->height;
+        e->sprite.animations[SPRITE_ANIM_WALK].inc = tex->width / 4;
+        e->sprite.animations[SPRITE_ANIM_WALK].directions[RIGHT_FRONT] = {0, 0, 4};
+        e->sprite.animations[SPRITE_ANIM_WALK].directions[LEFT_FRONT]  = {0, 1, 4};
+        e->sprite.animations[SPRITE_ANIM_WALK].directions[RIGHT_BACK]  = {0, 2, 4};
+        e->sprite.animations[SPRITE_ANIM_WALK].directions[LEFT_BACK]   = {0, 3, 4};
+
+        tex = &r_assets->textures[TextureAsset_Human_Attack];
+        e->sprite.animations[SPRITE_ANIM_ATTACK].texture_id = TextureAsset_Human_Attack;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].speed = 6.0f;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].width = tex->width;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].height = tex->height;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].inc = tex->width / 4;
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_FRONT] = {0, 0, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_FRONT]  = {0, 1, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_BACK]  = {0, 2, 4};
+        e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_BACK]   = {0, 3, 4};
+
+        tex = &r_assets->textures[TextureAsset_Human_Jump];
+        e->sprite.animations[SPRITE_ANIM_JUMP].texture_id = TextureAsset_Human_Jump;
+        e->sprite.animations[SPRITE_ANIM_JUMP].speed = 6.0f;
+        e->sprite.animations[SPRITE_ANIM_JUMP].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_JUMP].width = tex->width;
+        e->sprite.animations[SPRITE_ANIM_JUMP].height = tex->height;
+        e->sprite.animations[SPRITE_ANIM_JUMP].inc = tex->width / 4;
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_FRONT] = {0, 0, 4};
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_FRONT]  = {0, 0, 4};
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_BACK]  = {0, 1, 4};
+        e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_BACK]   = {0, 2, 4};
+
+        tex = &r_assets->textures[TextureAsset_Human_Die];
+        e->sprite.animations[SPRITE_ANIM_DIE].texture_id = TextureAsset_Human_Die;
+        e->sprite.animations[SPRITE_ANIM_DIE].speed = 6.0f;
+        e->sprite.animations[SPRITE_ANIM_DIE].anim_time = 1.0f;
+        e->sprite.animations[SPRITE_ANIM_DIE].width = tex->width;
+        e->sprite.animations[SPRITE_ANIM_DIE].height = tex->height;
+        e->sprite.animations[SPRITE_ANIM_DIE].inc = tex->width / 12;
+        e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_FRONT] = {0, 3, 12};
+        e->sprite.animations[SPRITE_ANIM_DIE].directions[LEFT_FRONT]  = {0, 0, 0};
+        e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_BACK]  = {0, 0, 0};
+        e->sprite.animations[SPRITE_ANIM_DIE].directions[LEFT_BACK]   = {0, 0, 0};
     }
     else{
         print("Failed to add entity: Quad\n");
@@ -451,10 +605,25 @@ generate_new_world(f32 width, f32 height){
 }
 
 static void
+update_entity_sprites(){
+    for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+        Entity *e = state->entities + idx;
+
+        if(has_flags(e->flags, EntityFlag_Active|EntityFlag_HasSprite)){
+            if(entity_is_moving(e)){
+                e->sprite.direction = entity_direction_from_velocity(e); 
+                e->sprite.kind = SPRITE_ANIM_WALK;
+            }
+            else{
+                e->sprite.kind = SPRITE_ANIM_IDLE;
+            }
+            update_sprite(&e->sprite, (f32)clock.dt);
+        }
+    }
+}
+
+static void
 draw_entities(State* state){
-    set_texture(state->player->texture_id);
-    Quad quad = quad_from_entity_world(state->player);
-    draw_sprite(state->player->sprite, quad, WALK_RIGHT_FRONT);
 
     for(s32 idx = 0; idx < array_count(state->entities); ++idx){
         Entity *e = state->entities + idx;
@@ -512,6 +681,36 @@ draw_entities(State* state){
                     set_texture(e->texture_id);
                     draw_texture(quad, e->color);
                 } break;
+                case EntityType_Monster:{
+
+                    Sprite_Animation_Kind kind = e->sprite.kind;
+                    Sprite_Animation anim = e->sprite.animations[kind];
+                    set_texture(anim.texture_id);
+                    Quad quad = quad_from_entity_world(e);
+                    draw_sprite(e->sprite, quad);
+
+                    //quad = rotate_quad(quad, e->deg, e->pos);
+                    //set_texture(e->texture_id);
+                    //draw_texture(quad, e->color);
+
+
+
+                    if(e->selected){
+                        if(e->active_command){
+                            draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
+                        }
+
+                        u32 read_idx = e->commands_read;
+                        while(read_idx != e->commands_write){
+                            EntityCommand* c = entity_commands_read(e, read_idx);
+                            read_idx++;
+
+                            draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
+                            // no
+                            //draw_line(e->pos, screen_space, 0.1f, ORANGE);
+                        }
+                    }
+                }
                 case EntityType_Skeleton1:{
                     quad = rotate_quad(quad, e->deg, e->pos);
 
@@ -564,6 +763,14 @@ draw_entities(State* state){
             }
         }
     }
+
+    // draw player
+    Sprite_Animation_Kind kind = state->player->sprite.kind;
+    Sprite_Animation anim = state->player->sprite.animations[kind];
+    set_texture(anim.texture_id);
+    Quad quad = quad_from_entity_world(state->player);
+    draw_sprite(state->player->sprite, quad);
+
 }
 
 static void
@@ -745,7 +952,8 @@ ui_castle(void){
                 Entity* castle = state->entities_selected[0];
 
                 v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                Entity* e = add_skeleton(TextureAsset_Human_Walk, grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(1, 1), dir);
+                Entity* e = add_monster(grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(2, 2), dir);
+                //Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(1, 1), dir);
                 e->origin = castle;
                 e->rallypoint = castle->rallypoint;
                 e->rallypoint_cell = castle->rallypoint_cell;
@@ -770,7 +978,8 @@ ui_castle(void){
                         v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
 
                         v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                        Entity* e = add_skeleton(TextureAsset_Human_Walk, new_coords, make_v2(1, 1), dir);
+                        Entity* e = add_monster(grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(2, 2), dir);
+                        //Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
                         e->origin = castle;
 
                         v2 target_direction = direction_v2(e->pos, castle->rallypoint);
@@ -800,7 +1009,8 @@ ui_castle(void){
                         v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
 
                         v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                        Entity* e = add_skeleton(TextureAsset_Human_Walk, new_coords, make_v2(1, 1), dir);
+                        Entity* e = add_monster(grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(2, 2), dir);
+                        //Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
                         e->origin = castle;
 
                         v2 target_direction = direction_v2(e->pos, castle->rallypoint);
@@ -1630,9 +1840,10 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         // load castle
         //state->castle_cell = make_v2(10, 5);
-        state->castle_cell = make_v2(0, 0);
+        state->castle_cell = make_v2(198, 98);
         state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(2, 2));
-        state->player = add_human(TextureAsset_Human_Walk, make_v2(1, 1), make_v2(300, 300), 4, 4, 1);
+        state->player = add_human(make_v2(200, 100), make_v2(2, 2));
+        state->player->speed = 2.5f;
 
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
@@ -1650,7 +1861,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->scene_state = SceneState_Game;
         //state->scene_state = SceneState_Editor;
         //init_camera_2d(&camera, make_v2((state->world_width_in_cells/2) * state->world_cell_size, (state->world_height_in_cells/2) * state->world_cell_size), 30);
-        init_camera_2d(&camera, make_v2(10, 5), 15);
+        init_camera_2d(&camera, make_v2(200, 100), 1);
 
         Arena* arena = push_arena(&state->arena, MB(8));
         init_console(arena, &camera, &window, &assets);
@@ -1697,18 +1908,21 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         }
 
         if(controller_button_held(KeyCode_D)){ 
-            //state->player.sprite.anim_at 
-            //draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_RIGHT_FRONT);
+            state->player->velocity.x += state->player->speed;
         }
         if(controller_button_held(KeyCode_A)){ 
-            //draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_LEFT_FRONT);
+            state->player->velocity.x -= state->player->speed;
         }
         if(controller_button_held(KeyCode_W)){ 
-            //draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_RIGHT_BACK);
+            state->player->velocity.y += state->player->speed;
         }
         if(controller_button_held(KeyCode_S)){ 
-            //draw_sprite(sprite, make_v2(window.width/2, window.height/2), make_v2(300, 300), WALK_LEFT_BACK);
+            state->player->velocity.y -= state->player->speed;
         }
+        state->player->pos.x += state->player->velocity.x * (f32)clock.dt;
+        state->player->pos.y += state->player->velocity.y * (f32)clock.dt;
+        state->player->velocity.x *= 0.75f;
+        state->player->velocity.y *= 0.75f;
 
         partition_entities_in_bins();
 
@@ -1888,6 +2102,27 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                         entity_commands_move(e, target_pos, world_mouse);
                     }
                 }
+                case EntityType_Monster:{
+                    if(!state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT, false)){
+                        f32 projected_distance  = distance_v2(state->entities_selected_center, world_mouse);
+                        v2  projected_direction = direction_v2(state->entities_selected_center, world_mouse);
+                        f32 projected_rad = rad_from_dir(projected_direction);
+
+                        v2 target_direction = direction_v2(e->pos, world_mouse);
+                        f32 target_rad = rad_from_dir(target_direction);
+
+                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
+                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
+                        v2 target_pos = e->pos + projected_offset;
+
+                        if(!controller.shift_pressed){
+                            entity_commands_clear(e);
+                        }
+                        tp = e->pos;
+                        wm = world_mouse;
+                        entity_commands_move(e, target_pos, world_mouse);
+                    }
+                }
             }
         }
 
@@ -1897,6 +2132,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         }
 
         console_update();
+        update_entity_sprites();
 
         // zoom
         if(camera.size > 30){
@@ -1919,7 +2155,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             render_batches_reset();
             //arena_free(ts->batch_arena);
             set_transform(m4_screen_from_world());
-            //draw_world_terrain();
+            draw_world_terrain();
             if(state->scene_state == SceneState_Editor){
                 if(state->show_world_cells){
                     //draw_grid(state->world_cell_size, RED);

@@ -1,25 +1,51 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+typedef enum Sprite_Direction{
+    RIGHT_FRONT,
+    LEFT_FRONT,
+    RIGHT_BACK,
+    LEFT_BACK,
+
+    SPRITE_DIRECTION_COUNT,
+} Sprite_Direction;
 
 typedef enum Sprite_Animation_Kind{
-    WALK_RIGHT_FRONT,
-    WALK_LEFT_FRONT,
-    WALK_RIGHT_BACK,
-    WALK_LEFT_BACK,
+    SPRITE_ANIM_IDLE,
+    SPRITE_ANIM_WALK,
+    SPRITE_ANIM_ATTACK,
+    SPRITE_ANIM_JUMP,
+    SPRITE_ANIM_DIE,
 
-    COUNT,
+    SPRITE_ANIM_COUNT,
 } Sprite_Animation_Kind;
+
+typedef struct Sprite_Sequence{
+    s32 col_start;
+    s32 row;
+    s32 frame_count;
+} Sprite_Sequence;
+
+typedef struct Sprite_Animation{
+    f32 time;
+    f32 anim_time;
+    f32 speed;
+    s32 col;
+    s32 inc;
+    f32 width;
+    f32 height;
+    TextureAsset texture_id;
+    Sprite_Sequence directions[SPRITE_DIRECTION_COUNT];
+} Sprite_Animation;
 
 typedef struct Spritesheet{
     Sprite_Animation_Kind kind;
+    Sprite_Direction direction;
+    Sprite_Animation animations[SPRITE_ANIM_COUNT];
 
-    f32 width;
-    f32 height;
 
-    s32 col;
-    s32 row;
-    f32 inc;
+    s32 max_col;
+    s32 max_row;
 
     f32 anim_speed;
     f32 anim_at;
@@ -39,6 +65,7 @@ typedef enum EntityFlag {
     EntityFlag_IsProjectile =  (1 << 5),
     EntityFlag_Wrapping =      (1 << 6),
     EntityFlag_Particle =      (1 << 7),
+    EntityFlag_HasSprite =     (1 << 8),
 } EntityFlag;
 
 typedef enum CollisionType {
@@ -61,7 +88,7 @@ typedef enum ParticleType{
     ParticleType_Bullet,
 } ParticleType;
 
-typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Structure, EntityType_Skeleton1, EntityType_Player} EntityType;
+typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Structure, EntityType_Skeleton1, EntityType_Monster, EntityType_Player} EntityType;
 
 typedef enum StructureType{
     StructureType_None,
@@ -149,6 +176,7 @@ typedef struct Entity{
 
     //bool dead;
     bool selected;
+    bool moving;
     TextureAsset texture_id;
     Spritesheet sprite;
 } Entity;
@@ -181,5 +209,8 @@ static EntityCommand* entity_commands_read(Entity* e, u32 read);
 static EntityCommand* entity_commands_next(Entity* e);
 
 static void entity_commands_move(Entity* e, v2 move_to, v2 clicked_at);
+static Sprite_Direction entity_direction_from_velocity(Entity* e);
+static bool entity_is_moving(Entity* e);
+static void update_sprite(Entity* e, f32 dt);
 
 #endif

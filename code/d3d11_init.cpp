@@ -142,9 +142,12 @@ init_d3d(HWND window_handle, u32 width, u32 height){
 #if DEBUG
     D3D11_SAMPLER_DESC sampler_desc = {
         .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
-        .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
-        .AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
-        .AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
+        //.AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+        //.AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
+        //.AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
+        .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+        .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+        .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
         .MipLODBias = 0.0f,
         .BorderColor = {1.0f, 0.0f, 1.0f, 1.0f},
         .MinLOD = 0.0f,
