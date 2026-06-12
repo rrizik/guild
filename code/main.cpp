@@ -51,6 +51,27 @@ sim_game(void){
             if(!has_flags(e->flags, EntityFlag_Active)) continue;
             if(!has_flags(e->flags, EntityFlag_MoveWithPhys)) continue;
 
+            // update attack_box
+            //e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.3f);
+            //e->attack_box.max = make_v2(e->pos.x + 0.6f, e->pos.y + 0.3f);
+            if(e->sprite.direction == RIGHT_FRONT){
+                e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.42f);
+                e->attack_box.max = make_v2(e->pos.x + 0.7f, e->pos.y + 0.25f);
+            }
+            if(e->sprite.direction == RIGHT_BACK){
+                e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.25f);
+                e->attack_box.max = make_v2(e->pos.x + 0.7f, e->pos.y + 0.4f);
+            }
+            if(e->sprite.direction == LEFT_FRONT){
+                e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.36f);
+                e->attack_box.max = make_v2(e->pos.x - 0.65f, e->pos.y + 0.2);
+            }
+            if(e->sprite.direction == LEFT_BACK){
+                e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.2f);
+                e->attack_box.max = make_v2(e->pos.x - 0.65f, e->pos.y + 0.35f);
+            }
+            e->bounding_box = make_rect(make_v2(e->pos.x - 0.3f, e->pos.y - 0.3f), make_v2(e->pos.x + 0.3f, e->pos.y + 0.3f));
+
             // All 9 surrounding cells.
             v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
             v2 all_coords[9] = {
@@ -96,14 +117,14 @@ sim_game(void){
                             dir.y /= distance;
 
                             f32 push_strength = 1.0f;
-                            if(e == state->player){
+                            if(e == player){
                                 push_strength = 10.0f;
                             }
-                            if(e != state->player){
+                            if(e != player){
                                 e->velocity.x += (dir.x * push_strength * (f32)clock.dt) / distance;
                                 e->velocity.y += (dir.y * push_strength * (f32)clock.dt) / distance;
                             }
-                            if(other != state->player){
+                            if(other != player){
                                 other->velocity.x -= (dir.x * push_strength * (f32)clock.dt) / distance;
                                 other->velocity.y -= (dir.y * push_strength * (f32)clock.dt) / distance;
                             }
@@ -143,6 +164,40 @@ sim_game(void){
 
             e->pos.x += e->velocity.x * (f32)clock.dt;
             e->pos.y += e->velocity.y * (f32)clock.dt;
+        }
+
+        v2 cell_coords = grid_cell_from_pos(player->pos, state->flocking_cell_size);
+        v2 all_coords[9] = {
+            cell_coords,
+            make_v2(cell_coords.x - 1, cell_coords.y - 1),
+            make_v2(cell_coords.x - 1, cell_coords.y),
+            make_v2(cell_coords.x - 1, cell_coords.y + 1),
+            make_v2(cell_coords.x,     cell_coords.y - 1),
+            make_v2(cell_coords.x,     cell_coords.y + 1),
+            make_v2(cell_coords.x + 1, cell_coords.y - 1),
+            make_v2(cell_coords.x + 1, cell_coords.y),
+            make_v2(cell_coords.x + 1, cell_coords.y + 1),
+        };
+        for(s32 j=0; j < array_count(all_coords); ++j){
+            v2 coords = all_coords[j];
+            if(!grid_cell_coords_in_bounds(coords)) continue;
+
+            Cell* cell = state->cells + ((s32)coords.x + (WORLD_WIDTH_IN_TILES_MAX * (s32)coords.y));
+            for(BinNode* bin = cell->bin; bin != 0; bin = bin->next){
+                for(s32 k = 0; k < bin->at; ++k){
+                    Entity* other = bin->entities[k];
+                    if(other == player) continue;
+                    if(!has_flags(other->flags, EntityFlag_Active)) continue;
+
+                    if(player->attacking){
+                        if(has_flags(other->flags, EntityFlag_CanDie)){
+                            if(rect_collides_rect(player->attack_box, other->bounding_box)){
+                                other->dead = true;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -310,7 +365,7 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->dir = dir;
         e->rot = make_v2(1, 0);
         e->deg = deg_from_dir(e->rot);
-        set_flags(&e->flags, EntityFlag_MoveWithPhys|EntityFlag_HasSprite);
+        set_flags(&e->flags, EntityFlag_MoveWithPhys|EntityFlag_HasSprite|EntityFlag_CanDie);
 
         e->sprite.kind = SPRITE_ANIM_IDLE;
         e->sprite.direction = RIGHT_FRONT;
@@ -367,13 +422,13 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
 
         tex = &r_assets->textures[TextureAsset_Orc_Die];
         e->sprite.animations[SPRITE_ANIM_DIE].texture_id = TextureAsset_Orc_Die;
-        e->sprite.animations[SPRITE_ANIM_DIE].speed = 20.0f;
+        e->sprite.animations[SPRITE_ANIM_DIE].speed = 12.0f;
         e->sprite.animations[SPRITE_ANIM_DIE].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_DIE].width = tex->width;
         e->sprite.animations[SPRITE_ANIM_DIE].height = tex->height;
         e->sprite.animations[SPRITE_ANIM_DIE].inc = tex->width / 12;
         e->sprite.animations[SPRITE_ANIM_DIE].do_once = true;
-        e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_FRONT] = {0, 3, 12};
+        e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_FRONT] = {0, 0, 8};
         e->sprite.animations[SPRITE_ANIM_DIE].directions[LEFT_FRONT]  = {0, 0, 0};
         e->sprite.animations[SPRITE_ANIM_DIE].directions[RIGHT_BACK]  = {0, 0, 0};
         e->sprite.animations[SPRITE_ANIM_DIE].directions[LEFT_BACK]   = {0, 0, 0};
@@ -401,6 +456,9 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
 
         e->sprite.kind = SPRITE_ANIM_IDLE;
         e->sprite.direction = RIGHT_FRONT;
+
+        e->attack_box_max = make_v2(0.6f, 0.3f);
+        e->attack_box = make_rect_size(e->pos, e->attack_box_max);
 
         Texture* tex = &r_assets->textures[TextureAsset_Human_Idle];
         e->sprite.animations[SPRITE_ANIM_IDLE].texture_id = TextureAsset_Human_Idle;
@@ -452,8 +510,8 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_BACK]  = {0, 2, 4};
         e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_BACK]   = {0, 3, 4};
 
-        tex = &r_assets->textures[TextureAsset_Human_Die];
-        e->sprite.animations[SPRITE_ANIM_DIE].texture_id = TextureAsset_Human_Die;
+        tex = &r_assets->textures[TextureAsset_Human_Spin_Die];
+        e->sprite.animations[SPRITE_ANIM_DIE].texture_id = TextureAsset_Human_Spin_Die;
         e->sprite.animations[SPRITE_ANIM_DIE].speed = 12.0f;
         e->sprite.animations[SPRITE_ANIM_DIE].time_max = 1.0f;
         e->sprite.animations[SPRITE_ANIM_DIE].width = tex->width;
@@ -611,7 +669,9 @@ entity_sprite_update(){
         Entity *e = state->entities + idx;
 
         if(has_flags(e->flags, EntityFlag_Active|EntityFlag_HasSprite)){
-            e->sprite.direction = entity_direction_from_velocity(e); 
+            if(!e->dead){
+                e->sprite.direction = entity_direction_from_velocity(e); 
+            }
 
             if(e->dead){
                 if(e->sprite.kind != SPRITE_ANIM_DIE){
@@ -659,6 +719,7 @@ draw_entities(State* state){
 
     for(s32 idx = 0; idx < array_count(state->entities); ++idx){
         Entity *e = state->entities + idx;
+
 
         Quad quad = quad_from_entity_world(e);
         if(has_flags(e->flags, EntityFlag_Active)){
@@ -718,9 +779,11 @@ draw_entities(State* state){
                     Sprite_Animation_Kind kind = e->sprite.kind;
                     Sprite_Animation anim = e->sprite.animations[kind];
                     set_texture(anim.texture_id);
+
                     Quad quad = quad_from_entity_world(e);
                     draw_sprite(e->sprite, quad);
 
+                    //draw_bounding_box(e->bounding_box, 0.05f, RED);
                     //quad = rotate_quad(quad, e->deg, e->pos);
                     //set_texture(e->texture_id);
                     //draw_texture(quad, e->color);
@@ -797,12 +860,16 @@ draw_entities(State* state){
     }
 
     // draw player
-    Sprite_Animation_Kind kind = state->player->sprite.kind;
-    Sprite_Animation anim = state->player->sprite.animations[kind];
+    Sprite_Animation_Kind kind = player->sprite.kind;
+    Sprite_Animation anim = player->sprite.animations[kind];
     set_texture(anim.texture_id);
-    Quad quad = quad_from_entity_world(state->player);
-    draw_sprite(state->player->sprite, quad);
+    Quad quad = quad_from_entity_world(player);
+    draw_sprite(player->sprite, quad);
 
+    if(state->scene_state == SceneState_Editor){
+        draw_bounding_box(player->attack_box, 0.05f, RED);
+        draw_bounding_box(player->bounding_box, 0.05f, RED);
+    }
 }
 
 static void
@@ -1839,7 +1906,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         ts->bin_arena      = push_arena(&ts->arena, MB(512));
 
         show_cursor(true);
-        assets_load(ts->asset_arena, &assets);
+        assets_load(ts->asset_arena);
 
         state->world_width_in_cells = 10;
         state->world_height_in_cells = 10;
@@ -1875,6 +1942,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->castle_cell = make_v2(198, 98);
         state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(2, 2));
         state->player = add_human(make_v2(200, 100), make_v2(2, 2));
+        player = state->player;
 
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
         //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
@@ -1938,41 +2006,44 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             handled = handle_game_events(event);
         }
 
-        if(controller_button_held(KeyCode_Q)){ 
-            state->player->dead = true;
+        if(controller_button_pressed(KeyCode_Q)){ 
+            player->dead = !player->dead;
         }
 
-        if(controller_button_held(KeyCode_D)){ 
-            state->player->velocity.x = state->player->speed;
-            state->player->left_right = 1;
-        }
-        if(controller_button_held(KeyCode_A)){ 
-            state->player->velocity.x = -state->player->speed;
-            state->player->left_right = -1;
-        }
-        if(controller_button_held(KeyCode_W)){ 
-            state->player->velocity.y = state->player->speed;
-            state->player->up_down = 1;
-        }
-        if(controller_button_held(KeyCode_S)){ 
-            state->player->velocity.y = -state->player->speed;
-            state->player->up_down = -1;
-        }
+        if(!player->dead){
+            if(controller_button_held(KeyCode_D)){ 
+                player->velocity.x = player->speed;
+                player->left_right = 1;
+            }
+            if(controller_button_held(KeyCode_A)){ 
+                player->velocity.x = -player->speed;
+                player->left_right = -1;
+            }
+            if(controller_button_held(KeyCode_W)){ 
+                player->velocity.y = player->speed;
+                player->up_down = 1;
+            }
+            if(controller_button_held(KeyCode_S)){ 
+                player->velocity.y = -player->speed;
+                player->up_down = -1;
+            }
 
-        if(controller_button_pressed(KeyCode_SPACEBAR)){ 
-            state->player->jumping = true;
-        }
-        if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){ 
-            state->player->attacking = true;
+            if(controller_button_pressed(KeyCode_SPACEBAR)){ 
+                player->jumping = true;
+            }
+            //if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){ 
+            if(controller_button_pressed(KeyCode_E)){ 
+                player->attacking = true;
+            }
         }
 
         // note(rr): Digonal movement adjustment.
-        if(state->player->left_right != 0 && state->player->up_down != 0){
-            state->player->velocity.x *= 0.707f;
-            state->player->velocity.y *= 0.707f;
+        if(player->left_right != 0 && player->up_down != 0){
+            player->velocity.x *= 0.707f;
+            player->velocity.y *= 0.707f;
         }
-        state->player->left_right = 0;
-        state->player->up_down = 0;
+        player->left_right = 0;
+        player->up_down = 0;
 
         partition_entities_in_bins();
 
@@ -2047,6 +2118,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 bool selected_new_units = false;
                 for(s32 i=0; i < array_count(state->entities); ++i){
                     Entity* e = state->entities + i;
+                    if(e == player) continue;
                     if(!has_flags(e->flags, EntityFlag_Active)) continue;
 
                     if(rect_contains_point(state->selection_rect, e->pos)){
@@ -2083,17 +2155,18 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
 
             // single select
-            if(state->entity_hovered && !controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                //memset(state->entities_selected, 0, sizeof(state->entities_selected));
-                clear_entities_selected();
-                state->entities_selected[0] = state->entity_hovered;
-                state->entities_selected[0]->selected = true;
-                state->entities_selected_count = 1;
-            }
-            if(state->entity_hovered && controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                state->entities_selected[state->entities_selected_count] = state->entity_hovered;
-                state->entities_selected[state->entities_selected_count]->selected = true;
-                state->entities_selected_count++;
+            if(state->entity_hovered != player){
+                if(state->entity_hovered && !controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                    clear_entities_selected();
+                    state->entities_selected[0] = state->entity_hovered;
+                    state->entities_selected[0]->selected = true;
+                    state->entities_selected_count = 1;
+                }
+                if(state->entity_hovered && controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                    state->entities_selected[state->entities_selected_count] = state->entity_hovered;
+                    state->entities_selected[state->entities_selected_count]->selected = true;
+                    state->entities_selected_count++;
+                }
             }
 
         }

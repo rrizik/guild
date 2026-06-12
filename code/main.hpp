@@ -74,7 +74,6 @@ global String8 sounds_path;
 
 global u64 frame_count;
 global bool should_quit;
-global Assets assets;
 
 global v2 world_mouse_record;
 global Camera2D world_camera_record;
@@ -259,6 +258,7 @@ static Font* font3;
 static Font* font4;
 static Font* font5;
 static Font* font6;
+static Entity* player;
 
 #endif
 

@@ -55,15 +55,16 @@ typedef struct Spritesheet{
 // handle to originator, entity cant collide with its originator
 // collision layers (1,2,3,4,5)
 typedef enum EntityFlag {
-    EntityFlag_Active =        (1 << 0),
+    EntityFlag_Active        = (1 << 0),
     EntityFlag_MoveWithCtrls = (1 << 1),
-    EntityFlag_CanCollide =    (1 << 2),
-    EntityFlag_CanShoot =      (1 << 3),
-    EntityFlag_MoveWithPhys =  (1 << 4),
-    EntityFlag_IsProjectile =  (1 << 5),
-    EntityFlag_Wrapping =      (1 << 6),
-    EntityFlag_Particle =      (1 << 7),
-    EntityFlag_HasSprite =     (1 << 8),
+    EntityFlag_CanCollide    = (1 << 2),
+    EntityFlag_CanShoot      = (1 << 3),
+    EntityFlag_MoveWithPhys  = (1 << 4),
+    EntityFlag_IsProjectile  = (1 << 5),
+    EntityFlag_Wrapping      = (1 << 6),
+    EntityFlag_Particle      = (1 << 7),
+    EntityFlag_HasSprite     = (1 << 8),
+    EntityFlag_CanDie        = (1 << 9),
 } EntityFlag;
 
 typedef enum CollisionType {
@@ -121,6 +122,10 @@ typedef struct Entity{
     StructureType structure_type;
     v2 rallypoint;
     v2 rallypoint_cell;
+    
+    Rect bounding_box;
+    Rect attack_box;
+    v2 attack_box_max;
 
     u32 flags;
     u32 collision_type;
@@ -163,16 +168,8 @@ typedef struct Entity{
     u32 commands_read;
     u32 commands_write;
 
-    //s32 health;
-    //s32 damage;
-    //bool in_play;
-    //f32 particle_t;
-    //bool accelerating;
-    //bool exploding;
-    //u32  explosion_tex;
-    //f32 explosion_t;
-    //f32 immune_t;
-    //bool immune;
+    s32 health;
+    s32 damage;
 
     //bool dead;
     bool selected;

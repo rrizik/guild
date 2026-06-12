@@ -61,15 +61,20 @@ typedef enum TextureAsset{
     TextureAsset_Char_Walk,
 
     TextureAsset_Human_Idle,
+    TextureAsset_Human_Dmg,
     TextureAsset_Human_Walk,
     TextureAsset_Human_Attack,
+    TextureAsset_Human_Charged_Attack,
     TextureAsset_Human_Jump,
-    TextureAsset_Human_Die,
+    TextureAsset_Human_Spin_Die,
+    TextureAsset_Human_Soul_Die,
 
     TextureAsset_Orc_Idle,
     TextureAsset_Orc_Walk,
     TextureAsset_Orc_Attack,
+    TextureAsset_Orc_Charged_Attack,
     TextureAsset_Orc_Jump,
+    TextureAsset_Orc_Dmg,
     TextureAsset_Orc_Die,
 
 
@@ -85,6 +90,9 @@ typedef struct Assets{
     Font    fonts[FontAsset_Count];
     Texture textures[TextureAsset_Count];
 } Assets;
-static void assets_load(Arena* arena, Assets* assets);
+static void load_texture(Arena* arena, TextureAsset texture_id, String8 build_path, String8 path);
+static void assets_load(Arena* arena);
+
+global Assets assets;
 
 #endif
