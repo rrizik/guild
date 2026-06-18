@@ -22,7 +22,7 @@ typedef enum Sprite_Animation_Kind{
 
 typedef struct Sprite_Sequence{
     s32 col_start;
-    s32 row;
+    s32 row_start;
     s32 frame_count;
 } Sprite_Sequence;
 
@@ -37,10 +37,10 @@ typedef struct Sprite_Animation{
     f32 width;
     f32 height;
 
-    bool loop;
-    bool done_once;
-    bool do_once;
     bool started;
+    bool do_once;
+    bool done_once;
+
     TextureAsset texture_id;
     Sprite_Sequence directions[SPRITE_DIRECTION_COUNT];
 } Sprite_Animation;
@@ -157,6 +157,9 @@ typedef struct Entity{
 
     f32 collision_padding;
 
+    s32 layer;
+    f32 z;
+
     f32 speed;
     f32 rotation_speed;
     f32 accel_speed;
@@ -179,6 +182,7 @@ typedef struct Entity{
     bool dead;
     TextureAsset texture_id;
     Spritesheet sprite;
+    Spritesheet shadow_sprite;
 } Entity;
 
 static bool has_flags(u32 lflags, u32 rflags);
@@ -211,6 +215,7 @@ static EntityCommand* entity_commands_next(Entity* e);
 static void entity_commands_move(Entity* e, v2 move_to, v2 clicked_at);
 static Sprite_Direction entity_direction_from_velocity(Entity* e);
 static bool entity_is_moving(Entity* e);
+static void sprite_anim_reset(Spritesheet* sprite, Sprite_Animation_Kind kind);
 static bool sprite_update(Entity* e, f32 dt);
 
 #endif

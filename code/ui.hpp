@@ -100,9 +100,9 @@ UI_BoxFlags ui_floating_panel_world = UI_BoxFlag_DrawBackground |
                                       UI_BoxFlag_Draggable |
                                       UI_BoxFlag_NoSiblings|
                                       UI_BoxFlag_NoCache;
-UI_BoxFlags ui_fixed_panel    = UI_BoxFlag_DrawBackground |
-                                UI_BoxFlag_Clickable |
-                                UI_BoxFlag_NoSiblings;
+UI_BoxFlags ui_fixed_panel = UI_BoxFlag_DrawBackground |
+                             UI_BoxFlag_Clickable |
+                             UI_BoxFlag_NoSiblings;
 
 // todo(rr): not even using this
 typedef struct TextInfo{

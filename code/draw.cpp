@@ -204,43 +204,23 @@ init_draw(Arena* batch_arena, Arena* sprite_arena, Assets* assets){
     r_assets = assets;
 }
 
-//static Spritesheet*
-//push_spritesheet(s32 texture_id, f32 col, f32 row, f32 anim_speed){
-//    Texture* tex = &r_assets->textures[texture_id];
-//    
-//    Spritesheet* result = push_struct(r_arena_spritesheets, Spritesheet);
-//    result->max_col = col;
-//    result->max_row = row;
-//    result->width = tex->width;
-//    result->height = tex->height;
-//    //result->inc = (f32)tex->width / col;
-//    result->anim_speed = anim_speed;
-//
-//    return(result);
-//}
-
 static void
-draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
+imm_draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
     RGBA linear_color = linear_from_srgb(color); 
 
     Sprite_Animation anim = sprite.animations[sprite.kind];
     Sprite_Sequence sequence = anim.directions[sprite.direction];
 
-    f32 left   =  (anim.col     * anim.inc)             / anim.width;
-    f32 top    =  (sequence.row * anim.inc)             / anim.height;
-    f32 right  = ((anim.col     * anim.inc) + anim.inc) / anim.width;
-    f32 bottom = ((sequence.row * anim.inc) + anim.inc) / anim.height;
+    f32 left   =  (anim.col           * anim.inc)             / anim.width;
+    f32 top    =  (sequence.row_start * anim.inc)             / anim.height;
+    f32 right  = ((anim.col           * anim.inc) + anim.inc) / anim.width;
+    f32 bottom = ((sequence.row_start * anim.inc) + anim.inc) / anim.height;
 
     v2 u0 = make_v2(left,  top);
     v2 u1 = make_v2(right, top);
     v2 u2 = make_v2(right, bottom);
     v2 u3 = make_v2(left,  bottom);
                                                 
-    //v2 p0 = make_v2(pos.x - dim.w/2, pos.y - dim.h/2);
-    //v2 p1 = make_v2(pos.x + dim.w/2, pos.y - dim.h/2);
-    //v2 p2 = make_v2(pos.x + dim.w/2, pos.y + dim.h/2);
-    //v2 p3 = make_v2(pos.x - dim.w/2, pos.y + dim.h/2);
-
     RenderBatch *batch = get_render_batch(6);
     batch->buffer[batch->vertex_count++] = { quad.p0, u0, linear_color };
     batch->buffer[batch->vertex_count++] = { quad.p1, u1, linear_color };
@@ -248,27 +228,23 @@ draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
     batch->buffer[batch->vertex_count++] = { quad.p0, u0, linear_color };
     batch->buffer[batch->vertex_count++] = { quad.p2, u2, linear_color };
     batch->buffer[batch->vertex_count++] = { quad.p3, u3, linear_color };
-    
-    //sprite.anim_col = (s32)(sprite.anim_col + 1) % sprite.col;
 }
-
-
-//r_init_spritesheet(TextureAsset_Human_Walk, 4, 4, 1);
 
 static void
 set_texture(s32 texture_id){
-    r_texture = &r_assets->textures[texture_id];
+    //r_texture = &r_assets->textures[texture_id];
+    r_texture_id = texture_id;
 }
 
 // todo: revisit this, yuck
-static void
-set_texture_explicit(Texture* texture){
-    r_texture = texture;
-}
+//static void
+//set_texture_explicit(Texture* texture){
+//    r_texture = texture;
+//}
 
 static Texture*
 get_texture(void){
-    return(r_texture);
+    return(&r_assets->textures[r_texture_id]);
 }
 
 static void
@@ -295,7 +271,7 @@ get_transform(){
 }
 
 static void 
-draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
+imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
     set_texture(TextureAsset_White);
     RGBA linear_color = linear_from_srgb(color); 
                                                 
@@ -311,75 +287,75 @@ draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
 }
 
 static void 
-draw_quad(v2 pos, v2 dim, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
+imm_draw_quad(v2 pos, v2 dim, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
     v2 p0 = pos;
     v2 p1 = make_v2(pos.x + dim.w, pos.y);
     v2 p2 = make_v2(pos.x + dim.w, pos.y + dim.h);
     v2 p3 = make_v2(pos.x, pos.y + dim.h);
 
-    draw_quad(p0, p1, p2, p3, u0, u1, u2, u3, color);
+    imm_draw_quad(p0, p1, p2, p3, u0, u1, u2, u3, color);
 }
 
 static void 
-draw_quad(Rect rect, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
+imm_draw_quad(Rect rect, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
     v2 p0 = make_v2(rect.x0, rect.y0);
     v2 p1 = make_v2(rect.x1, rect.y0);
     v2 p2 = make_v2(rect.x1, rect.y1);
     v2 p3 = make_v2(rect.x0, rect.y1);
 
-    draw_quad(p0, p1, p2, p3, u0, u1, u2, u3, color);
+    imm_draw_quad(p0, p1, p2, p3, u0, u1, u2, u3, color);
 }
 
 static void 
-draw_quad(Quad quad, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
-    draw_quad(quad.p0, quad.p1, quad.p2, quad.p3, u0, u1, u2, u3, color);
+imm_draw_quad(Quad quad, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
+    imm_draw_quad(quad.p0, quad.p1, quad.p2, quad.p3, u0, u1, u2, u3, color);
 }
 
 // note: p0(top-left), p1(top-right), p2(bottom-right), p3(bottom-left) order
 static void 
-draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
-    draw_quad(p0, p1, p2, p3, 
+imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
+    imm_draw_quad(p0, p1, p2, p3, 
               make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
               make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
               color);
 }
 
 static void
-draw_quad(v2 pos, v2 dim, RGBA color){
+imm_draw_quad(v2 pos, v2 dim, RGBA color){
     v2 p0 = pos;
     v2 p1 = make_v2(pos.x + dim.w, pos.y);
     v2 p2 = make_v2(pos.x + dim.w, pos.y + dim.h);
     v2 p3 = make_v2(pos.x, pos.y + dim.h);
 
-    draw_quad(p0, p1, p2, p3, 
+    imm_draw_quad(p0, p1, p2, p3, 
               make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
               make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
               color);
 }
 
 static void
-draw_quad(Rect rect, RGBA color){
+imm_draw_quad(Rect rect, RGBA color){
     v2 p0 = make_v2(rect.x0, rect.y0);
     v2 p1 = make_v2(rect.x1, rect.y0);
     v2 p2 = make_v2(rect.x1, rect.y1);
     v2 p3 = make_v2(rect.x0, rect.y1);
 
-    draw_quad(p0, p1, p2, p3, 
+    imm_draw_quad(p0, p1, p2, p3, 
               make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
               make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
               color);
 }
 
 static void
-draw_quad(Quad quad, RGBA color){
-    draw_quad(quad.p0, quad.p1, quad.p2, quad.p3, 
+imm_draw_quad(Quad quad, RGBA color){
+    imm_draw_quad(quad.p0, quad.p1, quad.p2, quad.p3, 
               make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
               make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
               color);
 }
 
 static void 
-draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
+imm_draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
     RGBA linear_color = linear_from_srgb(color); 
                                                 
     RenderBatch *batch = get_render_batch(6);
@@ -392,107 +368,107 @@ draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color)
 }
 
 static void 
-draw_texture(v2 pos, v2 dim, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
+imm_draw_texture(v2 pos, v2 dim, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
     v2 p0 = pos;
     v2 p1 = make_v2(pos.x + dim.w, pos.y);
     v2 p2 = make_v2(pos.x + dim.w, pos.y + dim.h);
     v2 p3 = make_v2(pos.x, pos.y + dim.h);
 
-    draw_texture(p0, p1, p2, p3, u0, u1, u2, u3, color);
+    imm_draw_texture(p0, p1, p2, p3, u0, u1, u2, u3, color);
 }
 
 static void 
-draw_texture(Rect rect, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
+imm_draw_texture(Rect rect, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
     v2 p0 = make_v2(rect.x0, rect.y0);
     v2 p1 = make_v2(rect.x1, rect.y0);
     v2 p2 = make_v2(rect.x1, rect.y1);
     v2 p3 = make_v2(rect.x0, rect.y1);
 
-    draw_texture(p0, p1, p2, p3, u0, u1, u2, u3, color);
+    imm_draw_texture(p0, p1, p2, p3, u0, u1, u2, u3, color);
 }
 
 static void 
-draw_texture(Quad quad, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
-    draw_texture(quad.p0, quad.p1, quad.p2, quad.p3, u0, u1, u2, u3, color);
+imm_draw_texture(Quad quad, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
+    imm_draw_texture(quad.p0, quad.p1, quad.p2, quad.p3, u0, u1, u2, u3, color);
 }
 
 // note: p0(top-left), p1(top-right), p2(bottom-right), p3(bottom-left) order
 static void 
-draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
-    draw_texture(p0, p1, p2, p3, 
+imm_draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
+    imm_draw_texture(p0, p1, p2, p3, 
                  make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
                  make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
                  color);
 }
 
 static void
-draw_texture(v2 pos, v2 dim, RGBA color){
+imm_draw_texture(v2 pos, v2 dim, RGBA color){
     v2 p0 = pos;
     v2 p1 = make_v2(pos.x + dim.w, pos.y);
     v2 p2 = make_v2(pos.x + dim.w, pos.y + dim.h);
     v2 p3 = make_v2(pos.x, pos.y + dim.h);
 
-    draw_texture(p0, p1, p2, p3, 
+    imm_draw_texture(p0, p1, p2, p3, 
                  make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
                  make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
                  color);
 }
 
 static void
-draw_texture(Rect rect, RGBA color){
+imm_draw_texture(Rect rect, RGBA color){
     v2 p0 = make_v2(rect.x0, rect.y0);
     v2 p1 = make_v2(rect.x1, rect.y0);
     v2 p2 = make_v2(rect.x1, rect.y1);
     v2 p3 = make_v2(rect.x0, rect.y1);
 
-    draw_texture(p0, p1, p2, p3, 
+    imm_draw_texture(p0, p1, p2, p3, 
                  make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
                  make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
                  color);
 }
 
 static void
-draw_texture(Quad quad, RGBA color){
-    draw_texture(quad.p0, quad.p1, quad.p2, quad.p3, 
+imm_draw_texture(Quad quad, RGBA color){
+    imm_draw_texture(quad.p0, quad.p1, quad.p2, quad.p3, 
                  make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
                  make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
                  color);
 }
 
 static void
-draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 thickness, RGBA color){
-    draw_line(p0, p1, thickness, color);
-    draw_line(p1, p2, thickness, color);
-    draw_line(p2, p3, thickness, color);
-    draw_line(p3, p0, thickness, color);
+imm_draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 thickness, RGBA color){
+    imm_draw_line(p0, p1, thickness, color);
+    imm_draw_line(p1, p2, thickness, color);
+    imm_draw_line(p2, p3, thickness, color);
+    imm_draw_line(p3, p0, thickness, color);
 }
 
 static void
-draw_bounding_box(v2 pos, v2 dim, f32 thickness, RGBA color){
-    draw_line(pos, make_v2(pos.x, pos.y + dim.h), thickness, color);
-    draw_line(make_v2(pos.x, pos.y + dim.h), make_v2(pos.x + dim.w, pos.y + dim.h), thickness, color);
-    draw_line(make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x + dim.w, pos.y), thickness, color);
-    draw_line(make_v2(pos.x + dim.w, pos.y), pos, thickness, color);
+imm_draw_bounding_box(v2 pos, v2 dim, f32 thickness, RGBA color){
+    imm_draw_line(pos, make_v2(pos.x, pos.y + dim.h), thickness, color);
+    imm_draw_line(make_v2(pos.x, pos.y + dim.h), make_v2(pos.x + dim.w, pos.y + dim.h), thickness, color);
+    imm_draw_line(make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x + dim.w, pos.y), thickness, color);
+    imm_draw_line(make_v2(pos.x + dim.w, pos.y), pos, thickness, color);
 }
 
 static void
-draw_bounding_box(Quad quad, f32 thickness, RGBA color){
-    draw_line(quad.p0, quad.p1, thickness, color);
-    draw_line(quad.p1, quad.p2, thickness, color);
-    draw_line(quad.p2, quad.p3, thickness, color);
-    draw_line(quad.p3, quad.p0, thickness, color);
+imm_draw_bounding_box(Quad quad, f32 thickness, RGBA color){
+    imm_draw_line(quad.p0, quad.p1, thickness, color);
+    imm_draw_line(quad.p1, quad.p2, thickness, color);
+    imm_draw_line(quad.p2, quad.p3, thickness, color);
+    imm_draw_line(quad.p3, quad.p0, thickness, color);
 }
 
 static void
-draw_bounding_box(Rect rect, f32 thickness, RGBA color){
-    draw_line(make_v2(rect.x0, rect.y0), make_v2(rect.x1, rect.y0), thickness, color);
-    draw_line(make_v2(rect.x1, rect.y0), make_v2(rect.x1, rect.y1), thickness, color);
-    draw_line(make_v2(rect.x1, rect.y1), make_v2(rect.x0, rect.y1), thickness, color);
-    draw_line(make_v2(rect.x0, rect.y1), make_v2(rect.x0, rect.y0), thickness, color);
+imm_draw_bounding_box(Rect rect, f32 thickness, RGBA color){
+    imm_draw_line(make_v2(rect.x0, rect.y0), make_v2(rect.x1, rect.y0), thickness, color);
+    imm_draw_line(make_v2(rect.x1, rect.y0), make_v2(rect.x1, rect.y1), thickness, color);
+    imm_draw_line(make_v2(rect.x1, rect.y1), make_v2(rect.x0, rect.y1), thickness, color);
+    imm_draw_line(make_v2(rect.x0, rect.y1), make_v2(rect.x0, rect.y0), thickness, color);
 }
 
 static void
-draw_line(v2 p0, v2 p1, f32 thickness, RGBA color){
+imm_draw_line(v2 p0, v2 p1, f32 thickness, RGBA color){
     set_texture(TextureAsset_White);
 
     v2 dir = direction_v2(p0, p1);
@@ -512,9 +488,9 @@ draw_line(v2 p0, v2 p1, f32 thickness, RGBA color){
 }
 
 static void
-draw_text(String8 text, v2 pos, RGBA color){
+imm_draw_text(String8 text, v2 pos, RGBA color){
     Font* font = get_font();
-    set_texture_explicit(&font->texture);
+    set_texture(font->texture_id);
 
     u64 count = text.size * 6;
     RenderBatch* batch = get_render_batch(count);
@@ -582,7 +558,56 @@ get_render_batch(u64 vertex_count){
     return(batch);
 }
 
-static void draw_render_batches(){
+static void 
+draw_quad(Quad quad, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Quad;
+    command->quad = quad;
+    command->color = color;
+}
+
+static void draw_texture(Quad quad, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Texture;
+    command->quad = quad;
+    command->texture = r_texture_id;
+    command->color = color;
+}
+
+static void draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Quad;
+    command->quad = quad;
+    command->color = color;
+}
+
+static void draw_bounding_box(Quad quad, f32 width, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Quad;
+    command->quad = quad;
+    command->color = color;
+}
+
+static void draw_line(v2 p0, v2 p1, f32 width, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Quad;
+    command->quad = quad;
+    command->color = color;
+}
+
+static void draw_text(String8 text, v2 pos, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Quad;
+    command->quad = quad;
+    command->color = color;
+}
+
+static void draw_commands_clear(void){
+    draw_commands_at = 0;
+}
+
+static void 
+draw_render_batches(){
     s32 required_size = 0;
     for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
         required_size += batch->vertex_count * sizeof(Vertex2);

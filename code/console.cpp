@@ -295,16 +295,16 @@ console_draw(void){
         v2 cursor_p3 = make_v2(console.text_left_pad + font_char_width(font, '>') + font_string_width(font, str), input_p2.y);
 
         // draw regions quads
-        draw_quad(output_p0, output_p1, output_p2, output_p3, console.output_background_color);
-        draw_quad(input_p0, input_p1, input_p2, input_p3, console.input_background_color);
-        draw_quad(cursor_p0, cursor_p1, cursor_p2, cursor_p3, console.cursor_color);
+        imm_draw_quad(output_p0, output_p1, output_p2, output_p3, console.output_background_color);
+        imm_draw_quad(input_p0, input_p1, input_p2, input_p3, console.input_background_color);
+        imm_draw_quad(cursor_p0, cursor_p1, cursor_p2, cursor_p3, console.cursor_color);
 
         // draw text input
         f32 input_pos_y = input_p2.y + ((f32)font->descent * font->scale);
-        draw_text(str8_literal(">"), make_v2(console.text_left_pad, input_pos_y), console.input_color);
+        imm_draw_text(str8_literal(">"), make_v2(console.text_left_pad, input_pos_y), console.input_color);
         if(console.input.count > 0){
             String8 input_str = str8(console.input.data, (u64)console.input.count);
-            draw_text(input_str, make_v2(console.text_left_pad + font_char_width(font, '>'), input_pos_y), console.input_color);
+            imm_draw_text(input_str, make_v2(console.text_left_pad + font_char_width(font, '>'), input_pos_y), console.input_color);
         }
 
         // draw text history (in reverse order and only if its on screen)
@@ -313,7 +313,7 @@ console_draw(void){
             for(u64 i=console.output_history_count-1; i < CONSOLE_OUTPUT_HISTORY_MAX; --i){
                 if(output_pos_y < (f32)console.window->height){
                     String8 next_string = console.output_history[i];
-                    draw_text(next_string, make_v2(console.text_left_pad, output_pos_y), console.output_color);
+                    imm_draw_text(next_string, make_v2(console.text_left_pad, output_pos_y), console.output_color);
                     output_pos_y -= (f32)font->vertical_offset;
                 }
             }

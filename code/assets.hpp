@@ -91,6 +91,8 @@ typedef struct Assets{
     Texture textures[TextureAsset_Count];
 } Assets;
 static void load_texture(Arena* arena, TextureAsset texture_id, String8 build_path, String8 path);
+static void load_audio(Arena* arena, TextureAsset texture_id, String8 build_path, String8 path);
+static void load_font(Arena* arena, FontAsset font_id, String8 build_path, String8 path);
 static void assets_load(Arena* arena);
 
 global Assets assets;

@@ -186,7 +186,7 @@ entity_is_moving(Entity* e){
 }
 
 static void
-entity_sprite_anim_reset(Spritesheet* sprite, Sprite_Animation_Kind kind){
+sprite_anim_reset(Spritesheet* sprite, Sprite_Animation_Kind kind){
     Sprite_Animation* anim = sprite->animations + kind;
     Sprite_Sequence* sequence = anim->directions + sprite->direction;
 
@@ -202,24 +202,18 @@ sprite_update(Spritesheet* sprite, f32 dt){
     Sprite_Animation* anim = sprite->animations + sprite->kind;
     Sprite_Sequence* sequence = anim->directions + sprite->direction;
 
-
-    if(anim->col < sequence->col_start){
-        anim->col = sequence->col_start;
-    }
-
     anim->time_at += anim->speed * dt;
     if(anim->time_at >= anim->time_max){
-        if(anim->do_once && anim->done_once){
+        if(anim->col == sequence->frame_count - 1){
+            anim->done_once = true;
+        }
+
+        if(anim->done_once && anim->do_once){
             return(true);
         }
 
         anim->col = (s32)(anim->col + 1) % sequence->frame_count;
         anim->time_at = 0;
-
-        if(anim->col == sequence->frame_count - 1){
-            anim->done_once = true;
-            return(true);
-        }
     }
     return(false);
 }

@@ -25,6 +25,7 @@ global Arena*   r_arena = 0;
 global Arena*   r_arena_spritesheets = 0;
 global Assets*  r_assets = 0;
 global Texture* r_texture;
+global s32      r_texture_id;
 global Font*    r_font;
 global m4       r_transform;
 global u32      r_transform_gen = 0;
@@ -57,7 +58,7 @@ static Spritesheet*
 push_spritesheet(s32 texture_id, f32 col, f32 row, f32 anim_speed);
 
 static void set_texture(s32 texture_id);
-static void set_texture_explicit(s32 texture_id);
+//static void set_texture_explicit(s32 texture_id);
 static Texture* get_texture(void);
 static void set_font(Font* font);
 static Font* get_font(void);
@@ -86,40 +87,77 @@ static void init_draw(Arena* batch_arena, Arena* sprite_arena, Assets* assets);
 
 static void push_texture_quad();
 
-static void draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
-static void draw_quad(v2 pos, v2 dim, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
-static void draw_quad(Rect rect, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
-static void draw_quad(Quad quad, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
+static void imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
+static void imm_draw_quad(v2 pos, v2 dim, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
+static void imm_draw_quad(Rect rect, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
+static void imm_draw_quad(Quad quad, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
 
-static void draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color=WHITE);
-static void draw_quad(v2 pos, v2 dim, RGBA color=WHITE);
-static void draw_quad(Rect rect, RGBA color=WHITE);
+static void imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color=WHITE);
+static void imm_draw_quad(v2 pos, v2 dim, RGBA color=WHITE);
+static void imm_draw_quad(Rect rect, RGBA color=WHITE);
+static void imm_draw_quad(Quad quad, RGBA color=WHITE);
+
+static void imm_draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
+static void imm_draw_texture(v2 pos, v2 dim, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
+static void imm_draw_texture(Rect rect, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
+static void imm_draw_texture(Quad quad, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
+
+static void imm_draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color=WHITE);
+static void imm_draw_texture(v2 pos, v2 dim, RGBA color=WHITE);
+static void imm_draw_texture(Rect rect, RGBA color=WHITE);
+static void imm_draw_texture(Quad quad, RGBA color=WHITE);
+
+static void imm_draw_sprite(Spritesheet sprite, Quad quad, RGBA color=WHITE);
+
+static void imm_draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color=WHITE);
+static void imm_draw_bounding_box(v2 pos, v2 dim, f32 width, RGBA color=WHITE);
+static void imm_draw_bounding_box(Quad quad, f32 width, RGBA color=WHITE);
+static void imm_draw_bounding_box(Rect rect, f32 width, RGBA color=WHITE);
+
+static void imm_draw_line(v2 p0, v2 p1, f32 width, RGBA color=WHITE);
+
+static void imm_draw_text(String8 text, v2 pos, RGBA color=WHITE);
+
 static void draw_quad(Quad quad, RGBA color=WHITE);
-
-static void draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
-static void draw_texture(v2 pos, v2 dim, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
-static void draw_texture(Rect rect, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
-static void draw_texture(Quad quad, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color=WHITE);
-
-static void draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color=WHITE);
-static void draw_texture(v2 pos, v2 dim, RGBA color=WHITE);
-static void draw_texture(Rect rect, RGBA color=WHITE);
 static void draw_texture(Quad quad, RGBA color=WHITE);
-
 static void draw_sprite(Spritesheet sprite, Quad quad, RGBA color=WHITE);
-
-static void draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color);
-static void draw_bounding_box(v2 pos, v2 dim, f32 width, RGBA color);
-static void draw_bounding_box(Quad quad, f32 width, RGBA color);
-static void draw_bounding_box(Rect rect, f32 width, RGBA color);
-
-static void draw_line(v2 p0, v2 p1, f32 width, RGBA color);
-
-static void draw_text(String8 text, v2 pos, RGBA color);
+static void draw_bounding_box(Quad quad, f32 width, RGBA color=WHITE);
+static void draw_line(v2 p0, v2 p1, f32 width, RGBA color=WHITE);
+static void draw_text(String8 text, v2 pos, RGBA color=WHITE);
+static void draw_commands_clear(void);
 
 static void draw_render_batches(void);
 static void render_batches_reset(void);
 
+typedef enum Draw_Command_Kind{
+    Draw_Command_Quad,
+    Draw_Command_Bounding_Box,
+    Draw_Command_Line,
+
+    Draw_Command_Texture,
+    Draw_Command_Sprite,
+
+    Draw_Command_Text,
+} Draw_Command_Kind;
+
+typedef struct Draw_Command{
+    Draw_Command_Kind kind;
+
+    Quad quad;
+    Spritesheet sprite;
+
+    String8 text;
+    v2 pos;
+
+    f32 width; 
+
+    RGBA color;
+
+    s32 texture_id;
+} Draw_Command;
+#define DRAW_COMMANDS_COUNT 409600
+Draw_Command draw_commands[DRAW_COMMANDS_COUNT];
+s32 draw_commands_at = 0;
 
 #endif
 

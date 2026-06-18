@@ -677,38 +677,39 @@ entity_sprite_update(){
                 if(e->sprite.kind != SPRITE_ANIM_DIE){
                     e->sprite.kind = SPRITE_ANIM_DIE;
                     e->sprite.direction = RIGHT_FRONT;
-                    entity_sprite_anim_reset(&e->sprite, e->sprite.kind);
+                    sprite_anim_reset(&e->sprite, e->sprite.kind);
                 }
             }
             else if(e->attacking){
                 if(e->sprite.kind != SPRITE_ANIM_ATTACK){
                     e->sprite.kind = SPRITE_ANIM_ATTACK;
-                    entity_sprite_anim_reset(&e->sprite, e->sprite.kind);
+                    sprite_anim_reset(&e->sprite, e->sprite.kind);
                 }
             }
             else if(e->jumping){
                 if(e->sprite.kind != SPRITE_ANIM_JUMP){
                     e->sprite.kind = SPRITE_ANIM_JUMP;
-                    entity_sprite_anim_reset(&e->sprite, e->sprite.kind);
+                    sprite_anim_reset(&e->sprite, e->sprite.kind);
                 }
             }
             else if(entity_is_moving(e)){
                 if(e->sprite.kind != SPRITE_ANIM_WALK){
                     e->sprite.kind = SPRITE_ANIM_WALK;
-                    entity_sprite_anim_reset(&e->sprite, e->sprite.kind);
+                    sprite_anim_reset(&e->sprite, e->sprite.kind);
                 }
             }
             else{
                 if(e->sprite.kind != SPRITE_ANIM_IDLE){
                     e->sprite.kind = SPRITE_ANIM_IDLE;
-                    entity_sprite_anim_reset(&e->sprite, e->sprite.kind);
+                    sprite_anim_reset(&e->sprite, e->sprite.kind);
                 }
             }
+
             bool anim_done = sprite_update(&e->sprite, (f32)clock.dt);
             if(anim_done){
                 e->attacking = false;
                 e->jumping = false;
-                e->moving = false;
+                e->moving = false; // todo: probably shouldn't be here
             }
         }
     }
@@ -727,7 +728,7 @@ draw_entities(State* state){
             switch(e->type){
                 case EntityType_Quad:{
                     quad = rotate_quad(quad, e->deg, e->pos);
-                    draw_quad(quad, e->color);
+                    imm_draw_quad(quad, e->color);
                 } break;
             }
         }
@@ -745,10 +746,10 @@ draw_entities(State* state){
                     switch(e->structure_type){
                         case StructureType_Castle:{
                             set_texture(e->texture_id);
-                            draw_texture(quad, e->color);
+                            imm_draw_texture(quad, e->color);
 
                             if(e->selected){
-                                draw_line(e->pos, e->rallypoint, 0.1f, RED);
+                                imm_draw_line(e->pos, e->rallypoint, 0.1f, RED);
                             }
 
                             set_font(state->font);
@@ -772,7 +773,7 @@ draw_entities(State* state){
                     quad = rotate_quad(quad, e->deg, e->pos);
 
                     set_texture(e->texture_id);
-                    draw_texture(quad, e->color);
+                    imm_draw_texture(quad, e->color);
                 } break;
                 case EntityType_Monster:{
 
@@ -781,7 +782,7 @@ draw_entities(State* state){
                     set_texture(anim.texture_id);
 
                     Quad quad = quad_from_entity_world(e);
-                    draw_sprite(e->sprite, quad);
+                    imm_draw_sprite(e->sprite, quad);
 
                     //draw_bounding_box(e->bounding_box, 0.05f, RED);
                     //quad = rotate_quad(quad, e->deg, e->pos);
@@ -792,7 +793,7 @@ draw_entities(State* state){
 
                     if(e->selected){
                         if(e->active_command){
-                            draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
+                            imm_draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
                         }
 
                         u32 read_idx = e->commands_read;
@@ -800,7 +801,7 @@ draw_entities(State* state){
                             EntityCommand* c = entity_commands_read(e, read_idx);
                             read_idx++;
 
-                            draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
+                            imm_draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
                             // no
                             //draw_line(e->pos, screen_space, 0.1f, ORANGE);
                         }
@@ -810,13 +811,13 @@ draw_entities(State* state){
                     quad = rotate_quad(quad, e->deg, e->pos);
 
                     set_texture(e->texture_id);
-                    draw_texture(quad, e->color);
+                    imm_draw_texture(quad, e->color);
 
 
 
                     if(e->selected){
                         if(e->active_command){
-                            draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
+                            imm_draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
                         }
 
                         u32 read_idx = e->commands_read;
@@ -824,7 +825,7 @@ draw_entities(State* state){
                             EntityCommand* c = entity_commands_read(e, read_idx);
                             read_idx++;
 
-                            draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
+                            imm_draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
                             // no
                             //draw_line(e->pos, screen_space, 0.1f, ORANGE);
                         }
@@ -864,11 +865,11 @@ draw_entities(State* state){
     Sprite_Animation anim = player->sprite.animations[kind];
     set_texture(anim.texture_id);
     Quad quad = quad_from_entity_world(player);
-    draw_sprite(player->sprite, quad);
+    imm_draw_sprite(player->sprite, quad);
 
     if(state->scene_state == SceneState_Editor){
-        draw_bounding_box(player->attack_box, 0.05f, RED);
-        draw_bounding_box(player->bounding_box, 0.05f, RED);
+        imm_draw_bounding_box(player->attack_box, 0.05f, RED);
+        imm_draw_bounding_box(player->bounding_box, 0.05f, RED);
     }
 }
 
@@ -878,7 +879,7 @@ debug_draw_mouse_cell_pos(void){
     v2 pos = controller.mouse.world_pos;
     v2 cell = make_v2(floor_f32(pos.x/state->world_cell_size), floor_f32(pos.y/state->world_cell_size));
     String8 cell_str = str8_format(ts->frame_arena, "(%i, %i)", (s32)cell.x, (s32)cell.y);
-    draw_text(cell_str, controller.mouse.pos, RED);
+    imm_draw_text(cell_str, controller.mouse.pos, RED);
 }
 
 static void
@@ -1143,7 +1144,7 @@ draw_grid(f32 size, RGBA color){
         v2 p0 = make_v2(x, low.y);
         v2 p1 = make_v2(x, high.y);
 
-        draw_line(p0, p1, 0.1f, color);
+        imm_draw_line(p0, p1, 0.1f, color);
         x += size;
     }
 
@@ -1152,7 +1153,7 @@ draw_grid(f32 size, RGBA color){
         v2 p0 = make_v2(low.x, y);
         v2 p1 = make_v2(high.x, y);
 
-        draw_line(p0, p1, 0.1f, color);
+        imm_draw_line(p0, p1, 0.1f, color);
         y += size;
     }
 
@@ -1170,7 +1171,7 @@ draw_grid(f32 size, RGBA color){
 
                     set_font(state->font);
                     String8 coord = str8_formatted(ts->frame_arena, "(%i, %i)", (s32)x/(s32)state->world_cell_size, (s32)y/(s32)state->world_cell_size);
-                    draw_text(coord, screen_cell, YELLOW);
+                    imm_draw_text(coord, screen_cell, YELLOW);
                 }
             }
 
@@ -1205,7 +1206,7 @@ draw_world_terrain(void){
                         if(cell_tex == i){
                             set_texture(cell_tex);
                             Rect tex_rect = make_rect_size(cell, make_v2(state->world_cell_size, state->world_cell_size));
-                            draw_texture(tex_rect);
+                            imm_draw_texture(tex_rect);
                         }
                     }
                 }
@@ -2065,52 +2066,52 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             time_elapsed += clock.dt;
             simulations++;
 
-        }
+    }
 
-        if(controller_button_pressed(KeyCode_F1)){
-            if(state->scene_state == SceneState_Editor){
-                state->scene_state = SceneState_Game;
-                state->terrain_selected = false;
-                state->terrain_selected_id = 0;
-            }
-            else if(state->scene_state == SceneState_Game){
-                state->scene_state = SceneState_Editor;
-            }
+    if(controller_button_pressed(KeyCode_F1)){
+        if(state->scene_state == SceneState_Editor){
+            state->scene_state = SceneState_Game;
+            state->terrain_selected = false;
+            state->terrain_selected_id = 0;
         }
+        else if(state->scene_state == SceneState_Game){
+            state->scene_state = SceneState_Editor;
+        }
+    }
 
-        // camera drag
-        if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT, false)){
-            world_camera_record = camera;
-            world_mouse_record = controller.mouse.world_pos;
-            state->dragging_world = true;
-        }
-        if(controller.ctrl_pressed && controller_button_held(MOUSE_BUTTON_RIGHT)){
-            v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
-            v2 world_rel_pos = world_mouse_record - world_mouse_current;
-            state->selecting = false;
-            camera.x = world_camera_record.x + world_rel_pos.x;
-            camera.y = world_camera_record.y + world_rel_pos.y;
-        }
-        if(state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT)){
-            world_camera_record = {0};
-            world_mouse_record = {0};
-            state->dragging_world = false;
-        }
+    // camera drag
+    if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT, false)){
+        world_camera_record = camera;
+        world_mouse_record = controller.mouse.world_pos;
+        state->dragging_world = true;
+    }
+    if(controller.ctrl_pressed && controller_button_held(MOUSE_BUTTON_RIGHT)){
+        v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
+        v2 world_rel_pos = world_mouse_record - world_mouse_current;
+        state->selecting = false;
+        camera.x = world_camera_record.x + world_rel_pos.x;
+        camera.y = world_camera_record.y + world_rel_pos.y;
+    }
+    if(state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT)){
+        world_camera_record = {0};
+        world_mouse_record = {0};
+        state->dragging_world = false;
+    }
 
-        // Entity Selection.
-        if(!state->dragging_world){
-            if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
-                state->selection_mouse_record = controller.mouse.world_pos;
-                state->selecting = true;
-            }
-            if(state->selecting && controller_button_held(MOUSE_BUTTON_LEFT)){
-                min.x = state->selection_mouse_record.x <= controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
-                min.y = state->selection_mouse_record.y <= controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
-                max.x = state->selection_mouse_record.x >  controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
-                max.y = state->selection_mouse_record.y >  controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
-                state->selection_rect = make_rect(min, max);
-            }
-            if(controller_button_released(MOUSE_BUTTON_LEFT)){
+    // Entity Selection.
+    if(!state->dragging_world){
+        if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
+            state->selection_mouse_record = controller.mouse.world_pos;
+            state->selecting = true;
+        }
+        if(state->selecting && controller_button_held(MOUSE_BUTTON_LEFT)){
+            min.x = state->selection_mouse_record.x <= controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
+            min.y = state->selection_mouse_record.y <= controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
+            max.x = state->selection_mouse_record.x >  controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
+            max.y = state->selection_mouse_record.y >  controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
+            state->selection_rect = make_rect(min, max);
+        }
+        if(controller_button_released(MOUSE_BUTTON_LEFT)){
                 state->selection_mouse_record = {0};
                 state->selecting = false;
 
@@ -2293,7 +2294,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 if(state->entities_selected_count == 1){
                     Entity* e = state->entities_selected[0];
                     Rect rect = rect_from_entity(e);
-                    draw_bounding_box(rect, 0.1f, RED);
+                    imm_draw_bounding_box(rect, 0.1f, RED);
                 }
                 else{
                     for(s32 i=0; i < state->entities_selected_count; ++i){
@@ -2318,7 +2319,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                     max_x += 0.5f;
                     max_y += 0.5f;
                     Rect rect = make_rect(make_v2(min_x, min_y), make_v2(max_x, max_y));
-                    draw_bounding_box(rect, 0.1f, RED);
+                    imm_draw_bounding_box(rect, 0.1f, RED);
                 }
             }
 
@@ -2344,13 +2345,13 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             if(state->selecting && !state->dragging_world){
                 //state->selection_rect.min.y *= -1;
                 //state->selection_rect.max.y *= -1;
-                draw_bounding_box(state->selection_rect, 0.1f, RED);
+                imm_draw_bounding_box(state->selection_rect, 0.1f, RED);
             }
             if(state->terrain_selected){
                 set_texture(state->terrain_selected_id);
-                draw_texture(controller.mouse.pos, make_v2(50, 50));
+                imm_draw_texture(controller.mouse.pos, make_v2(50, 50));
 
-                draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
+                imm_draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
             }
 
             set_transform(m4_make_ident());
@@ -2367,7 +2368,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             if(state->scene_state == SceneState_Editor){
                 set_texture(TextureAsset_Castle1);
                 Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
-                draw_texture(rr, WHITE);
+                imm_draw_texture(rr, WHITE);
             }
 
             console_draw();
