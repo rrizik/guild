@@ -231,20 +231,18 @@ imm_draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
 }
 
 static void
-set_texture(s32 texture_id){
-    //r_texture = &r_assets->textures[texture_id];
+r_set_texture(s32 texture_id){
     r_texture_id = texture_id;
 }
 
-// todo: revisit this, yuck
-//static void
-//set_texture_explicit(Texture* texture){
-//    r_texture = texture;
-//}
-
 static Texture*
-get_texture(void){
-    return(&r_assets->textures[r_texture_id]);
+r_get_texture_asset(s32 texture_id){
+    return(&r_assets->textures[texture_id]);
+}
+
+static s32
+r_get_texture(void){
+    return(r_texture_id);
 }
 
 static void
@@ -272,7 +270,7 @@ get_transform(){
 
 static void 
 imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
-    set_texture(TextureAsset_White);
+    r_set_texture(TextureAsset_White);
     RGBA linear_color = linear_from_srgb(color); 
                                                 
     RenderBatch *batch = get_render_batch(6);
@@ -469,7 +467,7 @@ imm_draw_bounding_box(Rect rect, f32 thickness, RGBA color){
 
 static void
 imm_draw_line(v2 p0, v2 p1, f32 thickness, RGBA color){
-    set_texture(TextureAsset_White);
+    r_set_texture(TextureAsset_White);
 
     v2 dir = direction_v2(p0, p1);
     v2 perp = perpendicular(dir);
@@ -490,7 +488,7 @@ imm_draw_line(v2 p0, v2 p1, f32 thickness, RGBA color){
 static void
 imm_draw_text(String8 text, v2 pos, RGBA color){
     Font* font = get_font();
-    set_texture(font->texture_id);
+    r_set_texture(font->texture_id);
 
     u64 count = text.size * 6;
     RenderBatch* batch = get_render_batch(count);
@@ -532,17 +530,65 @@ imm_draw_text(String8 text, v2 pos, RGBA color){
     }
 }
 
+static void 
+draw_quad(Quad quad, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Quad;
+    command->quad = quad;
+    command->color = color;
+}
+
+static void draw_texture(Quad quad, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Texture;
+    command->quad = quad;
+    command->texture_id = r_texture_id;
+    command->color = color;
+}
+
+//static void draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
+//    Draw_Command* command = draw_commands + draw_commands_at;
+//    command->kind = Draw_Command_Quad;
+//    command->quad = quad;
+//    command->color = color;
+//}
+//
+//static void draw_bounding_box(Quad quad, f32 width, RGBA color){
+//    Draw_Command* command = draw_commands + draw_commands_at;
+//    command->kind = Draw_Command_Quad;
+//    command->quad = quad;
+//    command->color = color;
+//}
+//
+//static void draw_line(v2 p0, v2 p1, f32 width, RGBA color){
+//    Draw_Command* command = draw_commands + draw_commands_at;
+//    command->kind = Draw_Command_Quad;
+//    command->quad = quad;
+//    command->color = color;
+//}
+//
+//static void draw_text(String8 text, v2 pos, RGBA color){
+//    Draw_Command* command = draw_commands + draw_commands_at;
+//    command->kind = Draw_Command_Quad;
+//    command->quad = quad;
+//    command->color = color;
+//}
+
+static void draw_commands_clear(void){
+    draw_commands_at = 0;
+}
+
 static RenderBatch*
 get_render_batch(u64 vertex_count){
-    Texture* texture = get_texture();
+    //s32 texture_id = get_texture();
 
     RenderBatch *batch = render_batches.last;
-    if(batch == 0 || batch->vertex_count + vertex_count >= batch->vertex_cap || batch->texture != texture || batch->transform_gen != r_transform_gen){
+    if(batch == 0 || batch->vertex_count + vertex_count >= batch->vertex_cap || batch->texture_id != r_texture_id || batch->transform_gen != r_transform_gen){
         batch = push_array_zero(r_arena, RenderBatch, 1);
         batch->buffer = push_array(r_arena, Vertex2, DEFAULT_BATCH_SIZE / sizeof(Vertex2));
         batch->vertex_cap = DEFAULT_BATCH_SIZE / sizeof(Vertex2);
         batch->vertex_count = 0;
-        batch->texture = texture;
+        batch->texture_id = r_texture_id;
         batch->transform = get_transform();
         batch->id = render_batches.count;
         if(render_batches.last == 0){
@@ -556,54 +602,6 @@ get_render_batch(u64 vertex_count){
         ++render_batches.count;
     }
     return(batch);
-}
-
-static void 
-draw_quad(Quad quad, RGBA color){
-    Draw_Command* command = draw_commands + draw_commands_at;
-    command->kind = Draw_Command_Quad;
-    command->quad = quad;
-    command->color = color;
-}
-
-static void draw_texture(Quad quad, RGBA color){
-    Draw_Command* command = draw_commands + draw_commands_at;
-    command->kind = Draw_Command_Texture;
-    command->quad = quad;
-    command->texture = r_texture_id;
-    command->color = color;
-}
-
-static void draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
-    Draw_Command* command = draw_commands + draw_commands_at;
-    command->kind = Draw_Command_Quad;
-    command->quad = quad;
-    command->color = color;
-}
-
-static void draw_bounding_box(Quad quad, f32 width, RGBA color){
-    Draw_Command* command = draw_commands + draw_commands_at;
-    command->kind = Draw_Command_Quad;
-    command->quad = quad;
-    command->color = color;
-}
-
-static void draw_line(v2 p0, v2 p1, f32 width, RGBA color){
-    Draw_Command* command = draw_commands + draw_commands_at;
-    command->kind = Draw_Command_Quad;
-    command->quad = quad;
-    command->color = color;
-}
-
-static void draw_text(String8 text, v2 pos, RGBA color){
-    Draw_Command* command = draw_commands + draw_commands_at;
-    command->kind = Draw_Command_Quad;
-    command->quad = quad;
-    command->color = color;
-}
-
-static void draw_commands_clear(void){
-    draw_commands_at = 0;
 }
 
 static void 
@@ -663,7 +661,8 @@ draw_render_batches(){
             d3d_context->Unmap(d3d_constant_buffer, 0);
         }
 
-        d3d_context->PSSetShaderResources(0, 1, &batch->texture->view);
+        Texture* texture = r_get_texture_asset(batch->texture_id);
+        d3d_context->PSSetShaderResources(0, 1, &texture->view);
         d3d_context->Draw((u32)batch->vertex_count, (u32)batch->idx_in_vertex_buffer);
     }
 }

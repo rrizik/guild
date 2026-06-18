@@ -41,7 +41,7 @@ typedef struct RenderBatch{
 
     s32 vertex_count;
     s32 vertex_cap;
-    Texture* texture;
+    s32 texture_id;
 
     m4 transform;
     u32 transform_gen;
@@ -57,9 +57,9 @@ global RenderBatchNode render_batches = {0};
 static Spritesheet*
 push_spritesheet(s32 texture_id, f32 col, f32 row, f32 anim_speed);
 
-static void set_texture(s32 texture_id);
-//static void set_texture_explicit(s32 texture_id);
-static Texture* get_texture(void);
+static void r_set_texture(s32 texture_id);
+static Texture* r_get_texture_asset(s32 texture_id);
+static s32 r_get_texture(void);
 static void set_font(Font* font);
 static Font* get_font(void);
 static void set_transform(m4 transform);

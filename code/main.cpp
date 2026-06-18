@@ -745,7 +745,7 @@ draw_entities(State* state){
 
                     switch(e->structure_type){
                         case StructureType_Castle:{
-                            set_texture(e->texture_id);
+                            r_set_texture(e->texture_id);
                             imm_draw_texture(quad, e->color);
 
                             if(e->selected){
@@ -772,14 +772,14 @@ draw_entities(State* state){
                 case EntityType_Texture:{
                     quad = rotate_quad(quad, e->deg, e->pos);
 
-                    set_texture(e->texture_id);
+                    r_set_texture(e->texture_id);
                     imm_draw_texture(quad, e->color);
                 } break;
                 case EntityType_Monster:{
 
                     Sprite_Animation_Kind kind = e->sprite.kind;
                     Sprite_Animation anim = e->sprite.animations[kind];
-                    set_texture(anim.texture_id);
+                    r_set_texture(anim.texture_id);
 
                     Quad quad = quad_from_entity_world(e);
                     imm_draw_sprite(e->sprite, quad);
@@ -810,7 +810,7 @@ draw_entities(State* state){
                 case EntityType_Skeleton1:{
                     quad = rotate_quad(quad, e->deg, e->pos);
 
-                    set_texture(e->texture_id);
+                    r_set_texture(e->texture_id);
                     imm_draw_texture(quad, e->color);
 
 
@@ -863,7 +863,7 @@ draw_entities(State* state){
     // draw player
     Sprite_Animation_Kind kind = player->sprite.kind;
     Sprite_Animation anim = player->sprite.animations[kind];
-    set_texture(anim.texture_id);
+    r_set_texture(anim.texture_id);
     Quad quad = quad_from_entity_world(player);
     imm_draw_sprite(player->sprite, quad);
 
@@ -1204,7 +1204,7 @@ draw_world_terrain(void){
                         s32 idx = (s32)(((y/state->world_cell_size) * state->world_width_in_cells) + (x/state->world_cell_size));
                         s32 cell_tex = state->world_grid[idx];
                         if(cell_tex == i){
-                            set_texture(cell_tex);
+                            r_set_texture(cell_tex);
                             Rect tex_rect = make_rect_size(cell, make_v2(state->world_cell_size, state->world_cell_size));
                             imm_draw_texture(tex_rect);
                         }
@@ -2348,7 +2348,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 imm_draw_bounding_box(state->selection_rect, 0.1f, RED);
             }
             if(state->terrain_selected){
-                set_texture(state->terrain_selected_id);
+                r_set_texture(state->terrain_selected_id);
                 imm_draw_texture(controller.mouse.pos, make_v2(50, 50));
 
                 imm_draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
@@ -2366,7 +2366,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
 
             if(state->scene_state == SceneState_Editor){
-                set_texture(TextureAsset_Castle1);
+                r_set_texture(TextureAsset_Castle1);
                 Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
                 imm_draw_texture(rr, WHITE);
             }
