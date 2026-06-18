@@ -27,6 +27,7 @@ global Assets*  r_assets = 0;
 global Texture* r_texture;
 global s32      r_texture_id;
 global Font*    r_font;
+global s32      r_font_id;
 global m4       r_transform;
 global u32      r_transform_gen = 0;
 
@@ -41,7 +42,7 @@ typedef struct RenderBatch{
 
     s32 vertex_count;
     s32 vertex_cap;
-    s32 texture_id;
+    Texture* texture;
 
     m4 transform;
     u32 transform_gen;
@@ -58,10 +59,10 @@ static Spritesheet*
 push_spritesheet(s32 texture_id, f32 col, f32 row, f32 anim_speed);
 
 static void r_set_texture(s32 texture_id);
-static Texture* r_get_texture_asset(s32 texture_id);
-static s32 r_get_texture(void);
-static void set_font(Font* font);
-static Font* get_font(void);
+//static Texture* r_get_texture_asset(s32 texture_id);
+//static s32 r_get_texture(void);
+//static void set_font(Font* font);
+//static Font* get_font(void);
 static void set_transform(m4 transform);
 static m4 get_transform(void);
 static RenderBatch* get_render_batch(u64 vertex_count);

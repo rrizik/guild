@@ -4,7 +4,8 @@
 static void
 init_console(Arena* arena, Camera2D* camera, Window* window, Assets* assets){ //note: everything is positioned relative to the output_rect
     console.state = CLOSED;
-    console.font = &assets->fonts[FontAsset_Consolas];
+    //console.font = &assets->fonts[FontAsset_Consolas];
+    console.font_id = FontAsset_Consolas;
     console.window = window;
     console.camera = camera;
     console.arena = arena;
@@ -270,10 +271,10 @@ console_push_input(String8 text){
 
 static void
 console_draw(void){
-    set_font(console.font);
+    r_set_font(console.font_id);
 
     if(console_is_visible()){
-        Font* font = console.font;
+        Font* font = a_get_font(console.font_id);
 
         // rect setup
         f32 y = (f32)(-font->vertical_offset);

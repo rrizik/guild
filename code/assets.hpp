@@ -91,9 +91,13 @@ typedef struct Assets{
     Texture textures[TextureAsset_Count];
 } Assets;
 static void load_texture(Arena* arena, TextureAsset texture_id, String8 build_path, String8 path);
-static void load_audio(Arena* arena, TextureAsset texture_id, String8 build_path, String8 path);
+static void load_audio(Arena* arena, WaveAsset audio_id, String8 build_path, String8 path);
 static void load_font(Arena* arena, FontAsset font_id, String8 build_path, String8 path);
 static void assets_load(Arena* arena);
+
+static Wave* a_get_texture(s32 texture_id);
+static Texture* a_get_audio(s32 audio_id);
+static Font* a_get_font(s32 font_id);
 
 global Assets assets;
 

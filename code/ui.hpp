@@ -143,7 +143,8 @@ typedef struct UI_Box{
     RGBA background_color;
     f32 border_thickness;
 
-    Font* font;
+    //Font* font;
+    s32 font_id;
 
 } UI_Box;
 
@@ -320,7 +321,7 @@ static f32     ui_top_text_padding(void)        { ui_stack_top_impl(text_padding
 static RGBA    ui_top_text_color(void)          { ui_stack_top_impl(text_color) }
 static RGBA    ui_top_background_color(void)    { ui_stack_top_impl(background_color) }
 static f32     ui_top_border_thickness(void)    { ui_stack_top_impl(border_thickness) }
-static Font*   ui_top_font(void)                { ui_stack_top_impl(font) }
+static s32     ui_top_font(void)                { ui_stack_top_impl(font_id) }
 
 static UI_Box* ui_set_parent(UI_Box* v)         { ui_stack_set_impl(ui_arena(), Parent, parent, v) }
 static f32     ui_set_pos_x(f32 v)              { ui_stack_set_impl(ui_arena(), PosX, pos_x, v) }

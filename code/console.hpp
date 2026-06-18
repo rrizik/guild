@@ -16,6 +16,7 @@ typedef enum ConsoleState{
 #define CONSOLE_TEXT_BUFFER_SIZE MB(8)
 typedef struct Console{
     ConsoleState state;
+    s32 font_id;
     Font* font;
     Window* window;
     Camera2D* camera;

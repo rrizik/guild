@@ -4,6 +4,8 @@
 static void
 load_font(Arena* arena, FontAsset font_id, String8 build_path, String8 path, s32 size){
     assets.fonts[font_id] = font_ttf_read(arena, build_path, path, size);
+    assets.fonts[font_id].texture_id = font_id;
+    s32 a = 1;
 }
 
 static void
@@ -15,6 +17,11 @@ static void
 load_texture(Arena* arena, TextureAsset texture_id, String8 build_path, String8 path){
     Bitmap bm = stb_load_image(arena, build_path, path);
     d3d_init_texture_resource(&assets.textures[texture_id], &bm);
+}
+
+static Font*
+a_get_font(s32 font_id){
+    return(&assets.fonts[font_id]);
 }
 
 static void

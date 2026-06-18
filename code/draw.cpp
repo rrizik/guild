@@ -232,23 +232,24 @@ imm_draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
 
 static void
 r_set_texture(s32 texture_id){
-    r_texture_id = texture_id;
-}
-
-static Texture*
-r_get_texture_asset(s32 texture_id){
-    return(&r_assets->textures[texture_id]);
-}
-
-static s32
-r_get_texture(void){
-    return(r_texture_id);
+    r_texture = &r_assets->textures[texture_id];
 }
 
 static void
-set_font(Font* font){
-    r_font = font;
+r_set_font(s32 font_id){
+    r_font_id = font_id;
+    r_texture = &r_assets->fonts[font_id].texture;
 }
+
+//static Texture*
+//r_get_texture(s32 texture_id){
+//    return(&r_assets->textures[texture_id]);
+//}
+
+//static void
+//set_font(Font* font){
+//    r_font = font;
+//}
 
 static Font*
 get_font(void){
@@ -487,8 +488,8 @@ imm_draw_line(v2 p0, v2 p1, f32 thickness, RGBA color){
 
 static void
 imm_draw_text(String8 text, v2 pos, RGBA color){
-    Font* font = get_font();
-    r_set_texture(font->texture_id);
+    //Font* font = get_font();
+    r_set_texture(r_font->texture_id);
 
     u64 count = text.size * 6;
     RenderBatch* batch = get_render_batch(count);
@@ -501,12 +502,12 @@ imm_draw_text(String8 text, v2 pos, RGBA color){
     for(s32 i=0; i < text.size; ++i){
         u8* character = text.str + i;
         if(*character == '\n'){
-            y_offset += (f32)font->vertical_offset;
+            y_offset += (f32)r_font->vertical_offset;
             pos.x = start_x;
         }
         else{
-            stbtt_GetPackedQuad(font->packed_chars, font->texture_w, font->texture_h,
-                                (*character) - font->first_char, &pos.x, &pos.y, &quad, 1);
+            stbtt_GetPackedQuad(r_font->packed_chars, r_font->texture_w, r_font->texture_h,
+                                (*character) - r_font->first_char, &pos.x, &pos.y, &quad, 1);
             v2 p0 = make_v2(quad.x0, quad.y0 + y_offset);
             v2 p1 = make_v2(quad.x1, quad.y0 + y_offset);
             v2 p2 = make_v2(quad.x1, quad.y1 + y_offset);
@@ -580,15 +581,17 @@ static void draw_commands_clear(void){
 
 static RenderBatch*
 get_render_batch(u64 vertex_count){
-    //s32 texture_id = get_texture();
-
     RenderBatch *batch = render_batches.last;
-    if(batch == 0 || batch->vertex_count + vertex_count >= batch->vertex_cap || batch->texture_id != r_texture_id || batch->transform_gen != r_transform_gen){
+    if(batch == 0 || 
+       batch->vertex_count + vertex_count >= batch->vertex_cap || 
+       batch->texture != r_texture || 
+       batch->transform_gen != r_transform_gen){
+
         batch = push_array_zero(r_arena, RenderBatch, 1);
         batch->buffer = push_array(r_arena, Vertex2, DEFAULT_BATCH_SIZE / sizeof(Vertex2));
         batch->vertex_cap = DEFAULT_BATCH_SIZE / sizeof(Vertex2);
         batch->vertex_count = 0;
-        batch->texture_id = r_texture_id;
+        batch->texture = r_texture;
         batch->transform = get_transform();
         batch->id = render_batches.count;
         if(render_batches.last == 0){
@@ -661,8 +664,7 @@ draw_render_batches(){
             d3d_context->Unmap(d3d_constant_buffer, 0);
         }
 
-        Texture* texture = r_get_texture_asset(batch->texture_id);
-        d3d_context->PSSetShaderResources(0, 1, &texture->view);
+        d3d_context->PSSetShaderResources(0, 1, &batch->texture->view);
         d3d_context->Draw((u32)batch->vertex_count, (u32)batch->idx_in_vertex_buffer);
     }
 }

@@ -118,7 +118,8 @@ typedef struct State{
     u32 generation[ENTITIES_MAX];
     u32 free_entities[ENTITIES_MAX];
     u32 free_entities_at;
-    Font* font;
+    //Font* font;
+    s32 font_id;
 
     Cell cells[WORLD_WIDTH_IN_TILES_MAX * WORLD_HEIGHT_IN_TILES_MAX];
     s32 world_grid[WORLD_WIDTH_IN_TILES_MAX * WORLD_HEIGHT_IN_TILES_MAX];

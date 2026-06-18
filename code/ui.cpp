@@ -131,14 +131,15 @@ ui_draw(UI_Box* box){
         imm_draw_quad(box->rect, box->background_color);
     }
     if(has_flags(box->flags, UI_BoxFlag_DrawText)){
-        set_font(box->font);
+        r_set_font(box->font_id);
+        Font* font = a_get_font(box->font_id);
 
         String8 text = ui_text_part_from_key(box->string);
 
-        f32 width = font_string_width(box->font, text);
-        f32 vertical_offset = font_vertical_offset(box->font);
-        f32 ascent = font_ascent(box->font);
-        f32 descent = font_descent(box->font);
+        f32 width = font_string_width(font, text);
+        f32 vertical_offset = font_vertical_offset(font);
+        f32 ascent = font_ascent(font);
+        f32 descent = font_descent(font);
 
         f32 center = ascent - (ascent - descent)/2;
         v2 pos = make_v2(box->rect.min.x + box->size[Axis_X]/2 - width/2,
@@ -244,7 +245,7 @@ ui_make_box(String8 string, UI_BoxFlags flags){
 
     result->background_color = ui_top_background_color();
     result->border_thickness = ui_top_border_thickness();
-    result->font = ui_top_font();
+    result->font_id = ui_top_font();
 
     BoxCache* cache = ui_table_lookup(ui_state->table, string);
     if(cache){
@@ -373,11 +374,11 @@ ui_traverse_independent(UI_Box* box, Axis axis){
         } break;
         case UI_SizeType_TextContent:{
             if(axis == Axis_X){
-                f32 width = font_string_width(box->font, box->string);
+                f32 width = font_string_width(box->font_id, box->string);
                 box->size[axis] = (f32)width + box->text_padding;
             }
             if(axis == Axis_Y){
-                f32 height = font_vertical_offset(box->font);
+                f32 height = font_vertical_offset(box->font_id);
                 box->size[axis] = height + box->text_padding;
             }
         } break;

@@ -752,7 +752,7 @@ draw_entities(State* state){
                                 imm_draw_line(e->pos, e->rallypoint, 0.1f, RED);
                             }
 
-                            set_font(state->font);
+                            r_set_font(state->font_id);
                             String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->rallypoint.x, e->rallypoint.y);
                             // no
                             //draw_text(fmt_str, v2_screen_from_world(e->rallypoint), GREEN);
@@ -875,7 +875,7 @@ draw_entities(State* state){
 
 static void
 debug_draw_mouse_cell_pos(void){
-    set_font(state->font);
+    r_set_font(state->font_id);
     v2 pos = controller.mouse.world_pos;
     v2 cell = make_v2(floor_f32(pos.x/state->world_cell_size), floor_f32(pos.y/state->world_cell_size));
     String8 cell_str = str8_format(ts->frame_arena, "(%i, %i)", (s32)cell.x, (s32)cell.y);
@@ -1922,7 +1922,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         init_draw(ts->batch_arena, ts->sprite_arena, &assets);
         //sprite = push_spritesheet(TextureAsset_Human_Walk, 4, 4, 1);
 
-        state->font = &assets.fonts[FontAsset_Arial];
+        //state->font = &assets.fonts[FontAsset_Arial];
+        state->font_id = FontAsset_Arial;
         font1 = &assets.fonts[FontAsset_Arial1];
         font2 = &assets.fonts[FontAsset_Arial2];
         font3 = &assets.fonts[FontAsset_Arial3];
@@ -2358,11 +2359,11 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             ui_end();
 
             //set_transform(m4_screen_from_world());
-            set_font(state->font);
+            r_set_font(state->font_id);
             String8 fps = str8_formatted(ts->frame_arena, "fps: %.0f", FPS);
             //draw_text(fps, make_v2(text_padding, 20), GREEN);
 
-            set_font(state->font);
+            r_set_font(state->font_id);
             String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
 
             if(state->scene_state == SceneState_Editor){
