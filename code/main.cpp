@@ -752,10 +752,10 @@ draw_entities(State* state){
                                 imm_draw_line(e->pos, e->rallypoint, 0.1f, RED);
                             }
 
-                            r_set_font(state->font_id);
+                            //r_set_font(state->font_id);
                             String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->rallypoint.x, e->rallypoint.y);
                             // no
-                            //draw_text(fmt_str, v2_screen_from_world(e->rallypoint), GREEN);
+                            //imm_draw_text(fmt_str, v2_screen_from_world(e->rallypoint), GREEN);
                         }
                     }
                 } break;
@@ -784,10 +784,10 @@ draw_entities(State* state){
                     Quad quad = quad_from_entity_world(e);
                     imm_draw_sprite(e->sprite, quad);
 
-                    //draw_bounding_box(e->bounding_box, 0.05f, RED);
+                    //imm_draw_bounding_box(e->bounding_box, 0.05f, RED);
                     //quad = rotate_quad(quad, e->deg, e->pos);
                     //set_texture(e->texture_id);
-                    //draw_texture(quad, e->color);
+                    //imm_draw_texture(quad, e->color);
 
 
 
@@ -803,7 +803,7 @@ draw_entities(State* state){
 
                             imm_draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
                             // no
-                            //draw_line(e->pos, screen_space, 0.1f, ORANGE);
+                            //imm_draw_line(e->pos, screen_space, 0.1f, ORANGE);
                         }
                     }
                 }
@@ -827,7 +827,7 @@ draw_entities(State* state){
 
                             imm_draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
                             // no
-                            //draw_line(e->pos, screen_space, 0.1f, ORANGE);
+                            //imm_draw_line(e->pos, screen_space, 0.1f, ORANGE);
                         }
                     }
 
@@ -875,7 +875,7 @@ draw_entities(State* state){
 
 static void
 debug_draw_mouse_cell_pos(void){
-    r_set_font(state->font_id);
+    //r_set_font(state->font_id);
     v2 pos = controller.mouse.world_pos;
     v2 cell = make_v2(floor_f32(pos.x/state->world_cell_size), floor_f32(pos.y/state->world_cell_size));
     String8 cell_str = str8_format(ts->frame_arena, "(%i, %i)", (s32)cell.x, (s32)cell.y);
@@ -1133,7 +1133,7 @@ ui_castle(void){
 }
 
 static void
-draw_grid(f32 size, RGBA color){
+imm_draw_grid(f32 size, RGBA color){
     v2 low  = make_v2(floor_f32(camera.p3.x/size) * size,
                       floor_f32(camera.p3.y/size) * size);
     v2 high = make_v2(ceil_f32(camera.p1.x/size) * size,
@@ -1962,7 +1962,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->scene_state = SceneState_Game;
         //state->scene_state = SceneState_Editor;
         //init_camera_2d(&camera, make_v2((state->world_width_in_cells/2) * state->world_cell_size, (state->world_height_in_cells/2) * state->world_cell_size), 30);
-        init_camera_2d(&camera, make_v2(200, 100), 1);
+        //init_camera_2d(&camera, make_v2(200, 100), 1);
+        init_camera_2d(&camera, make_v2(0, 0), 1);
 
         Arena* arena = push_arena(&state->arena, MB(8));
         init_console(arena, &camera, &window, &assets);
@@ -2267,20 +2268,20 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         // rendering
         {
             begin_timed_scope("rendering");
-
             render_batches_reset();
+
             //arena_free(ts->batch_arena);
             set_transform(m4_screen_from_world());
             draw_world_terrain();
             if(state->scene_state == SceneState_Editor){
                 if(state->show_world_cells){
-                    //draw_grid(state->world_cell_size, RED);
+                    //imm_draw_grid(state->world_cell_size, RED);
                 }
                 if(state->show_flocking_cells){
-                    //draw_grid(state->flocking_cell_size, BLUE);
+                    //imm_draw_grid(state->flocking_cell_size, BLUE);
                 }
                 if(state->show_pathing_cells){
-                    //draw_grid(state->pathing_cell_size, GREEN);
+                    //imm_draw_grid(state->pathing_cell_size, GREEN);
                 }
             }
             draw_entities(state);
@@ -2332,16 +2333,16 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //            EntityCommand* c = entity_commands_read(e, read_idx);
             //            read_idx++;
 
-            //            draw_quad(c->move_to, make_v2(10, 10), RED);
-            //            //draw_line(e->pos, screen_space, 2, ORANGE);
+            //            imm_draw_quad(c->move_to, make_v2(10, 10), RED);
+            //            //imm_draw_line(e->pos, screen_space, 2, ORANGE);
             //        }
             //    }
             //}
 
             // no
-            //debug_draw_mouse_cell_pos();
+            //debug_imm_draw_mouse_cell_pos();
 
-            //draw_line(tp, wm, 0.1f, RED);
+            //imm_draw_line(tp, wm, 0.1f, RED);
 
             if(state->selecting && !state->dragging_world){
                 //state->selection_rect.min.y *= -1;
@@ -2358,12 +2359,12 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             set_transform(m4_make_ident());
             ui_end();
 
-            //set_transform(m4_screen_from_world());
-            r_set_font(state->font_id);
+            set_transform(m4_screen_from_world());
+            //r_set_font(state->font_id);
             String8 fps = str8_formatted(ts->frame_arena, "fps: %.0f", FPS);
-            //draw_text(fps, make_v2(text_padding, 20), GREEN);
+            //imm_draw_text(fps, make_v2(text_padding, 20), GREEN);
 
-            r_set_font(state->font_id);
+            //r_set_font(state->font_id);
             String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
 
             if(state->scene_state == SceneState_Editor){
@@ -2374,14 +2375,35 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
             console_draw();
             // draw border
-            //draw_line(camera.p0, camera.p1, 5, RED);
-            //draw_line(camera.p1, camera.p2, 5, RED);
-            //draw_line(camera.p2, camera.p3, 5, RED);
-            //draw_line(camera.p3, camera.p0, 5, RED);
+            //imm_draw_line(camera.p0, camera.p1, 5, RED);
+            //imm_draw_line(camera.p1, camera.p2, 5, RED);
+            //imm_draw_line(camera.p2, camera.p3, 5, RED);
+            //imm_draw_line(camera.p3, camera.p0, 5, RED);
+
+            set_transform(m4_make_ident());
+            draw_quad(make_v2(100, 100), make_v2(100, 100), RED);
+
+            set_transform(m4_screen_from_world());
+            draw_quad(make_v2(0, 0), make_v2(1, 1), BLUE);
+
+            set_transform(m4_make_ident());
+            r_set_texture(TextureAsset_Water1);
+            draw_texture(make_v2(100, 300), make_v2(50, 50));
+
+            //draw_line(make_v2(50, 50), make_v2(100, 50), 5, PINK);
+            draw_bounding_box(make_v2(100, 600), make_v2(100, 100), 5, RED);
+           
+            String8 str = str8_lit("TEST TEST TEST");
+            r_set_font(FontAsset_Consolas);
+            draw_text(str, make_v2(100, 500), GREEN);
+
 
             {
                 d3d_clear_color(BACKGROUND_COLOR);
+
+                //draw_render_commands();
                 draw_render_batches();
+
                 d3d_present();
 
                 String8 title = str8_fmt(ts->frame_arena, "Entity Count: %i - FPS: %.2f", state->entities_count - 1, FPS);

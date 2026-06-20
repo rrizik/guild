@@ -91,6 +91,9 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     hr = d3d_device->CreateShaderResourceView(texture, 0, &result.texture.view);
     assert_hr(hr);
 
+    result.texture.width = result.texture_w;
+    result.texture.height = result.texture_h;
+
     texture->Release();
     os_file_close(&file);
     end_scratch(scratch);

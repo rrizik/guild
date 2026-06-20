@@ -1,8 +1,10 @@
 #ifndef CONSOLE_C
 #define CONSOLE_C
 
+//note: everything is positioned relative to the output_rect
+
 static void
-init_console(Arena* arena, Camera2D* camera, Window* window, Assets* assets){ //note: everything is positioned relative to the output_rect
+init_console(Arena* arena, Camera2D* camera, Window* window, Assets* assets){ 
     console.state = CLOSED;
     //console.font = &assets->fonts[FontAsset_Consolas];
     console.font_id = FontAsset_Consolas;
@@ -22,7 +24,7 @@ init_console(Arena* arena, Camera2D* camera, Window* window, Assets* assets){ //
     console.y_open     = 0.4f;
     console.y_open_big = 0.7f;
 
-    // some colors
+    // colors
     console.output_background_color = CONSOLE_OUTPUT_BACKGROUND_COLOR;
     console.input_background_color  = CONSOLE_INPUT_BACKGROUND_COLOR;
     console.input_color  = CONSOLE_TEXT_INPUT_COLOR;
@@ -271,7 +273,6 @@ console_push_input(String8 text){
 
 static void
 console_draw(void){
-    r_set_font(console.font_id);
 
     if(console_is_visible()){
         Font* font = a_get_font(console.font_id);
@@ -289,7 +290,6 @@ console_draw(void){
         v2 input_p3 = make_v2(0, output_p2.y + (f32)font->vertical_offset);
 
         String8 str = str8(console.input.data, (u64)console.cursor_index);
-
         v2 cursor_p0 = make_v2(console.text_left_pad + font_char_width(font, '>') + font_string_width(font, str), input_p0.y);
         v2 cursor_p1 = make_v2(cursor_p0.x + font_char_width(font, console_char_at_cursor()), input_p0.y);
         v2 cursor_p2 = make_v2(cursor_p0.x + font_char_width(font, console_char_at_cursor()), input_p2.y);
@@ -301,6 +301,7 @@ console_draw(void){
         imm_draw_quad(cursor_p0, cursor_p1, cursor_p2, cursor_p3, console.cursor_color);
 
         // draw text input
+        r_set_font(console.font_id);
         f32 input_pos_y = input_p2.y + ((f32)font->descent * font->scale);
         imm_draw_text(str8_literal(">"), make_v2(console.text_left_pad, input_pos_y), console.input_color);
         if(console.input.count > 0){

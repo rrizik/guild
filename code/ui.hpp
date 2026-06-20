@@ -191,7 +191,7 @@ typedef struct UI_TextPaddingNode     { UI_TextPaddingNode*     next; f32 v;    
 typedef struct UI_TextColorNode       { UI_TextColorNode*       next; RGBA v;    } UI_TextColorNode;
 typedef struct UI_BackgroundColorNode { UI_BackgroundColorNode* next; RGBA v;    } UI_BackgroundColorNode;
 typedef struct UI_BorderThicknessNode { UI_BorderThicknessNode* next; f32 v;     } UI_BorderThicknessNode;
-typedef struct UI_FontNode            { UI_FontNode*            next; Font* v;   } UI_FontNode;
+typedef struct UI_FontNode            { UI_FontNode*            next; s32 v;   } UI_FontNode;
 
 //------------------------------------------------------------
 // Stack Definitions
@@ -227,7 +227,8 @@ typedef struct UI_State{
     Arena* arena;
     Window* window;
     Controller* controller;
-    Font* default_font;
+    //Font* default_font;
+    s32 default_font_id;
 
     UI_Box* root;
 
@@ -250,7 +251,7 @@ typedef struct UI_State{
     UI_TextColorStack       text_color_stack;
     UI_BackgroundColorStack background_color_stack;
     UI_BorderThicknessStack border_thickness_stack;
-    UI_FontStack            font_stack;
+    UI_FontStack            font_id_stack;
 
 } UI_State;
 global UI_State* ui_state;
@@ -297,7 +298,7 @@ static f32     ui_push_text_padding(f32 v)      { ui_stack_push_impl(ui_arena(),
 static RGBA    ui_push_text_color(RGBA v)       { ui_stack_push_impl(ui_arena(), TextColor, text_color, v) }
 static RGBA    ui_push_background_color(RGBA v) { ui_stack_push_impl(ui_arena(), BackgroundColor, background_color, v) }
 static f32     ui_push_border_thickness(f32 v)  { ui_stack_push_impl(ui_arena(), BorderThickness, border_thickness, v) }
-static Font*   ui_push_font(Font* v)            { ui_stack_push_impl(ui_arena(), Font, font, v) }
+static s32     ui_push_font(s32 v)              { ui_stack_push_impl(ui_arena(), Font, font_id, v) }
 
 static UI_Box* ui_pop_parent(void)              { ui_stack_pop_impl(Parent, parent) }
 static f32     ui_pop_pos_x(void)               { ui_stack_pop_impl(PosX, pos_x) }
@@ -309,7 +310,7 @@ static f32     ui_pop_text_padding(void)        { ui_stack_pop_impl(TextPadding,
 static RGBA    ui_pop_text_color(void)          { ui_stack_pop_impl(TextColor, text_color) }
 static RGBA    ui_pop_background_color(void)    { ui_stack_pop_impl(BackgroundColor, background_color) }
 static f32     ui_pop_border_thickness(void)    { ui_stack_pop_impl(BorderThickness, border_thickness) }
-static Font*   ui_pop_font(void)                { ui_stack_pop_impl(Font, font) }
+static s32     ui_pop_font(void)                { ui_stack_pop_impl(Font, font_id) }
 
 static UI_Box* ui_top_parent(void)              { ui_stack_top_impl(parent) }
 static f32     ui_top_pos_x(void)               { ui_stack_top_impl(pos_x) }
@@ -333,7 +334,7 @@ static f32     ui_set_text_padding(f32 v)       { ui_stack_set_impl(ui_arena(), 
 static RGBA    ui_set_text_color(RGBA v)        { ui_stack_set_impl(ui_arena(), TextColor, text_color, v) }
 static RGBA    ui_set_background_color(RGBA v)  { ui_stack_set_impl(ui_arena(), BackgroundColor, background_color, v) }
 static f32     ui_set_border_thickness(f32 v)   { ui_stack_set_impl(ui_arena(), BorderThickness, border_thickness, v) }
-static Font*   ui_set_font(Font* v)             { ui_stack_set_impl(ui_arena(), Font, font, v) }
+static s32     ui_set_font(s32 v)               { ui_stack_set_impl(ui_arena(), Font, font_id, v) }
 
 //------------------------------------------------------------
 // Push/Pop/Top/Set Compositions

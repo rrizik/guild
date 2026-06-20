@@ -432,16 +432,16 @@ d3d_make_vertex_buffer(s32 size){
     ID3D11Buffer* result;
 
     d3d_vertex_buffer_size = size;
-    {
-        D3D11_BUFFER_DESC desc = {0};
-        desc.ByteWidth = (u32)d3d_vertex_buffer_size;
-        desc.Usage     = D3D11_USAGE_DYNAMIC;
-        desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-        hr = d3d_device->CreateBuffer(&desc, 0, &result);
-        assert_hr(hr);
-    }
+    D3D11_BUFFER_DESC desc = {0};
+    desc.ByteWidth = (u32)d3d_vertex_buffer_size;
+    desc.Usage     = D3D11_USAGE_DYNAMIC;
+    desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+    hr = d3d_device->CreateBuffer(&desc, 0, &result);
+    assert_hr(hr);
+
     return(result);
 }
 

@@ -232,24 +232,16 @@ imm_draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
 
 static void
 r_set_texture(s32 texture_id){
+    r_texture_id = texture_id;
     r_texture = &r_assets->textures[texture_id];
 }
 
 static void
 r_set_font(s32 font_id){
     r_font_id = font_id;
+    r_font = &r_assets->fonts[font_id];
     r_texture = &r_assets->fonts[font_id].texture;
 }
-
-//static Texture*
-//r_get_texture(s32 texture_id){
-//    return(&r_assets->textures[texture_id]);
-//}
-
-//static void
-//set_font(Font* font){
-//    r_font = font;
-//}
 
 static Font*
 get_font(void){
@@ -258,19 +250,25 @@ get_font(void){
 
 static void
 set_transform(m4 transform){
+    r_transform = transform; 
+}
+
+static void
+set_transform_internal(m4 transform){
     if(!m4_equal(r_transform, transform, 0.1f)){
         r_transform_gen++;
     }
     r_transform = transform; 
 }
 
-static m4
-get_transform(){
-    return(r_transform);
+static void
+set_transform_gen(u32 transform_gen){
+    r_transform_gen = transform_gen; 
 }
 
+// note: p0(top-left), p1(top-right), p2(bottom-right), p3(bottom-left) order
 static void 
-imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
+imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
     r_set_texture(TextureAsset_White);
     RGBA linear_color = linear_from_srgb(color); 
                                                 
@@ -286,71 +284,28 @@ imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color
 }
 
 static void 
-imm_draw_quad(v2 pos, v2 dim, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
-    v2 p0 = pos;
-    v2 p1 = make_v2(pos.x + dim.w, pos.y);
-    v2 p2 = make_v2(pos.x + dim.w, pos.y + dim.h);
-    v2 p3 = make_v2(pos.x, pos.y + dim.h);
-
-    imm_draw_quad(p0, p1, p2, p3, u0, u1, u2, u3, color);
-}
-
-static void 
-imm_draw_quad(Rect rect, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
-    v2 p0 = make_v2(rect.x0, rect.y0);
-    v2 p1 = make_v2(rect.x1, rect.y0);
-    v2 p2 = make_v2(rect.x1, rect.y1);
-    v2 p3 = make_v2(rect.x0, rect.y1);
-
-    imm_draw_quad(p0, p1, p2, p3, u0, u1, u2, u3, color);
-}
-
-static void 
-imm_draw_quad(Quad quad, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
-    imm_draw_quad(quad.p0, quad.p1, quad.p2, quad.p3, u0, u1, u2, u3, color);
-}
-
-// note: p0(top-left), p1(top-right), p2(bottom-right), p3(bottom-left) order
-static void 
-imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
-    imm_draw_quad(p0, p1, p2, p3, 
-              make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
-              make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
-              color);
-}
-
-static void
 imm_draw_quad(v2 pos, v2 dim, RGBA color){
     v2 p0 = pos;
     v2 p1 = make_v2(pos.x + dim.w, pos.y);
     v2 p2 = make_v2(pos.x + dim.w, pos.y + dim.h);
     v2 p3 = make_v2(pos.x, pos.y + dim.h);
 
-    imm_draw_quad(p0, p1, p2, p3, 
-              make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
-              make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
-              color);
+    imm_draw_quad(p0, p1, p2, p3, color);
 }
 
-static void
+static void 
 imm_draw_quad(Rect rect, RGBA color){
     v2 p0 = make_v2(rect.x0, rect.y0);
     v2 p1 = make_v2(rect.x1, rect.y0);
     v2 p2 = make_v2(rect.x1, rect.y1);
     v2 p3 = make_v2(rect.x0, rect.y1);
 
-    imm_draw_quad(p0, p1, p2, p3, 
-              make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
-              make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
-              color);
+    imm_draw_quad(p0, p1, p2, p3, color);
 }
 
-static void
+static void 
 imm_draw_quad(Quad quad, RGBA color){
-    imm_draw_quad(quad.p0, quad.p1, quad.p2, quad.p3, 
-              make_v2(0.0f, 0.0f), make_v2(1.0f, 0.0f), 
-              make_v2(1.0f, 1.0f), make_v2(0.0f, 1.0f),
-              color);
+    imm_draw_quad(quad.p0, quad.p1, quad.p2, quad.p3, color);
 }
 
 static void 
@@ -488,9 +443,6 @@ imm_draw_line(v2 p0, v2 p1, f32 thickness, RGBA color){
 
 static void
 imm_draw_text(String8 text, v2 pos, RGBA color){
-    //Font* font = get_font();
-    r_set_texture(r_font->texture_id);
-
     u64 count = text.size * 6;
     RenderBatch* batch = get_render_batch(count);
     RGBA linear_color = linear_from_srgb(color);
@@ -532,50 +484,238 @@ imm_draw_text(String8 text, v2 pos, RGBA color){
 }
 
 static void 
+draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Quad;
+    command->texture_id = TextureAsset_White;
+    command->transform = r_transform;
+    command->quad = make_quad(p0, p1, p2, p3);
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
+draw_quad(v2 pos, v2 dim, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Quad;
+    command->texture_id = TextureAsset_White;
+    command->transform = r_transform;
+
+    command->quad = make_quad(pos, make_v2(pos.x + dim.w, pos.y), 
+                              make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x, pos.y + dim.h));
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
+draw_quad(Rect rect, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Quad;
+    command->texture_id = TextureAsset_White;
+    command->transform = r_transform;
+
+    command->quad = make_quad(make_v2(rect.x0, rect.y0), make_v2(rect.x1, rect.y0),
+                              make_v2(rect.x1, rect.y1), make_v2(rect.x0, rect.y1));
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
 draw_quad(Quad quad, RGBA color){
     Draw_Command* command = draw_commands + draw_commands_at;
     command->kind = Draw_Command_Quad;
+    command->texture_id = TextureAsset_White;
+    command->transform = r_transform;
     command->quad = quad;
     command->color = color;
+
+    draw_commands_at++;
 }
 
-static void draw_texture(Quad quad, RGBA color){
+static void 
+draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
     Draw_Command* command = draw_commands + draw_commands_at;
     command->kind = Draw_Command_Texture;
-    command->quad = quad;
     command->texture_id = r_texture_id;
+    command->transform = r_transform;
+    command->quad = make_quad(p0, p1, p2, p3);
     command->color = color;
+
+    draw_commands_at++;
 }
 
-//static void draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
-//    Draw_Command* command = draw_commands + draw_commands_at;
-//    command->kind = Draw_Command_Quad;
-//    command->quad = quad;
-//    command->color = color;
-//}
-//
-//static void draw_bounding_box(Quad quad, f32 width, RGBA color){
-//    Draw_Command* command = draw_commands + draw_commands_at;
-//    command->kind = Draw_Command_Quad;
-//    command->quad = quad;
-//    command->color = color;
-//}
-//
-//static void draw_line(v2 p0, v2 p1, f32 width, RGBA color){
-//    Draw_Command* command = draw_commands + draw_commands_at;
-//    command->kind = Draw_Command_Quad;
-//    command->quad = quad;
-//    command->color = color;
-//}
-//
-//static void draw_text(String8 text, v2 pos, RGBA color){
-//    Draw_Command* command = draw_commands + draw_commands_at;
-//    command->kind = Draw_Command_Quad;
-//    command->quad = quad;
-//    command->color = color;
-//}
+static void 
+draw_texture(v2 pos, v2 dim, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Texture;
+    command->texture_id = r_texture_id;
+    command->transform = r_transform;
+    command->quad = make_quad(pos, make_v2(pos.x + dim.w, pos.y), 
+                              make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x, pos.y + dim.h));
+    command->color = color;
 
-static void draw_commands_clear(void){
+    draw_commands_at++;
+}
+
+static void 
+draw_texture(Rect rect, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Texture;
+    command->texture_id = r_texture_id;
+    command->transform = r_transform;
+    command->quad = make_quad(make_v2(rect.x0, rect.y0), make_v2(rect.x1, rect.y0),
+                              make_v2(rect.x1, rect.y1), make_v2(rect.x0, rect.y1));
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
+draw_texture(Quad quad, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Texture;
+    command->texture_id = r_texture_id;
+    command->transform = r_transform;
+    command->quad = quad;
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
+draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Sprite;
+    command->texture_id = r_texture_id;
+    //command->transform_gen = r_transform_gen;
+    command->quad = quad;
+    command->sprite = sprite;
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
+draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Bounding_Box;
+    command->texture_id = TextureAsset_White;
+    //command->transform_gen = r_transform_gen;
+    command->quad = make_quad(p0, p1, p2, p3);
+    command->width = width;
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
+draw_bounding_box(v2 pos, v2 dim, f32 width, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Bounding_Box;
+    command->texture_id = TextureAsset_White;
+    //command->transform_gen = r_transform_gen;
+    command->quad = make_quad(pos, make_v2(pos.x + dim.w, pos.y), 
+                              make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x, pos.y + dim.h));
+    command->width = width;
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
+draw_bounding_box(Rect rect, f32 width, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Bounding_Box;
+    command->texture_id = TextureAsset_White;
+    //command->transform_gen = r_transform_gen;
+    command->quad = make_quad(make_v2(rect.x0, rect.y0), make_v2(rect.x1, rect.y0),
+                              make_v2(rect.x1, rect.y1), make_v2(rect.x0, rect.y1));
+    command->width = width;
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
+draw_bounding_box(Quad quad, f32 width, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Bounding_Box;
+    command->texture_id = TextureAsset_White;
+    //command->transform_gen = r_transform_gen;
+    command->quad = quad;
+    command->width = width;
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
+draw_line(v2 p0, v2 p1, f32 width, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Line;
+    command->texture_id = TextureAsset_White;
+    command->transform = r_transform;
+    command->p0 = p0;
+    command->p1 = p1;
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void 
+draw_text(String8 text, v2 pos, RGBA color){
+    Draw_Command* command = draw_commands + draw_commands_at;
+    command->kind = Draw_Command_Text;
+    command->font_id = r_font_id;
+    command->transform = r_transform;
+    command->text = text;
+    command->pos = pos;
+    command->color = color;
+
+    draw_commands_at++;
+}
+
+static void
+draw_render_commands(void){
+    render_batches_reset();
+
+    for(s32 i=0; i<draw_commands_at; ++i){
+        Draw_Command* c = draw_commands + i;
+        r_set_texture(c->texture_id);
+        set_transform_internal(c->transform);
+
+        switch(c->kind){
+            case Draw_Command_Quad:{
+                imm_draw_quad(c->quad, c->color);
+            } break;
+            case Draw_Command_Texture:{
+                imm_draw_texture(c->quad, c->color);
+            } break;
+            case Draw_Command_Sprite:{
+                imm_draw_sprite(c->sprite, c->quad, c->color);
+            } break;
+            case Draw_Command_Bounding_Box:{
+                imm_draw_bounding_box(c->quad, c->width, c->color);
+            } break;
+            case Draw_Command_Line:{
+                imm_draw_line(c->p0, c->p1, c->width, c->color);
+            } break;
+            case Draw_Command_Text:{
+                r_set_font(c->font_id);
+                imm_draw_text(c->text, c->pos, c->color);
+            } break;
+        }
+    }
+
+    draw_render_batches();
+    draw_commands_clear();
+}
+
+static void 
+draw_commands_clear(void){
     draw_commands_at = 0;
 }
 
@@ -592,7 +732,7 @@ get_render_batch(u64 vertex_count){
         batch->vertex_cap = DEFAULT_BATCH_SIZE / sizeof(Vertex2);
         batch->vertex_count = 0;
         batch->texture = r_texture;
-        batch->transform = get_transform();
+        batch->transform = r_transform;
         batch->id = render_batches.count;
         if(render_batches.last == 0){
             render_batches.last = batch;
@@ -602,7 +742,7 @@ get_render_batch(u64 vertex_count){
             render_batches.last->next = batch;
             render_batches.last = batch;
         }
-        ++render_batches.count;
+        render_batches.count++;
     }
     return(batch);
 }
@@ -625,9 +765,11 @@ draw_render_batches(){
         s32 vertex_idx = 0;
         for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
             batch->idx_in_vertex_buffer = vertex_idx;
+
             memcpy((u8*)resource.pData + (vertex_idx * sizeof(Vertex2)),
                    batch->buffer,
                    batch->vertex_count * sizeof(Vertex2));
+
             vertex_idx += batch->vertex_count;
         }
         d3d_context->Unmap(d3d_vertex_buffer, 0);

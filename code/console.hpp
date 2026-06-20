@@ -17,7 +17,6 @@ typedef enum ConsoleState{
 typedef struct Console{
     ConsoleState state;
     s32 font_id;
-    Font* font;
     Window* window;
     Camera2D* camera;
     Arena* arena;

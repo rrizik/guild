@@ -10,7 +10,7 @@ ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
     ui_state = push_struct(arena, UI_State);
     ui_state->window = window;
     ui_state->controller = controller;
-    ui_state->default_font = &assets->fonts[FontAsset_Arial];
+    ui_state->default_font_id = FontAsset_Arial;
     //ui_state->generation = 0;
     ui_state->table = ui_make_table(arena);
     ui_state->arena = make_arena(MB(100));
@@ -25,7 +25,7 @@ ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
     ui_state->text_color_stack.top = &ui_text_color_null;
     ui_state->background_color_stack.top = &ui_background_color_null;
     ui_state->border_thickness_stack.top = &ui_border_thickness_null;
-    ui_state->font_stack.top = &ui_font_null;
+    ui_state->font_id_stack.top = &ui_font_null;
 }
 
 static void
@@ -44,7 +44,7 @@ ui_begin(void){
 
     ui_push_border_thickness(10);
 
-    ui_push_font(ui_state->default_font);
+    ui_push_font(ui_state->default_font_id);
 
     ui_push_background_color(CLEAR);
 
@@ -67,7 +67,7 @@ ui_end(void){
     ui_state->text_color_stack.top = &ui_text_color_null;
     ui_state->background_color_stack.top = &ui_background_color_null;
     ui_state->border_thickness_stack.top = &ui_border_thickness_null;
-    ui_state->font_stack.top = &ui_font_null;
+    ui_state->font_id_stack.top = &ui_font_null;
 
     // todo(rr): go back to this
     //ui_state->parent_stack.top = 0;
@@ -107,7 +107,7 @@ ui_auto_pop(void){
     if(ui_state->text_color_stack.auto_pop)       { ui_state->text_color_stack.auto_pop   = false; ui_pop_text_color(); }
     if(ui_state->background_color_stack.auto_pop) { ui_state->background_color_stack.auto_pop = false; ui_pop_background_color(); }
     if(ui_state->border_thickness_stack.auto_pop) { ui_state->border_thickness_stack.auto_pop = false; ui_pop_border_thickness(); }
-    if(ui_state->font_stack.auto_pop)             { ui_state->font_stack.auto_pop = false; ui_pop_font(); }
+    if(ui_state->font_id_stack.auto_pop)             { ui_state->font_id_stack.auto_pop = false; ui_pop_font(); }
 }
 
 // todo: ui_root() on first function call so that you don't have to pass it in.
@@ -373,12 +373,13 @@ ui_traverse_independent(UI_Box* box, Axis axis){
             box->size[axis] = box->semantic_size[axis].value;
         } break;
         case UI_SizeType_TextContent:{
+            Font* font = a_get_font(box->font_id);
             if(axis == Axis_X){
-                f32 width = font_string_width(box->font_id, box->string);
+                f32 width = font_string_width(font, box->string);
                 box->size[axis] = (f32)width + box->text_padding;
             }
             if(axis == Axis_Y){
-                f32 height = font_vertical_offset(box->font_id);
+                f32 height = font_vertical_offset(font);
                 box->size[axis] = height + box->text_padding;
             }
         } break;
