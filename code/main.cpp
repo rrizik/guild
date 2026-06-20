@@ -728,7 +728,7 @@ draw_entities(State* state){
             switch(e->type){
                 case EntityType_Quad:{
                     quad = rotate_quad(quad, e->deg, e->pos);
-                    imm_draw_quad(quad, e->color);
+                    draw_quad(quad, e->color);
                 } break;
             }
         }
@@ -746,16 +746,16 @@ draw_entities(State* state){
                     switch(e->structure_type){
                         case StructureType_Castle:{
                             r_set_texture(e->texture_id);
-                            imm_draw_texture(quad, e->color);
+                            draw_texture(quad, e->color);
 
                             if(e->selected){
-                                imm_draw_line(e->pos, e->rallypoint, 0.1f, RED);
+                                draw_line(e->pos, e->rallypoint, 0.1f, RED);
                             }
 
-                            //r_set_font(state->font_id);
+                            r_set_font(state->font_id);
                             String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->rallypoint.x, e->rallypoint.y);
                             // no
-                            //imm_draw_text(fmt_str, v2_screen_from_world(e->rallypoint), GREEN);
+                            //draw_text(fmt_str, v2_screen_from_world(e->rallypoint), GREEN);
                         }
                     }
                 } break;
@@ -773,7 +773,7 @@ draw_entities(State* state){
                     quad = rotate_quad(quad, e->deg, e->pos);
 
                     r_set_texture(e->texture_id);
-                    imm_draw_texture(quad, e->color);
+                    draw_texture(quad, e->color);
                 } break;
                 case EntityType_Monster:{
 
@@ -782,18 +782,18 @@ draw_entities(State* state){
                     r_set_texture(anim.texture_id);
 
                     Quad quad = quad_from_entity_world(e);
-                    imm_draw_sprite(e->sprite, quad);
+                    draw_sprite(e->sprite, quad);
 
-                    //imm_draw_bounding_box(e->bounding_box, 0.05f, RED);
+                    //draw_bounding_box(e->bounding_box, 0.05f, RED);
                     //quad = rotate_quad(quad, e->deg, e->pos);
                     //set_texture(e->texture_id);
-                    //imm_draw_texture(quad, e->color);
+                    //draw_texture(quad, e->color);
 
 
 
                     if(e->selected){
                         if(e->active_command){
-                            imm_draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
+                            draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
                         }
 
                         u32 read_idx = e->commands_read;
@@ -801,9 +801,9 @@ draw_entities(State* state){
                             EntityCommand* c = entity_commands_read(e, read_idx);
                             read_idx++;
 
-                            imm_draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
+                            draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
                             // no
-                            //imm_draw_line(e->pos, screen_space, 0.1f, ORANGE);
+                            //draw_line(e->pos, screen_space, 0.1f, ORANGE);
                         }
                     }
                 }
@@ -811,13 +811,13 @@ draw_entities(State* state){
                     quad = rotate_quad(quad, e->deg, e->pos);
 
                     r_set_texture(e->texture_id);
-                    imm_draw_texture(quad, e->color);
+                    draw_texture(quad, e->color);
 
 
 
                     if(e->selected){
                         if(e->active_command){
-                            imm_draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
+                            draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
                         }
 
                         u32 read_idx = e->commands_read;
@@ -825,9 +825,9 @@ draw_entities(State* state){
                             EntityCommand* c = entity_commands_read(e, read_idx);
                             read_idx++;
 
-                            imm_draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
+                            draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
                             // no
-                            //imm_draw_line(e->pos, screen_space, 0.1f, ORANGE);
+                            //draw_line(e->pos, screen_space, 0.1f, ORANGE);
                         }
                     }
 
@@ -865,26 +865,26 @@ draw_entities(State* state){
     Sprite_Animation anim = player->sprite.animations[kind];
     r_set_texture(anim.texture_id);
     Quad quad = quad_from_entity_world(player);
-    imm_draw_sprite(player->sprite, quad);
+    draw_sprite(player->sprite, quad);
 
     if(state->scene_state == SceneState_Editor){
-        imm_draw_bounding_box(player->attack_box, 0.05f, RED);
-        imm_draw_bounding_box(player->bounding_box, 0.05f, RED);
+        draw_bounding_box(player->attack_box, 0.05f, RED);
+        draw_bounding_box(player->bounding_box, 0.05f, RED);
     }
 }
 
 static void
 debug_draw_mouse_cell_pos(void){
-    //r_set_font(state->font_id);
+    r_set_font(state->font_id);
     v2 pos = controller.mouse.world_pos;
     v2 cell = make_v2(floor_f32(pos.x/state->world_cell_size), floor_f32(pos.y/state->world_cell_size));
     String8 cell_str = str8_format(ts->frame_arena, "(%i, %i)", (s32)cell.x, (s32)cell.y);
-    imm_draw_text(cell_str, controller.mouse.pos, RED);
+    draw_text(cell_str, controller.mouse.pos, RED);
 }
 
 static void
 ui_editor(void){
-    set_transform(m4_make_ident());
+    r_set_transform(m4_make_ident());
 
     ui_set_pos(20, 200);
     ui_set_size(ui_size_children(0), ui_size_children(0));
@@ -1133,7 +1133,7 @@ ui_castle(void){
 }
 
 static void
-imm_draw_grid(f32 size, RGBA color){
+draw_grid(f32 size, RGBA color){
     v2 low  = make_v2(floor_f32(camera.p3.x/size) * size,
                       floor_f32(camera.p3.y/size) * size);
     v2 high = make_v2(ceil_f32(camera.p1.x/size) * size,
@@ -1144,7 +1144,7 @@ imm_draw_grid(f32 size, RGBA color){
         v2 p0 = make_v2(x, low.y);
         v2 p1 = make_v2(x, high.y);
 
-        imm_draw_line(p0, p1, 0.1f, color);
+        draw_line(p0, p1, 0.1f, color);
         x += size;
     }
 
@@ -1153,7 +1153,7 @@ imm_draw_grid(f32 size, RGBA color){
         v2 p0 = make_v2(low.x, y);
         v2 p1 = make_v2(high.x, y);
 
-        imm_draw_line(p0, p1, 0.1f, color);
+        draw_line(p0, p1, 0.1f, color);
         y += size;
     }
 
@@ -1171,7 +1171,7 @@ imm_draw_grid(f32 size, RGBA color){
 
                     set_font(state->font);
                     String8 coord = str8_formatted(ts->frame_arena, "(%i, %i)", (s32)x/(s32)state->world_cell_size, (s32)y/(s32)state->world_cell_size);
-                    imm_draw_text(coord, screen_cell, YELLOW);
+                    draw_text(coord, screen_cell, YELLOW);
                 }
             }
 
@@ -1206,7 +1206,7 @@ draw_world_terrain(void){
                         if(cell_tex == i){
                             r_set_texture(cell_tex);
                             Rect tex_rect = make_rect_size(cell, make_v2(state->world_cell_size, state->world_cell_size));
-                            imm_draw_texture(tex_rect);
+                            draw_texture(tex_rect);
                         }
                     }
                 }
@@ -1962,8 +1962,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->scene_state = SceneState_Game;
         //state->scene_state = SceneState_Editor;
         //init_camera_2d(&camera, make_v2((state->world_width_in_cells/2) * state->world_cell_size, (state->world_height_in_cells/2) * state->world_cell_size), 30);
-        //init_camera_2d(&camera, make_v2(200, 100), 1);
-        init_camera_2d(&camera, make_v2(0, 0), 1);
+        init_camera_2d(&camera, make_v2(200, 100), 1);
+        //init_camera_2d(&camera, make_v2(0, 0), 1);
 
         Arena* arena = push_arena(&state->arena, MB(8));
         init_console(arena, &camera, &window, &assets);
@@ -2268,20 +2268,20 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         // rendering
         {
             begin_timed_scope("rendering");
-            render_batches_reset();
+            //render_batches_reset();
 
             //arena_free(ts->batch_arena);
-            set_transform(m4_screen_from_world());
+            r_set_transform(m4_screen_from_world());
             draw_world_terrain();
             if(state->scene_state == SceneState_Editor){
                 if(state->show_world_cells){
-                    //imm_draw_grid(state->world_cell_size, RED);
+                    //draw_grid(state->world_cell_size, RED);
                 }
                 if(state->show_flocking_cells){
-                    //imm_draw_grid(state->flocking_cell_size, BLUE);
+                    //draw_grid(state->flocking_cell_size, BLUE);
                 }
                 if(state->show_pathing_cells){
-                    //imm_draw_grid(state->pathing_cell_size, GREEN);
+                    //draw_grid(state->pathing_cell_size, GREEN);
                 }
             }
             draw_entities(state);
@@ -2296,7 +2296,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 if(state->entities_selected_count == 1){
                     Entity* e = state->entities_selected[0];
                     Rect rect = rect_from_entity(e);
-                    imm_draw_bounding_box(rect, 0.1f, RED);
+                    draw_bounding_box(rect, 0.1f, RED);
                 }
                 else{
                     for(s32 i=0; i < state->entities_selected_count; ++i){
@@ -2321,7 +2321,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                     max_x += 0.5f;
                     max_y += 0.5f;
                     Rect rect = make_rect(make_v2(min_x, min_y), make_v2(max_x, max_y));
-                    imm_draw_bounding_box(rect, 0.1f, RED);
+                    draw_bounding_box(rect, 0.1f, RED);
                 }
             }
 
@@ -2333,76 +2333,79 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //            EntityCommand* c = entity_commands_read(e, read_idx);
             //            read_idx++;
 
-            //            imm_draw_quad(c->move_to, make_v2(10, 10), RED);
-            //            //imm_draw_line(e->pos, screen_space, 2, ORANGE);
+            //            draw_quad(c->move_to, make_v2(10, 10), RED);
+            //            //draw_line(e->pos, screen_space, 2, ORANGE);
             //        }
             //    }
             //}
 
             // no
-            //debug_imm_draw_mouse_cell_pos();
+            //debug_draw_mouse_cell_pos();
 
-            //imm_draw_line(tp, wm, 0.1f, RED);
+            //draw_line(tp, wm, 0.1f, RED);
 
             if(state->selecting && !state->dragging_world){
                 //state->selection_rect.min.y *= -1;
                 //state->selection_rect.max.y *= -1;
-                imm_draw_bounding_box(state->selection_rect, 0.1f, RED);
+                draw_bounding_box(state->selection_rect, 0.1f, RED);
             }
             if(state->terrain_selected){
                 r_set_texture(state->terrain_selected_id);
-                imm_draw_texture(controller.mouse.pos, make_v2(50, 50));
+                draw_texture(controller.mouse.pos, make_v2(50, 50));
 
-                imm_draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
+                draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
             }
 
-            set_transform(m4_make_ident());
+            r_set_transform(m4_make_ident());
             ui_end();
 
-            set_transform(m4_screen_from_world());
-            //r_set_font(state->font_id);
+            r_set_transform(m4_screen_from_world());
+            r_set_font(state->font_id);
             String8 fps = str8_formatted(ts->frame_arena, "fps: %.0f", FPS);
-            //imm_draw_text(fps, make_v2(text_padding, 20), GREEN);
+            //draw_text(fps, make_v2(text_padding, 20), GREEN);
 
-            //r_set_font(state->font_id);
+            r_set_font(state->font_id);
             String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
 
             if(state->scene_state == SceneState_Editor){
                 r_set_texture(TextureAsset_Castle1);
                 Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
-                imm_draw_texture(rr, WHITE);
+                draw_texture(rr, WHITE);
             }
 
             console_draw();
             // draw border
-            //imm_draw_line(camera.p0, camera.p1, 5, RED);
-            //imm_draw_line(camera.p1, camera.p2, 5, RED);
-            //imm_draw_line(camera.p2, camera.p3, 5, RED);
-            //imm_draw_line(camera.p3, camera.p0, 5, RED);
+            //draw_line(camera.p0, camera.p1, 5, RED);
+            //draw_line(camera.p1, camera.p2, 5, RED);
+            //draw_line(camera.p2, camera.p3, 5, RED);
+            //draw_line(camera.p3, camera.p0, 5, RED);
 
-            set_transform(m4_make_ident());
-            draw_quad(make_v2(100, 100), make_v2(100, 100), RED);
+            //{
+            //    r_set_transform(m4_make_ident());
+            //    draw_quad(make_v2(100, 100), make_v2(100, 100), RED);
 
-            set_transform(m4_screen_from_world());
-            draw_quad(make_v2(0, 0), make_v2(1, 1), BLUE);
+            //    r_set_transform(m4_screen_from_world());
+            //    draw_quad(make_v2(0, 0), make_v2(1, 1), BLUE);
 
-            set_transform(m4_make_ident());
-            r_set_texture(TextureAsset_Water1);
-            draw_texture(make_v2(100, 300), make_v2(50, 50));
+            //    r_set_transform(m4_make_ident());
+            //    r_set_texture(TextureAsset_Water1);
+            //    draw_texture(make_v2(100, 300), make_v2(50, 50));
 
-            //draw_line(make_v2(50, 50), make_v2(100, 50), 5, PINK);
-            draw_bounding_box(make_v2(100, 600), make_v2(100, 100), 5, RED);
-           
-            String8 str = str8_lit("TEST TEST TEST");
-            r_set_font(FontAsset_Consolas);
-            draw_text(str, make_v2(100, 500), GREEN);
+            //    draw_bounding_box(make_v2(100, 600), make_v2(100, 100), 5, TEAL);
+
+            //    draw_line(make_v2(50, 50), make_v2(100, 50), 5, PINK);
+            //   
+            //    String8 str = str8_lit("TEST TEST TEST");
+            //    r_set_font(FontAsset_Consolas);
+            //    draw_text(str, make_v2(100, 500), GREEN);
+            //}
 
 
             {
                 d3d_clear_color(BACKGROUND_COLOR);
 
-                //draw_render_commands();
-                draw_render_batches();
+                draw_render_commands();
+                //draw_render_batches();
 
                 d3d_present();
 

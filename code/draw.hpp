@@ -60,7 +60,7 @@ push_spritesheet(s32 texture_id, f32 col, f32 row, f32 anim_speed);
 
 static void r_set_texture(s32 texture_id);
 static void r_set_font(s32 font_id);
-static void set_transform(m4 transform);
+static void r_set_transform(m4 transform);
 static RenderBatch* get_render_batch(u64 vertex_count);
 
 static RGBA brighten_color(RGBA color, float factor);

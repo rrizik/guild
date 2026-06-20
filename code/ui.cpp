@@ -128,7 +128,7 @@ ui_draw(UI_Box* box){
                 box->background_color = brighten_color(box->background_color, 0.2f);
             }
         }
-        imm_draw_quad(box->rect, box->background_color);
+        draw_quad(box->rect, box->background_color);
     }
     if(has_flags(box->flags, UI_BoxFlag_DrawText)){
         r_set_font(box->font_id);
@@ -144,7 +144,7 @@ ui_draw(UI_Box* box){
         f32 center = ascent - (ascent - descent)/2;
         v2 pos = make_v2(box->rect.min.x + box->size[Axis_X]/2 - width/2,
                          box->rect.min.y + box->size[Axis_Y]/2 + center);
-        imm_draw_text(text, pos, box->text_color);
+        draw_text(text, pos, box->text_color);
     }
 
     if(box->first){

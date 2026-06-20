@@ -42,7 +42,6 @@ typedef enum WaveAsset{
 typedef enum TextureAsset{
     TextureAsset_None,
 
-    TextureAsset_White,
 
     TextureAsset_Grass1,
     //TextureAsset_Grass2,
@@ -82,6 +81,7 @@ typedef enum TextureAsset{
 
     TextureAsset_Castle1,
 
+    TextureAsset_White,
 
     TextureAsset_Count,
 } TextureAsset;

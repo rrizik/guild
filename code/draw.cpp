@@ -249,7 +249,7 @@ get_font(void){
 }
 
 static void
-set_transform(m4 transform){
+r_set_transform(m4 transform){
     r_transform = transform; 
 }
 
@@ -603,7 +603,7 @@ draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color){
     Draw_Command* command = draw_commands + draw_commands_at;
     command->kind = Draw_Command_Bounding_Box;
     command->texture_id = TextureAsset_White;
-    //command->transform_gen = r_transform_gen;
+    command->transform = r_transform;
     command->quad = make_quad(p0, p1, p2, p3);
     command->width = width;
     command->color = color;
@@ -616,7 +616,7 @@ draw_bounding_box(v2 pos, v2 dim, f32 width, RGBA color){
     Draw_Command* command = draw_commands + draw_commands_at;
     command->kind = Draw_Command_Bounding_Box;
     command->texture_id = TextureAsset_White;
-    //command->transform_gen = r_transform_gen;
+    command->transform = r_transform;
     command->quad = make_quad(pos, make_v2(pos.x + dim.w, pos.y), 
                               make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x, pos.y + dim.h));
     command->width = width;
@@ -630,7 +630,7 @@ draw_bounding_box(Rect rect, f32 width, RGBA color){
     Draw_Command* command = draw_commands + draw_commands_at;
     command->kind = Draw_Command_Bounding_Box;
     command->texture_id = TextureAsset_White;
-    //command->transform_gen = r_transform_gen;
+    command->transform = r_transform;
     command->quad = make_quad(make_v2(rect.x0, rect.y0), make_v2(rect.x1, rect.y0),
                               make_v2(rect.x1, rect.y1), make_v2(rect.x0, rect.y1));
     command->width = width;
@@ -644,7 +644,7 @@ draw_bounding_box(Quad quad, f32 width, RGBA color){
     Draw_Command* command = draw_commands + draw_commands_at;
     command->kind = Draw_Command_Bounding_Box;
     command->texture_id = TextureAsset_White;
-    //command->transform_gen = r_transform_gen;
+    command->transform = r_transform;
     command->quad = quad;
     command->width = width;
     command->color = color;
@@ -660,6 +660,7 @@ draw_line(v2 p0, v2 p1, f32 width, RGBA color){
     command->transform = r_transform;
     command->p0 = p0;
     command->p1 = p1;
+    command->width = width;
     command->color = color;
 
     draw_commands_at++;
