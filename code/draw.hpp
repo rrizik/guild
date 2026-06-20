@@ -168,6 +168,9 @@ typedef struct Draw_Command{
     s32 texture_id;
     s32 font_id;
     m4 transform;
+
+    s32 layer;
+    f32 z;
 } Draw_Command;
 #define DRAW_COMMANDS_COUNT 409600
 Draw_Command draw_commands[DRAW_COMMANDS_COUNT];

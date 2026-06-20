@@ -717,6 +717,7 @@ entity_sprite_update(){
 
 static void
 draw_entities(State* state){
+    r_set_transform(m4_screen_from_world());
 
     for(s32 idx = 0; idx < array_count(state->entities); ++idx){
         Entity *e = state->entities + idx;
@@ -1185,6 +1186,8 @@ draw_grid(f32 size, RGBA color){
 
 static void
 draw_world_terrain(void){
+    r_set_transform(m4_screen_from_world());
+
     v2 low  = make_v2(floor_f32(camera.p3.x/state->world_cell_size) * state->world_cell_size,
                       floor_f32(camera.p3.y/state->world_cell_size) * state->world_cell_size);
     v2 high = make_v2(ceil_f32(camera.p1.x/state->world_cell_size) * state->world_cell_size,
@@ -2271,7 +2274,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //render_batches_reset();
 
             //arena_free(ts->batch_arena);
-            r_set_transform(m4_screen_from_world());
             draw_world_terrain();
             if(state->scene_state == SceneState_Editor){
                 if(state->show_world_cells){
@@ -2359,15 +2361,16 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             r_set_transform(m4_make_ident());
             ui_end();
 
-            r_set_transform(m4_screen_from_world());
-            r_set_font(state->font_id);
-            String8 fps = str8_formatted(ts->frame_arena, "fps: %.0f", FPS);
+            //r_set_transform(m4_screen_from_world());
+            //r_set_font(state->font_id);
+            //String8 fps = str8_formatted(ts->frame_arena, "fps: %.0f", FPS);
             //draw_text(fps, make_v2(text_padding, 20), GREEN);
 
-            r_set_font(state->font_id);
-            String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
+            //r_set_font(state->font_id);
+            //String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
 
             if(state->scene_state == SceneState_Editor){
+                r_set_transform(m4_make_ident());
                 r_set_texture(TextureAsset_Castle1);
                 Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
                 draw_texture(rr, WHITE);

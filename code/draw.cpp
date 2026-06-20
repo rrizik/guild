@@ -489,6 +489,7 @@ draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
     command->kind = Draw_Command_Quad;
     command->texture_id = TextureAsset_White;
     command->transform = r_transform;
+
     command->quad = make_quad(p0, p1, p2, p3);
     command->color = color;
 
@@ -529,6 +530,7 @@ draw_quad(Quad quad, RGBA color){
     command->kind = Draw_Command_Quad;
     command->texture_id = TextureAsset_White;
     command->transform = r_transform;
+
     command->quad = quad;
     command->color = color;
 
@@ -541,6 +543,7 @@ draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
     command->kind = Draw_Command_Texture;
     command->texture_id = r_texture_id;
     command->transform = r_transform;
+
     command->quad = make_quad(p0, p1, p2, p3);
     command->color = color;
 
@@ -553,6 +556,7 @@ draw_texture(v2 pos, v2 dim, RGBA color){
     command->kind = Draw_Command_Texture;
     command->texture_id = r_texture_id;
     command->transform = r_transform;
+
     command->quad = make_quad(pos, make_v2(pos.x + dim.w, pos.y), 
                               make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x, pos.y + dim.h));
     command->color = color;
@@ -566,6 +570,7 @@ draw_texture(Rect rect, RGBA color){
     command->kind = Draw_Command_Texture;
     command->texture_id = r_texture_id;
     command->transform = r_transform;
+
     command->quad = make_quad(make_v2(rect.x0, rect.y0), make_v2(rect.x1, rect.y0),
                               make_v2(rect.x1, rect.y1), make_v2(rect.x0, rect.y1));
     command->color = color;
@@ -579,6 +584,7 @@ draw_texture(Quad quad, RGBA color){
     command->kind = Draw_Command_Texture;
     command->texture_id = r_texture_id;
     command->transform = r_transform;
+
     command->quad = quad;
     command->color = color;
 
@@ -590,7 +596,8 @@ draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
     Draw_Command* command = draw_commands + draw_commands_at;
     command->kind = Draw_Command_Sprite;
     command->texture_id = r_texture_id;
-    //command->transform_gen = r_transform_gen;
+    command->transform = r_transform;
+
     command->quad = quad;
     command->sprite = sprite;
     command->color = color;
@@ -604,6 +611,7 @@ draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color){
     command->kind = Draw_Command_Bounding_Box;
     command->texture_id = TextureAsset_White;
     command->transform = r_transform;
+
     command->quad = make_quad(p0, p1, p2, p3);
     command->width = width;
     command->color = color;
@@ -617,6 +625,7 @@ draw_bounding_box(v2 pos, v2 dim, f32 width, RGBA color){
     command->kind = Draw_Command_Bounding_Box;
     command->texture_id = TextureAsset_White;
     command->transform = r_transform;
+
     command->quad = make_quad(pos, make_v2(pos.x + dim.w, pos.y), 
                               make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x, pos.y + dim.h));
     command->width = width;
@@ -631,6 +640,7 @@ draw_bounding_box(Rect rect, f32 width, RGBA color){
     command->kind = Draw_Command_Bounding_Box;
     command->texture_id = TextureAsset_White;
     command->transform = r_transform;
+
     command->quad = make_quad(make_v2(rect.x0, rect.y0), make_v2(rect.x1, rect.y0),
                               make_v2(rect.x1, rect.y1), make_v2(rect.x0, rect.y1));
     command->width = width;
@@ -645,6 +655,7 @@ draw_bounding_box(Quad quad, f32 width, RGBA color){
     command->kind = Draw_Command_Bounding_Box;
     command->texture_id = TextureAsset_White;
     command->transform = r_transform;
+
     command->quad = quad;
     command->width = width;
     command->color = color;
@@ -658,6 +669,7 @@ draw_line(v2 p0, v2 p1, f32 width, RGBA color){
     command->kind = Draw_Command_Line;
     command->texture_id = TextureAsset_White;
     command->transform = r_transform;
+
     command->p0 = p0;
     command->p1 = p1;
     command->width = width;
@@ -672,6 +684,7 @@ draw_text(String8 text, v2 pos, RGBA color){
     command->kind = Draw_Command_Text;
     command->font_id = r_font_id;
     command->transform = r_transform;
+
     command->text = text;
     command->pos = pos;
     command->color = color;

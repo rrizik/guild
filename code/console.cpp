@@ -275,6 +275,7 @@ static void
 console_draw(void){
 
     if(console_is_visible()){
+        r_set_transform(m4_make_ident());
         Font* font = a_get_font(console.font_id);
 
         // rect setup
