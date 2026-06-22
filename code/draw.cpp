@@ -275,7 +275,7 @@ r_set_transform(m4 transform){
 
 static void
 r_set_generation(m4 transform){
-    if(!m4_equal(transform, transform, 0.1f)){
+    if(!m4_equal(render_state->transform, transform, 0.1f)){
         render_state->transform_gen++;
     }
     render_state->transform = transform; 
