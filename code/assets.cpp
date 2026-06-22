@@ -76,8 +76,8 @@ assets_load(Arena* arena){
     load_audio(arena, WaveAsset_ShipExplode, build_path, str8_lit("sounds/ship_explode.wav"));
     load_audio(arena, WaveAsset_Music, build_path, str8_lit("sounds/music.wav"));
 
-    load_font(arena, FontAsset_Arial, build_path, str8_lit("fonts/arial.ttf"), 16);
-    load_font(arena, FontAsset_Arial1, build_path, str8_lit("fonts/arial.ttf"), 32);
+    load_font(arena, FontAsset_Arial, build_path, str8_lit("fonts/arial.ttf"), 32);
+    load_font(arena, FontAsset_Arial1, build_path, str8_lit("fonts/arial.ttf"), 24);
     load_font(arena, FontAsset_Arial2, build_path, str8_lit("fonts/arial.ttf"), 16);
     load_font(arena, FontAsset_Arial3, build_path, str8_lit("fonts/arial.ttf"), 8);
     load_font(arena, FontAsset_Arial4, build_path, str8_lit("fonts/arial.ttf"), 4);

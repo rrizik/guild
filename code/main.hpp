@@ -178,7 +178,6 @@ typedef struct TransientMemory{
     Arena *ui_arena;
     Arena *ui_state_arena;
     Arena *batch_arena;
-    Arena *sprite_arena;
     Arena *data_arena;
     Arena *bin_arena;
 } TransientMemory, TState;

@@ -21,15 +21,106 @@ static RGBA DEFAULT    = {0.31f, 0.36f, 0.41f, 1.0f};
 static RGBA WHITE =      {1.0f, 1.0f, 1.0f,  1.0f};
 static RGBA BLACK =      {0.0f, 0.0f, 0.0f,  1.0f};
 
-global Arena*   r_arena = 0;
-global Arena*   r_arena_spritesheets = 0;
-global Assets*  r_assets = 0;
-global Texture* r_texture;
-global s32      r_texture_id;
-global Font*    r_font;
-global s32      r_font_id;
-global m4       r_transform;
-global u32      r_transform_gen = 0;
+//------------------------------------------------------------
+// Node Definitions
+
+//typedef struct R_TextureNode         { R_TextureNode*         next; Texture* v; } R_TextureNode;
+//typedef struct R_PosXNode            { R_PosXNode*            next; f32 v;     } R_PosXNode;
+//typedef struct R_PosYNode            { R_PosYNode*            next; f32 v;     } R_PosYNode;
+//typedef struct R_SizeWNode           { R_SizeWNode*           next; R_Size v; } R_SizeWNode;
+//typedef struct R_SizeHNode           { R_SizeHNode*           next; R_Size v; } R_SizeHNode;
+//typedef struct R_LayoutAxisNode      { R_LayoutAxisNode*      next; Axis v;    } R_LayoutAxisNode;
+//typedef struct R_TextPaddingNode     { R_TextPaddingNode*     next; f32 v;     } R_TextPaddingNode;
+//typedef struct R_TextColorNode       { R_TextColorNode*       next; RGBA v;    } R_TextColorNode;
+//typedef struct R_BackgroundColorNode { R_BackgroundColorNode* next; RGBA v;    } R_BackgroundColorNode;
+//typedef struct R_BorderThicknessNode { R_BorderThicknessNode* next; f32 v;     } R_BorderThicknessNode;
+//typedef struct R_FontNode            { R_FontNode*            next; s32 v;   } R_FontNode;
+//
+////------------------------------------------------------------
+//// Stack Definitions
+//
+//typedef struct R_ParentStack          { R_ParentNode*          top; bool auto_pop; } R_ParentStack;
+//typedef struct R_PosXStack            { R_PosXNode*            top; bool auto_pop; } R_PosXStack;
+//typedef struct R_PosYStack            { R_PosYNode*            top; bool auto_pop; } R_PosYStack;
+//typedef struct R_SizeWStack           { R_SizeWNode*           top; bool auto_pop; } R_SizeWStack;
+//typedef struct R_SizeHStack           { R_SizeHNode*           top; bool auto_pop; } R_SizeHStack;
+//typedef struct R_LayoutAxisStack      { R_LayoutAxisNode*      top; bool auto_pop; } R_LayoutAxisStack;
+//typedef struct R_TextPaddingStack     { R_TextPaddingNode*     top; bool auto_pop; } R_TextPaddingStack;
+//typedef struct R_TextColorStack       { R_TextColorNode*       top; bool auto_pop; } R_TextColorStack;
+//typedef struct R_BackgroundColorStack { R_BackgroundColorNode* top; bool auto_pop; } R_BackgroundColorStack;
+//typedef struct R_BorderThicknessStack { R_BorderThicknessNode* top; bool auto_pop; } R_BorderThicknessStack;
+//typedef struct R_FontStack            { R_FontNode*            top; bool auto_pop; } R_FontStack;
+typedef enum Draw_Command_Kind{
+    Draw_Command_Quad,
+    Draw_Command_Bounding_Box,
+    Draw_Command_Line,
+
+    Draw_Command_Texture,
+    Draw_Command_Sprite,
+
+    Draw_Command_Text,
+
+    Draw_Command_Count,
+} Draw_Command_Kind;
+
+typedef struct Draw_Command{
+    Draw_Command_Kind kind;
+
+    Quad quad;
+    Spritesheet sprite;
+
+    String8 text;
+    v2 pos;
+
+    v2 p0;
+    v2 p1;
+
+    f32 width; 
+
+    RGBA color;
+
+    s32 texture_id;
+    s32 font_id;
+    m4 transform;
+
+    s32 layer;
+    f32 z;
+} Draw_Command;
+
+#define DRAW_COMMANDS_COUNT 409600
+global Draw_Command  draw_screen_commands[DRAW_COMMANDS_COUNT];
+global Draw_Command  draw_world_commands[DRAW_COMMANDS_COUNT];
+global Draw_Command  draw_world_sorted_commands[DRAW_COMMANDS_COUNT];
+
+global s32 draw_screen_commands_at = 0;
+global s32 draw_world_commands_at = 0;
+global s32 draw_world_sorted_commands_at = 0;
+
+global Draw_Command* draw_commands;
+global s32* draw_commands_at;
+
+typedef enum Render_Space{
+    Render_Space_Screen,
+    Render_Space_World,
+    Render_Space_World_Sorted,
+
+    Render_Space_Count,
+} Render_Space;
+
+typedef struct Render_State{
+    Arena*       arena;
+    Assets*      assets;
+    Texture*     texture;
+    s32          texture_id;
+    Font*        font;
+    s32          font_id;
+    m4           transform;
+    u32          transform_gen;
+    s32          layer;
+    f32          z;
+    Render_Space space;
+} Render_State;
+Render_State* render_state;
 
 //#define DEFAULT_BATCH_SIZE MB(8)
 //#define DEFAULT_BATCH_SIZE KB(200)
@@ -61,7 +152,10 @@ push_spritesheet(s32 texture_id, f32 col, f32 row, f32 anim_speed);
 static void r_set_texture(s32 texture_id);
 static void r_set_font(s32 font_id);
 static void r_set_transform(m4 transform);
-static RenderBatch* get_render_batch(u64 vertex_count);
+static void r_set_generation(m4 transform);
+static void r_set_layer(s32 layer);
+static void r_set_z(f32 z);
+static void r_set_render_space(Render_Space space);
 
 static RGBA brighten_color(RGBA color, float factor);
 static RGBA darken_color(RGBA color, float factor);
@@ -80,7 +174,7 @@ static RGBA linear_to_srgb_approx(RGBA value);
 static RGBA linear_from_srgb(RGBA value);
 static RGBA srgb_from_linear(RGBA value);
 
-static void init_draw(Arena* batch_arena, Arena* sprite_arena, Assets* assets);
+static void draw_init(Arena* arena, Arena* batch_arena, Arena* sprite_arena, Assets* assets);
 
 static void push_texture_quad();
 
@@ -133,48 +227,9 @@ static void draw_text(String8 text, v2 pos, RGBA color=WHITE);
 static void draw_render_commands(void);
 static void draw_commands_clear(void);
 
+static RenderBatch* get_render_batch(u64 vertex_count);
 static void draw_render_batches(void);
 static void render_batches_reset(void);
-
-typedef enum Draw_Command_Kind{
-    Draw_Command_Quad,
-    Draw_Command_Bounding_Box,
-    Draw_Command_Line,
-
-    Draw_Command_Texture,
-    Draw_Command_Sprite,
-
-    Draw_Command_Text,
-
-    Draw_Command_Count,
-} Draw_Command_Kind;
-
-typedef struct Draw_Command{
-    Draw_Command_Kind kind;
-
-    Quad quad;
-    Spritesheet sprite;
-
-    String8 text;
-    v2 pos;
-
-    v2 p0;
-    v2 p1;
-
-    f32 width; 
-
-    RGBA color;
-
-    s32 texture_id;
-    s32 font_id;
-    m4 transform;
-
-    s32 layer;
-    f32 z;
-} Draw_Command;
-#define DRAW_COMMANDS_COUNT 409600
-Draw_Command draw_commands[DRAW_COMMANDS_COUNT];
-s32 draw_commands_at = 0;
 
 #endif
 

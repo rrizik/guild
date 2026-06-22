@@ -10,7 +10,7 @@ ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
     ui_state = push_struct(arena, UI_State);
     ui_state->window = window;
     ui_state->controller = controller;
-    ui_state->default_font_id = FontAsset_Arial;
+    ui_state->default_font_id = FontAsset_Arial2;
     //ui_state->generation = 0;
     ui_state->table = ui_make_table(arena);
     ui_state->arena = make_arena(MB(100));

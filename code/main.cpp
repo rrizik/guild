@@ -370,7 +370,7 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->sprite.kind = SPRITE_ANIM_IDLE;
         e->sprite.direction = RIGHT_FRONT;
 
-        Texture* tex = &r_assets->textures[TextureAsset_Orc_Idle];
+        Texture* tex = &assets.textures[TextureAsset_Orc_Idle];
         e->sprite.animations[SPRITE_ANIM_IDLE].texture_id = TextureAsset_Orc_Idle;
         e->sprite.animations[SPRITE_ANIM_IDLE].speed = 6.0f;
         e->sprite.animations[SPRITE_ANIM_IDLE].time_max = 1.0f;
@@ -382,7 +382,7 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->sprite.animations[SPRITE_ANIM_IDLE].directions[RIGHT_BACK]  = {0, 2, 16};
         e->sprite.animations[SPRITE_ANIM_IDLE].directions[LEFT_BACK]   = {0, 3, 16};
 
-        tex = &r_assets->textures[TextureAsset_Orc_Walk];
+        tex = &assets.textures[TextureAsset_Orc_Walk];
         e->sprite.animations[SPRITE_ANIM_WALK].texture_id = TextureAsset_Orc_Walk;
         e->sprite.animations[SPRITE_ANIM_WALK].speed = 18.0f;
         e->sprite.animations[SPRITE_ANIM_WALK].time_max = 1.0f;
@@ -394,7 +394,7 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->sprite.animations[SPRITE_ANIM_WALK].directions[RIGHT_BACK]  = {0, 2, 4};
         e->sprite.animations[SPRITE_ANIM_WALK].directions[LEFT_BACK]   = {0, 3, 4};
 
-        tex = &r_assets->textures[TextureAsset_Orc_Attack];
+        tex = &assets.textures[TextureAsset_Orc_Attack];
         e->sprite.animations[SPRITE_ANIM_ATTACK].texture_id = TextureAsset_Orc_Attack;
         e->sprite.animations[SPRITE_ANIM_ATTACK].speed = 20.0f;
         e->sprite.animations[SPRITE_ANIM_ATTACK].time_max = 1.0f;
@@ -407,7 +407,7 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_BACK]  = {1, 2, 4};
         e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_BACK]   = {1, 3, 4};
 
-        tex = &r_assets->textures[TextureAsset_Orc_Jump];
+        tex = &assets.textures[TextureAsset_Orc_Jump];
         e->sprite.animations[SPRITE_ANIM_JUMP].texture_id = TextureAsset_Orc_Jump;
         e->sprite.animations[SPRITE_ANIM_JUMP].speed = 20.0f;
         e->sprite.animations[SPRITE_ANIM_JUMP].time_max = 1.0f;
@@ -420,7 +420,7 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_BACK]  = {0, 1, 4};
         e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_BACK]   = {0, 2, 4};
 
-        tex = &r_assets->textures[TextureAsset_Orc_Die];
+        tex = &assets.textures[TextureAsset_Orc_Die];
         e->sprite.animations[SPRITE_ANIM_DIE].texture_id = TextureAsset_Orc_Die;
         e->sprite.animations[SPRITE_ANIM_DIE].speed = 12.0f;
         e->sprite.animations[SPRITE_ANIM_DIE].time_max = 1.0f;
@@ -460,7 +460,7 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->attack_box_max = make_v2(0.6f, 0.3f);
         e->attack_box = make_rect_size(e->pos, e->attack_box_max);
 
-        Texture* tex = &r_assets->textures[TextureAsset_Human_Idle];
+        Texture* tex = &assets.textures[TextureAsset_Human_Idle];
         e->sprite.animations[SPRITE_ANIM_IDLE].texture_id = TextureAsset_Human_Idle;
         e->sprite.animations[SPRITE_ANIM_IDLE].speed = 6.0f;
         e->sprite.animations[SPRITE_ANIM_IDLE].time_max = 1.0f;
@@ -472,7 +472,7 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->sprite.animations[SPRITE_ANIM_IDLE].directions[RIGHT_BACK]  = {0, 2, 16};
         e->sprite.animations[SPRITE_ANIM_IDLE].directions[LEFT_BACK]   = {0, 3, 16};
 
-        tex = &r_assets->textures[TextureAsset_Human_Walk];
+        tex = &assets.textures[TextureAsset_Human_Walk];
         e->sprite.animations[SPRITE_ANIM_WALK].texture_id = TextureAsset_Human_Walk;
         e->sprite.animations[SPRITE_ANIM_WALK].speed = 18.0f;
         e->sprite.animations[SPRITE_ANIM_WALK].time_max = 1.0f;
@@ -484,7 +484,7 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->sprite.animations[SPRITE_ANIM_WALK].directions[RIGHT_BACK]  = {0, 2, 4};
         e->sprite.animations[SPRITE_ANIM_WALK].directions[LEFT_BACK]   = {0, 3, 4};
 
-        tex = &r_assets->textures[TextureAsset_Human_Attack];
+        tex = &assets.textures[TextureAsset_Human_Attack];
         e->sprite.animations[SPRITE_ANIM_ATTACK].texture_id = TextureAsset_Human_Attack;
         e->sprite.animations[SPRITE_ANIM_ATTACK].speed = 20.0f;
         e->sprite.animations[SPRITE_ANIM_ATTACK].time_max = 1.0f;
@@ -497,7 +497,7 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->sprite.animations[SPRITE_ANIM_ATTACK].directions[RIGHT_BACK]  = {1, 2, 4};
         e->sprite.animations[SPRITE_ANIM_ATTACK].directions[LEFT_BACK]   = {1, 3, 4};
 
-        tex = &r_assets->textures[TextureAsset_Human_Jump];
+        tex = &assets.textures[TextureAsset_Human_Jump];
         e->sprite.animations[SPRITE_ANIM_JUMP].texture_id = TextureAsset_Human_Jump;
         e->sprite.animations[SPRITE_ANIM_JUMP].speed = 20.0f;
         e->sprite.animations[SPRITE_ANIM_JUMP].time_max = 1.0f;
@@ -510,7 +510,7 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->sprite.animations[SPRITE_ANIM_JUMP].directions[RIGHT_BACK]  = {0, 2, 4};
         e->sprite.animations[SPRITE_ANIM_JUMP].directions[LEFT_BACK]   = {0, 3, 4};
 
-        tex = &r_assets->textures[TextureAsset_Human_Spin_Die];
+        tex = &assets.textures[TextureAsset_Human_Spin_Die];
         e->sprite.animations[SPRITE_ANIM_DIE].texture_id = TextureAsset_Human_Spin_Die;
         e->sprite.animations[SPRITE_ANIM_DIE].speed = 12.0f;
         e->sprite.animations[SPRITE_ANIM_DIE].time_max = 1.0f;
@@ -717,7 +717,8 @@ entity_sprite_update(){
 
 static void
 draw_entities(State* state){
-    r_set_transform(m4_screen_from_world());
+    r_set_layer(1);
+    r_set_render_space(Render_Space_World_Sorted);
 
     for(s32 idx = 0; idx < array_count(state->entities); ++idx){
         Entity *e = state->entities + idx;
@@ -729,6 +730,7 @@ draw_entities(State* state){
             switch(e->type){
                 case EntityType_Quad:{
                     quad = rotate_quad(quad, e->deg, e->pos);
+                    r_set_z(quad.p0.y);
                     draw_quad(quad, e->color);
                 } break;
             }
@@ -747,15 +749,17 @@ draw_entities(State* state){
                     switch(e->structure_type){
                         case StructureType_Castle:{
                             r_set_texture(e->texture_id);
+                            r_set_z(quad.p0.y);
                             draw_texture(quad, e->color);
 
                             if(e->selected){
+                                //r_set_z(e->pos.y);
                                 draw_line(e->pos, e->rallypoint, 0.1f, RED);
                             }
 
-                            r_set_font(state->font_id);
-                            String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->rallypoint.x, e->rallypoint.y);
                             // no
+                            //r_set_font(state->font_id);
+                            //String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->rallypoint.x, e->rallypoint.y);
                             //draw_text(fmt_str, v2_screen_from_world(e->rallypoint), GREEN);
                         }
                     }
@@ -774,6 +778,7 @@ draw_entities(State* state){
                     quad = rotate_quad(quad, e->deg, e->pos);
 
                     r_set_texture(e->texture_id);
+                    r_set_z(quad.p0.y);
                     draw_texture(quad, e->color);
                 } break;
                 case EntityType_Monster:{
@@ -783,17 +788,21 @@ draw_entities(State* state){
                     r_set_texture(anim.texture_id);
 
                     Quad quad = quad_from_entity_world(e);
+                    r_set_z(quad.p0.y);
                     draw_sprite(e->sprite, quad);
 
+                    //r_set_z(e->bounding_box.top_left);
                     //draw_bounding_box(e->bounding_box, 0.05f, RED);
                     //quad = rotate_quad(quad, e->deg, e->pos);
                     //set_texture(e->texture_id);
+                    //r_set_z(quad.p0.y);
                     //draw_texture(quad, e->color);
 
 
 
                     if(e->selected){
                         if(e->active_command){
+                            //r_set_z(e->active_command->clicked_at.y);
                             draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
                         }
 
@@ -802,6 +811,7 @@ draw_entities(State* state){
                             EntityCommand* c = entity_commands_read(e, read_idx);
                             read_idx++;
 
+                            //r_set_z(c->clicked_at.y);
                             draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
                             // no
                             //draw_line(e->pos, screen_space, 0.1f, ORANGE);
@@ -812,12 +822,14 @@ draw_entities(State* state){
                     quad = rotate_quad(quad, e->deg, e->pos);
 
                     r_set_texture(e->texture_id);
+                    r_set_z(quad.p0.y);
                     draw_texture(quad, e->color);
 
 
 
                     if(e->selected){
                         if(e->active_command){
+                            //r_set_z(e->active_command->clicked_at.y);
                             draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
                         }
 
@@ -826,6 +838,7 @@ draw_entities(State* state){
                             EntityCommand* c = entity_commands_read(e, read_idx);
                             read_idx++;
 
+                            //r_set_z(c->clicked_at.y);
                             draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
                             // no
                             //draw_line(e->pos, screen_space, 0.1f, ORANGE);
@@ -866,6 +879,7 @@ draw_entities(State* state){
     Sprite_Animation anim = player->sprite.animations[kind];
     r_set_texture(anim.texture_id);
     Quad quad = quad_from_entity_world(player);
+    r_set_z(quad.p0.y);
     draw_sprite(player->sprite, quad);
 
     if(state->scene_state == SceneState_Editor){
@@ -885,7 +899,7 @@ debug_draw_mouse_cell_pos(void){
 
 static void
 ui_editor(void){
-    r_set_transform(m4_make_ident());
+    r_set_render_space(Render_Space_Screen);
 
     ui_set_pos(20, 200);
     ui_set_size(ui_size_children(0), ui_size_children(0));
@@ -929,7 +943,7 @@ ui_editor(void){
 
     ui_end_panel();
 
-    ui_set_pos(SCREEN_WIDTH - 400, 10);
+    ui_set_pos(SCREEN_WIDTH - 450, 10);
     ui_set_size(ui_size_children(0), ui_size_children(0));
     ui_set_border_thickness(10);
     ui_set_background_color(DEFAULT);
@@ -948,11 +962,10 @@ ui_editor(void){
         String8 fmt;
         v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
         v2 cell = grid_cell_from_pos(world_mouse, state->world_cell_size);
-        fmt = str8_format(ts->frame_arena, "mouse cell: %i, %i", (s32)cell.x, (s32)cell.y);
-        ui_label(fmt);
 
-        fmt = str8_format(ts->frame_arena, "mouse cell: %f, %f", world_mouse.x, world_mouse.y);
+        fmt = str8_format(ts->frame_arena, "mouse cell: %.2f, %.2f", world_mouse.x, world_mouse.y);
         ui_label(fmt);
+        ui_spacer(10);
 
         fmt = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
         ui_label(fmt);
@@ -1186,7 +1199,9 @@ draw_grid(f32 size, RGBA color){
 
 static void
 draw_world_terrain(void){
-    r_set_transform(m4_screen_from_world());
+    r_set_render_space(Render_Space_World);
+    r_set_layer(0);
+    r_set_z(0);
 
     v2 low  = make_v2(floor_f32(camera.p3.x/state->world_cell_size) * state->world_cell_size,
                       floor_f32(camera.p3.y/state->world_cell_size) * state->world_cell_size);
@@ -1905,7 +1920,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         //ts->ui_arena       = push_arena(&ts->arena, MB(100));
         ts->ui_state_arena = push_arena(&ts->arena, MB(100));
         ts->batch_arena    = push_arena(&ts->arena, GB(1));
-        ts->sprite_arena   = push_arena(&ts->arena, MB(100));
         ts->data_arena     = push_arena(&ts->arena, KB(1024));
         ts->bin_arena      = push_arena(&ts->arena, MB(512));
 
@@ -1921,8 +1935,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->show_flocking_cells = true;
         state->show_pathing_cells = true;
 
-        ui_init(ts->ui_state_arena, &window, &controller, &assets);
-        init_draw(ts->batch_arena, ts->sprite_arena, &assets);
+        ui_init(&state->arena, &window, &controller, &assets);
+        draw_init(&state->arena, ts->batch_arena, &assets);
         //sprite = push_spritesheet(TextureAsset_Human_Walk, 4, 4, 1);
 
         //state->font = &assets.fonts[FontAsset_Arial];
@@ -1971,6 +1985,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         Arena* arena = push_arena(&state->arena, MB(8));
         init_console(arena, &camera, &window, &assets);
 
+        r_set_render_space(Render_Space_Screen);
         memory.initialized = true;
     }
 
@@ -1982,7 +1997,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         u64 now_ticks = clock.get_os_timer();
         f64 frame_time = clock.get_seconds_elapsed(now_ticks, last_ticks);
-        MSPF = 1000/1000/((f64)clock.frequency / (f64)(now_ticks - last_ticks));
+        //MSPF = 1000 / 1000 / ((f64)clock.frequency / (f64)(now_ticks - last_ticks));
+        MSPF = clock.get_ms_elapsed(now_ticks, last_ticks);
         last_ticks = now_ticks;
 
         MSG message;
@@ -2358,19 +2374,22 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
             }
 
-            r_set_transform(m4_make_ident());
+            r_set_render_space(Render_Space_Screen);
             ui_end();
 
-            //r_set_transform(m4_screen_from_world());
+            r_set_render_space(Render_Space_Screen);
+            r_set_font(FontAsset_Arial1);
+            String8 text = str8_formatted(ts->frame_arena, "FPS: %.2f", FPS);
+            draw_text(text, make_v2(window.width-130, 20), RED);
+            text = str8_formatted(ts->frame_arena, "MSPF: %.2f", MSPF);
+            draw_text(text, make_v2(window.width-130, 40), RED);
             //r_set_font(state->font_id);
-            //String8 fps = str8_formatted(ts->frame_arena, "fps: %.0f", FPS);
-            //draw_text(fps, make_v2(text_padding, 20), GREEN);
 
             //r_set_font(state->font_id);
             //String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
 
             if(state->scene_state == SceneState_Editor){
-                r_set_transform(m4_make_ident());
+                r_set_render_space(Render_Space_Screen);
                 r_set_texture(TextureAsset_Castle1);
                 Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
                 draw_texture(rr, WHITE);
@@ -2384,13 +2403,13 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //draw_line(camera.p3, camera.p0, 5, RED);
 
             //{
-            //    r_set_transform(m4_make_ident());
+            //    r_set_render_space(Render_Space_Screen);
             //    draw_quad(make_v2(100, 100), make_v2(100, 100), RED);
 
-            //    r_set_transform(m4_screen_from_world());
+            //    r_set_render_space(Render_Space_World);
             //    draw_quad(make_v2(0, 0), make_v2(1, 1), BLUE);
 
-            //    r_set_transform(m4_make_ident());
+            //    r_set_render_space(Render_Space_Screen);
             //    r_set_texture(TextureAsset_Water1);
             //    draw_texture(make_v2(100, 300), make_v2(50, 50));
 
