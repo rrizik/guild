@@ -3,6 +3,47 @@
 static void
 sim_game(void){
 
+    if(controller_button_pressed(KeyCode_Q)){ 
+        player->dead = !player->dead;
+    }
+
+    if(!player->dead){
+        if(controller_button_held(KeyCode_D)){ 
+            player->velocity.x = player->speed;
+            player->left_right = 1;
+        }
+        if(controller_button_held(KeyCode_A)){ 
+            player->velocity.x = -player->speed;
+            player->left_right = -1;
+        }
+        if(controller_button_held(KeyCode_W)){ 
+            player->velocity.y = player->speed;
+            player->up_down = 1;
+        }
+        if(controller_button_held(KeyCode_S)){ 
+            player->velocity.y = -player->speed;
+            player->up_down = -1;
+        }
+
+        if(controller_button_pressed(KeyCode_SPACEBAR)){ 
+            player->jumping = true;
+        }
+        //if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){ 
+        if(controller_button_pressed(KeyCode_E)){ 
+            player->attacking = true;
+        }
+    }
+
+    // note(rr): Digonal movement adjustment.
+    if(player->left_right != 0 && player->up_down != 0){
+        player->velocity.x *= 0.707f;
+        player->velocity.y *= 0.707f;
+    }
+    player->left_right = 0;
+    player->up_down = 0;
+
+    entity_sprite_update();
+
     // camera
     {
         // movement
@@ -717,336 +758,344 @@ entity_sprite_update(){
 
 static void
 draw_entities(State* state){
-    r_set_layer(1);
-    r_set_render_space(Render_Space_World_Sorted);
+    r_layer(1)
+    r_render_space(Render_Space_World_Sorted)
+    {
 
-    for(s32 idx = 0; idx < array_count(state->entities); ++idx){
-        Entity *e = state->entities + idx;
+        for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+            Entity *e = state->entities + idx;
 
 
-        Quad quad = quad_from_entity_world(e);
-        if(has_flags(e->flags, EntityFlag_Active)){
+            Quad quad = quad_from_entity_world(e);
+            if(has_flags(e->flags, EntityFlag_Active)){
 
-            switch(e->type){
-                case EntityType_Quad:{
-                    quad = rotate_quad(quad, e->deg, e->pos);
-                    r_set_z(quad.p0.y);
-                    draw_quad(quad, e->color);
-                } break;
+                switch(e->type){
+                    case EntityType_Quad:{
+                        quad = rotate_quad(quad, e->deg, e->pos);
+                        r_z(quad.p0.y)
+                        {
+                            draw_quad(quad, e->color);
+                        }
+                    } break;
+                }
             }
         }
-    }
-    for(s32 idx = 0; idx < array_count(state->entities); ++idx){
-        Entity *e = state->entities + idx;
+        for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+            Entity *e = state->entities + idx;
 
-        Quad quad = quad_from_entity_world(e);
-        if(has_flags(e->flags, EntityFlag_Active)){
+            Quad quad = quad_from_entity_world(e);
+            if(has_flags(e->flags, EntityFlag_Active)){
 
-            switch(e->type){
-                case EntityType_Structure:{
-                    quad = rotate_quad(quad, e->deg, e->pos);
+                switch(e->type){
+                    case EntityType_Structure:{
+                        quad = rotate_quad(quad, e->deg, e->pos);
 
-                    switch(e->structure_type){
-                        case StructureType_Castle:{
-                            r_set_texture(e->texture_id);
-                            r_set_z(quad.p0.y);
+                        switch(e->structure_type){
+                            case StructureType_Castle:{
+                                r_texture(e->texture_id)
+                                r_z(quad.p0.y)
+                                {
+                                    draw_texture(quad, e->color);
+                                }
+
+                                if(e->selected){
+                                    //r_set_z(e->pos.y);
+                                    r_render_space(Render_Space_World){
+                                        draw_line(e->pos, e->rallypoint, 0.1f, RED);
+                                    }
+                                }
+
+                                // no
+                                //r_set_font(state->font_id);
+                                //String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->rallypoint.x, e->rallypoint.y);
+                                //draw_text(fmt_str, v2_screen_from_world(e->rallypoint), GREEN);
+                            }
+                        }
+                    } break;
+                }
+            }
+        }
+        for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+            Entity *e = state->entities + idx;
+
+            Quad quad = quad_from_entity_world(e);
+            if(has_flags(e->flags, EntityFlag_Active)){
+
+                switch(e->type){
+                    case EntityType_Texture:{
+                        quad = rotate_quad(quad, e->deg, e->pos);
+
+                        r_texture(e->texture_id)
+                        r_z(quad.p0.y)
+                        {
                             draw_texture(quad, e->color);
+                        }
+                    } break;
+                    case EntityType_Monster:{
 
-                            if(e->selected){
-                                //r_set_z(e->pos.y);
-                                draw_line(e->pos, e->rallypoint, 0.1f, RED);
+                        Sprite_Animation_Kind kind = e->sprite.kind;
+                        Sprite_Animation anim = e->sprite.animations[kind];
+                        Quad quad = quad_from_entity_world(e);
+                        r_texture(anim.texture_id)
+                        r_z(quad.p0.y)
+                        {
+                            draw_sprite(e->sprite, quad);
+                        }
+
+                        //r_set_z(e->bounding_box.top_left);
+                        //draw_bounding_box(e->bounding_box, 0.05f, RED);
+                        //quad = rotate_quad(quad, e->deg, e->pos);
+                        //set_texture(e->texture_id);
+                        //r_set_z(quad.p0.y);
+                        //draw_texture(quad, e->color);
+
+
+
+                        if(e->selected){
+                            if(e->active_command){
+                                r_render_space(Render_Space_World){
+                                    draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
+                                }
                             }
 
-                            // no
-                            //r_set_font(state->font_id);
-                            //String8 fmt_str = str8_format(ts->frame_arena, "(%f, %f)", e->rallypoint.x, e->rallypoint.y);
-                            //draw_text(fmt_str, v2_screen_from_world(e->rallypoint), GREEN);
+                            u32 read_idx = e->commands_read;
+                            while(read_idx != e->commands_write){
+                                EntityCommand* c = entity_commands_read(e, read_idx);
+                                read_idx++;
+
+                                r_render_space(Render_Space_World){
+                                    draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
+                                }
+                            }
                         }
                     }
-                } break;
-            }
-        }
-    }
-    for(s32 idx = 0; idx < array_count(state->entities); ++idx){
-        Entity *e = state->entities + idx;
+                    case EntityType_Skeleton1:{
+                        quad = rotate_quad(quad, e->deg, e->pos);
 
-        Quad quad = quad_from_entity_world(e);
-        if(has_flags(e->flags, EntityFlag_Active)){
-
-            switch(e->type){
-                case EntityType_Texture:{
-                    quad = rotate_quad(quad, e->deg, e->pos);
-
-                    r_set_texture(e->texture_id);
-                    r_set_z(quad.p0.y);
-                    draw_texture(quad, e->color);
-                } break;
-                case EntityType_Monster:{
-
-                    Sprite_Animation_Kind kind = e->sprite.kind;
-                    Sprite_Animation anim = e->sprite.animations[kind];
-                    r_set_texture(anim.texture_id);
-
-                    Quad quad = quad_from_entity_world(e);
-                    r_set_z(quad.p0.y);
-                    draw_sprite(e->sprite, quad);
-
-                    //r_set_z(e->bounding_box.top_left);
-                    //draw_bounding_box(e->bounding_box, 0.05f, RED);
-                    //quad = rotate_quad(quad, e->deg, e->pos);
-                    //set_texture(e->texture_id);
-                    //r_set_z(quad.p0.y);
-                    //draw_texture(quad, e->color);
-
-
-
-                    if(e->selected){
-                        if(e->active_command){
-                            //r_set_z(e->active_command->clicked_at.y);
-                            draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
+                        r_texture(e->texture_id)
+                        r_z(quad.p0.y)
+                        {
+                            draw_texture(quad, e->color);
                         }
 
-                        u32 read_idx = e->commands_read;
-                        while(read_idx != e->commands_write){
-                            EntityCommand* c = entity_commands_read(e, read_idx);
-                            read_idx++;
 
-                            //r_set_z(c->clicked_at.y);
-                            draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
-                            // no
-                            //draw_line(e->pos, screen_space, 0.1f, ORANGE);
+
+                        if(e->selected){
+                            if(e->active_command){
+                                //r_set_z(e->active_command->clicked_at.y);
+                                draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
+                            }
+
+                            u32 read_idx = e->commands_read;
+                            while(read_idx != e->commands_write){
+                                EntityCommand* c = entity_commands_read(e, read_idx);
+                                read_idx++;
+
+                                //r_set_z(c->clicked_at.y);
+                                draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
+                                // no
+                                //draw_line(e->pos, screen_space, 0.1f, ORANGE);
+                            }
                         }
-                    }
+
+                        //if(state->scene_state == SceneState_Editor){
+                        //    if(state->show_entity_info){
+                        //        v2 pos = e->pos;
+                        //        ui_set_pos(pos.x + 20, pos.y);
+                        //        ui_set_size(ui_size_children(0), ui_size_children(0));
+                        //        ui_set_border_thickness(10);
+                        //        ui_set_background_color(DEFAULT);
+
+                        //        String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
+                        //        ui_begin_panel(box_name, ui_floating_panel_world);
+
+                        //        String8 fmt_str;
+                        //        //ui_font(font);
+                        //        ui_size(ui_size_text(0), ui_size_text(0))
+                        //        ui_text_color(LIGHT_GRAY)
+                        //        {
+                        //            fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
+                        //            ui_label(fmt_str);
+                        //            fmt_str = str8_formatted(ts->frame_arena, "pos: %f, %f", e->pos.x, e->pos.y);
+                        //            ui_label(fmt_str);
+                        //        }
+                        //        ui_end_panel();
+                        //    }
+                        //}
+                    } break;
                 }
-                case EntityType_Skeleton1:{
-                    quad = rotate_quad(quad, e->deg, e->pos);
-
-                    r_set_texture(e->texture_id);
-                    r_set_z(quad.p0.y);
-                    draw_texture(quad, e->color);
-
-
-
-                    if(e->selected){
-                        if(e->active_command){
-                            //r_set_z(e->active_command->clicked_at.y);
-                            draw_quad(e->active_command->clicked_at, make_v2(0.25f, 0.25f), RED);
-                        }
-
-                        u32 read_idx = e->commands_read;
-                        while(read_idx != e->commands_write){
-                            EntityCommand* c = entity_commands_read(e, read_idx);
-                            read_idx++;
-
-                            //r_set_z(c->clicked_at.y);
-                            draw_quad(c->clicked_at, make_v2(0.1f, 0.1f), RED);
-                            // no
-                            //draw_line(e->pos, screen_space, 0.1f, ORANGE);
-                        }
-                    }
-
-                    //if(state->scene_state == SceneState_Editor){
-                    //    if(state->show_entity_info){
-                    //        v2 pos = e->pos;
-                    //        ui_set_pos(pos.x + 20, pos.y);
-                    //        ui_set_size(ui_size_children(0), ui_size_children(0));
-                    //        ui_set_border_thickness(10);
-                    //        ui_set_background_color(DEFAULT);
-
-                    //        String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
-                    //        ui_begin_panel(box_name, ui_floating_panel_world);
-
-                    //        String8 fmt_str;
-                    //        //ui_font(font);
-                    //        ui_size(ui_size_text(0), ui_size_text(0))
-                    //        ui_text_color(LIGHT_GRAY)
-                    //        {
-                    //            fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
-                    //            ui_label(fmt_str);
-                    //            fmt_str = str8_formatted(ts->frame_arena, "pos: %f, %f", e->pos.x, e->pos.y);
-                    //            ui_label(fmt_str);
-                    //        }
-                    //        ui_end_panel();
-                    //    }
-                    //}
-                } break;
             }
         }
+
+        // draw player
+        Sprite_Animation_Kind kind = player->sprite.kind;
+        Sprite_Animation anim = player->sprite.animations[kind];
+        Quad quad = quad_from_entity_world(player);
+        r_texture(anim.texture_id)
+        r_z(quad.p0.y)
+        {
+            draw_sprite(player->sprite, quad);
+        }
+
+        if(state->scene_state == SceneState_Editor){
+            draw_bounding_box(player->attack_box, 0.05f, RED);
+            draw_bounding_box(player->bounding_box, 0.05f, RED);
+        }
     }
-
-    // draw player
-    Sprite_Animation_Kind kind = player->sprite.kind;
-    Sprite_Animation anim = player->sprite.animations[kind];
-    r_set_texture(anim.texture_id);
-    Quad quad = quad_from_entity_world(player);
-    r_set_z(quad.p0.y);
-    draw_sprite(player->sprite, quad);
-
-    if(state->scene_state == SceneState_Editor){
-        draw_bounding_box(player->attack_box, 0.05f, RED);
-        draw_bounding_box(player->bounding_box, 0.05f, RED);
-    }
-}
-
-static void
-debug_draw_mouse_cell_pos(void){
-    r_set_font(state->font_id);
-    v2 pos = controller.mouse.world_pos;
-    v2 cell = make_v2(floor_f32(pos.x/state->world_cell_size), floor_f32(pos.y/state->world_cell_size));
-    String8 cell_str = str8_format(ts->frame_arena, "(%i, %i)", (s32)cell.x, (s32)cell.y);
-    draw_text(cell_str, controller.mouse.pos, RED);
 }
 
 static void
 ui_editor(void){
-    r_set_render_space(Render_Space_Screen);
-
-    ui_set_pos(20, 200);
-    ui_set_size(ui_size_children(0), ui_size_children(0));
-    ui_set_border_thickness(10);
-    ui_set_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("tile_panel##2"), ui_floating_panel);
-
-    ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
-    ui_background_color(DARK_GRAY)
-    {
-        if(ui_button(str8_literal("none")).pressed_left){
-            state->terrain_selected_id = 0;
-            state->terrain_selected = false;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("erase")).pressed_left){
-            state->terrain_selected_id = 0;
-            state->terrain_selected = true;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("grass")).pressed_left){
-            state->terrain_selected_id = TextureAsset_Grass1;
-            state->terrain_selected = true;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("water")).pressed_left){
-            state->terrain_selected_id = TextureAsset_Water1;
-            state->terrain_selected = true;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("wood")).pressed_left){
-            state->terrain_selected_id = TextureAsset_Wood1;
-            state->terrain_selected = true;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("lava")).pressed_left){
-            state->terrain_selected_id = TextureAsset_Lava1;
-            state->terrain_selected = true;
-        }
-    }
-
-    ui_end_panel();
-
-    ui_set_pos(SCREEN_WIDTH - 450, 10);
-    ui_set_size(ui_size_children(0), ui_size_children(0));
-    ui_set_border_thickness(10);
-    ui_set_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("info_panel##info_panel"), ui_floating_panel);
-
-    ui_size(ui_size_text(0), ui_size_text(0))
-    ui_text_color(LIGHT_GRAY)
+    r_render_space(Render_Space_Screen)
     {
 
-        String8 mouse_pos = str8_format(ts->frame_arena, "mouse pos: %f, %f", controller.mouse.x, controller.mouse.y);
-        ui_label(mouse_pos);
+        ui_set_pos(20, 200);
+        ui_set_size(ui_size_children(0), ui_size_children(0));
+        ui_set_border_thickness(10);
+        ui_set_background_color(DEFAULT);
+        ui_begin_panel(str8_literal("tile_panel##2"), ui_floating_panel);
 
-        mouse_pos = str8_format(ts->frame_arena, "mouse pos(world): %f, %f", controller.mouse.world_x, controller.mouse.world_y);
-        ui_label(mouse_pos);
-
-        String8 fmt;
-        v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
-        v2 cell = grid_cell_from_pos(world_mouse, state->world_cell_size);
-
-        fmt = str8_format(ts->frame_arena, "mouse cell: %.2f, %.2f", world_mouse.x, world_mouse.y);
-        ui_label(fmt);
-        ui_spacer(10);
-
-        fmt = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
-        ui_label(fmt);
-
-        fmt = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
-        ui_label(fmt);
-        ui_spacer(10);
-
-        fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
-        ui_label(fmt);
-
-
-
-        //fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
-        //ui_label(fmt);
-        //s32 count = 0;
-        //for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-        //    if(count < 50){
-        //        fmt = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->vertex_count, batch->vertex_cap, batch->id);
-        //        ui_label(fmt);
-        //    }
-        //    count++;
-        //}
-    }
-
-    ui_end_panel();
-
-    ui_set_pos(200, 200);
-    ui_set_size(ui_size_children(0), ui_size_children(0));
-    ui_set_border_thickness(5);
-    ui_set_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("grid_panel##3"), ui_floating_panel);
-
-    ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
-    ui_background_color(DARK_GRAY)
-    {
-        ui_label(str8_literal("Show Grid"));
-        if(ui_button(str8_literal("World")).pressed_left){
-            state->show_world_cells = !state->show_world_cells;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("Flocking")).pressed_left){
-            state->show_flocking_cells = !state->show_flocking_cells;
-        }
-        ui_spacer(10);
-        if(ui_button(str8_literal("Pathing")).pressed_left){
-            state->show_pathing_cells = !state->show_pathing_cells;
-        }
-
-        ui_spacer(10);
-        ui_label(str8_literal("Other"));
-        if(ui_button(str8_literal("Entity Info")).pressed_left){
-            state->show_entity_info = !state->show_entity_info;
-        }
-    }
-
-    ui_end_panel();
-
-    ui_set_pos(200, 20);
-    ui_set_size(ui_size_children(0), ui_size_children(0));
-    ui_set_border_thickness(5);
-    ui_set_background_color(DEFAULT);
-    ui_begin_panel(str8_literal("cell_size##5"), ui_floating_panel);
-
-    ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
-    ui_background_color(DARK_GRAY)
-    {
-        String8 str_fmt = str8_formatted(ts->frame_arena, "Cell Size (%i)", state->flocking_cell_size);
-        ui_label(str_fmt);
-        if(ui_button(str8_literal("^")).pressed_left){
-            state->flocking_cell_size++;
-        }
-        ui_spacer(2);
-        if(ui_button(str8_literal("V")).pressed_left){
-            if(state->flocking_cell_size > 1){
-                state->flocking_cell_size--;
+        ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
+        ui_background_color(DARK_GRAY)
+        {
+            if(ui_button(str8_literal("none")).pressed_left){
+                state->terrain_selected_id = 0;
+                state->terrain_selected = false;
+            }
+            ui_spacer(10);
+            if(ui_button(str8_literal("erase")).pressed_left){
+                state->terrain_selected_id = 0;
+                state->terrain_selected = true;
+            }
+            ui_spacer(10);
+            if(ui_button(str8_literal("grass")).pressed_left){
+                state->terrain_selected_id = TextureAsset_Grass1;
+                state->terrain_selected = true;
+            }
+            ui_spacer(10);
+            if(ui_button(str8_literal("water")).pressed_left){
+                state->terrain_selected_id = TextureAsset_Water1;
+                state->terrain_selected = true;
+            }
+            ui_spacer(10);
+            if(ui_button(str8_literal("wood")).pressed_left){
+                state->terrain_selected_id = TextureAsset_Wood1;
+                state->terrain_selected = true;
+            }
+            ui_spacer(10);
+            if(ui_button(str8_literal("lava")).pressed_left){
+                state->terrain_selected_id = TextureAsset_Lava1;
+                state->terrain_selected = true;
             }
         }
-    }
 
-    ui_end_panel();
+        ui_end_panel();
+
+        ui_set_pos(SCREEN_WIDTH - 450, 10);
+        ui_set_size(ui_size_children(0), ui_size_children(0));
+        ui_set_border_thickness(10);
+        ui_set_background_color(DEFAULT);
+        ui_begin_panel(str8_literal("info_panel##info_panel"), ui_floating_panel);
+
+        ui_size(ui_size_text(0), ui_size_text(0))
+        ui_text_color(LIGHT_GRAY)
+        {
+
+            String8 mouse_pos = str8_format(ts->frame_arena, "mouse pos: %f, %f", controller.mouse.x, controller.mouse.y);
+            ui_label(mouse_pos);
+
+            mouse_pos = str8_format(ts->frame_arena, "mouse pos(world): %f, %f", controller.mouse.world_x, controller.mouse.world_y);
+            ui_label(mouse_pos);
+
+            String8 fmt;
+            v2 world_mouse = v2_world_from_screen(controller.mouse.pos);
+            v2 cell = grid_cell_from_pos(world_mouse, state->world_cell_size);
+
+            fmt = str8_format(ts->frame_arena, "mouse cell: %.2f, %.2f", world_mouse.x, world_mouse.y);
+            ui_label(fmt);
+            ui_spacer(10);
+
+            fmt = str8_format(ts->frame_arena, "cam zoom: %f", camera.size);
+            ui_label(fmt);
+
+            fmt = str8_format(ts->frame_arena, "cam pos: (%.2f, %.2f)", camera.x, camera.y);
+            ui_label(fmt);
+            ui_spacer(10);
+
+            fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
+            ui_label(fmt);
+
+
+
+            //fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
+            //ui_label(fmt);
+            //s32 count = 0;
+            //for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+            //    if(count < 50){
+            //        fmt = str8_format(ts->frame_arena, "%i - %i/%i ##%i", batch->id, batch->vertex_count, batch->vertex_cap, batch->id);
+            //        ui_label(fmt);
+            //    }
+            //    count++;
+            //}
+        }
+
+        ui_end_panel();
+
+        ui_set_pos(200, 200);
+        ui_set_size(ui_size_children(0), ui_size_children(0));
+        ui_set_border_thickness(5);
+        ui_set_background_color(DEFAULT);
+        ui_begin_panel(str8_literal("grid_panel##3"), ui_floating_panel);
+
+        ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
+        ui_background_color(DARK_GRAY)
+        {
+            ui_label(str8_literal("Show Grid"));
+            if(ui_button(str8_literal("World")).pressed_left){
+                state->show_world_cells = !state->show_world_cells;
+            }
+            ui_spacer(10);
+            if(ui_button(str8_literal("Flocking")).pressed_left){
+                state->show_flocking_cells = !state->show_flocking_cells;
+            }
+            ui_spacer(10);
+            if(ui_button(str8_literal("Pathing")).pressed_left){
+                state->show_pathing_cells = !state->show_pathing_cells;
+            }
+
+            ui_spacer(10);
+            ui_label(str8_literal("Other"));
+            if(ui_button(str8_literal("Entity Info")).pressed_left){
+                state->show_entity_info = !state->show_entity_info;
+            }
+        }
+
+        ui_end_panel();
+
+        ui_set_pos(200, 20);
+        ui_set_size(ui_size_children(0), ui_size_children(0));
+        ui_set_border_thickness(5);
+        ui_set_background_color(DEFAULT);
+        ui_begin_panel(str8_literal("cell_size##5"), ui_floating_panel);
+
+        ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
+        ui_background_color(DARK_GRAY)
+        {
+            String8 str_fmt = str8_formatted(ts->frame_arena, "Cell Size (%i)", state->flocking_cell_size);
+            ui_label(str_fmt);
+            if(ui_button(str8_literal("^")).pressed_left){
+                state->flocking_cell_size++;
+            }
+            ui_spacer(2);
+            if(ui_button(str8_literal("V")).pressed_left){
+                if(state->flocking_cell_size > 1){
+                    state->flocking_cell_size--;
+                }
+            }
+        }
+
+        ui_end_panel();
+    }
 }
 
 static void
@@ -1199,40 +1248,44 @@ draw_grid(f32 size, RGBA color){
 
 static void
 draw_world_terrain(void){
-    r_set_render_space(Render_Space_World);
-    r_set_layer(0);
-    r_set_z(0);
+    r_render_space(Render_Space_World)
+    r_layer(0)
+    r_z(0)
+    {
 
-    v2 low  = make_v2(floor_f32(camera.p3.x/state->world_cell_size) * state->world_cell_size,
-                      floor_f32(camera.p3.y/state->world_cell_size) * state->world_cell_size);
-    v2 high = make_v2(ceil_f32(camera.p1.x/state->world_cell_size) * state->world_cell_size,
-                      ceil_f32(camera.p1.y/state->world_cell_size) * state->world_cell_size);
+        v2 low  = make_v2(floor_f32(camera.p3.x/state->world_cell_size) * state->world_cell_size,
+                          floor_f32(camera.p3.y/state->world_cell_size) * state->world_cell_size);
+        v2 high = make_v2(ceil_f32(camera.p1.x/state->world_cell_size) * state->world_cell_size,
+                          ceil_f32(camera.p1.y/state->world_cell_size) * state->world_cell_size);
 
-    for(s32 i=1; i < TextureAsset_Count; ++i){
-        f32 y = high.y;
-        while(y >= low.y){
+        for(s32 i=1; i < TextureAsset_Count; ++i){
+            f32 y = high.y;
+            while(y >= low.y){
 
-            f32 x = low.x;
-            while(x < high.x){
+                f32 x = low.x;
+                while(x < high.x){
 
-                if(x >= 0 && (x/state->world_cell_size) < state->world_width_in_cells){
-                    if(y >= 0 && (y/state->world_cell_size) < state->world_height_in_cells){
-                        v2 cell = make_v2(x, y);
+                    if(x >= 0 && (x/state->world_cell_size) < state->world_width_in_cells){
+                        if(y >= 0 && (y/state->world_cell_size) < state->world_height_in_cells){
+                            v2 cell = make_v2(x, y);
 
-                        s32 idx = (s32)(((y/state->world_cell_size) * state->world_width_in_cells) + (x/state->world_cell_size));
-                        s32 cell_tex = state->world_grid[idx];
-                        if(cell_tex == i){
-                            r_set_texture(cell_tex);
-                            Rect tex_rect = make_rect_size(cell, make_v2(state->world_cell_size, state->world_cell_size));
-                            draw_texture(tex_rect);
+                            s32 idx = (s32)(((y/state->world_cell_size) * state->world_width_in_cells) + (x/state->world_cell_size));
+                            s32 cell_tex = state->world_grid[idx];
+                            if(cell_tex == i){
+                                r_texture(cell_tex)
+                                {
+                                    Rect tex_rect = make_rect_size(cell, make_v2(state->world_cell_size, state->world_cell_size));
+                                    draw_texture(tex_rect);
+                                }
+                            }
                         }
                     }
+
+                    x += state->world_cell_size;
                 }
 
-                x += state->world_cell_size;
+                y -= state->world_cell_size;
             }
-
-            y -= state->world_cell_size;
         }
     }
 }
@@ -1937,7 +1990,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         ui_init(&state->arena, &window, &controller, &assets);
         draw_init(&state->arena, ts->batch_arena, &assets);
-        //sprite = push_spritesheet(TextureAsset_Human_Walk, 4, 4, 1);
 
         //state->font = &assets.fonts[FontAsset_Arial];
         state->font_id = FontAsset_Arial;
@@ -1985,7 +2037,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         Arena* arena = push_arena(&state->arena, MB(8));
         init_console(arena, &camera, &window, &assets);
 
-        r_set_render_space(Render_Space_Screen);
         memory.initialized = true;
     }
 
@@ -2028,53 +2079,13 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             handled = handle_game_events(event);
         }
 
-        if(controller_button_pressed(KeyCode_Q)){ 
-            player->dead = !player->dead;
-        }
-
-        if(!player->dead){
-            if(controller_button_held(KeyCode_D)){ 
-                player->velocity.x = player->speed;
-                player->left_right = 1;
-            }
-            if(controller_button_held(KeyCode_A)){ 
-                player->velocity.x = -player->speed;
-                player->left_right = -1;
-            }
-            if(controller_button_held(KeyCode_W)){ 
-                player->velocity.y = player->speed;
-                player->up_down = 1;
-            }
-            if(controller_button_held(KeyCode_S)){ 
-                player->velocity.y = -player->speed;
-                player->up_down = -1;
-            }
-
-            if(controller_button_pressed(KeyCode_SPACEBAR)){ 
-                player->jumping = true;
-            }
-            //if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){ 
-            if(controller_button_pressed(KeyCode_E)){ 
-                player->attacking = true;
-            }
-        }
-
-        // note(rr): Digonal movement adjustment.
-        if(player->left_right != 0 && player->up_down != 0){
-            player->velocity.x *= 0.707f;
-            player->velocity.y *= 0.707f;
-        }
-        player->left_right = 0;
-        player->up_down = 0;
-
         partition_entities_in_bins();
 
-        // note: consumes input so needs to be here
+        // note todo fixme: consumes input so needs to be here, input needs to be 1 frame later
+        // so that ui drawing doesn't have to happen before simulation and stuff like that
         if(state->scene_state == SceneState_Editor){
             ui_editor();
         }
-
-        entity_sprite_update();
 
         // SIM GAME HERE
         simulations = 0;
@@ -2311,35 +2322,38 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             f32 min_y = 1000;
             if(state->entities_selected_count){
 
-                if(state->entities_selected_count == 1){
-                    Entity* e = state->entities_selected[0];
-                    Rect rect = rect_from_entity(e);
-                    draw_bounding_box(rect, 0.1f, RED);
-                }
-                else{
-                    for(s32 i=0; i < state->entities_selected_count; ++i){
-                        Entity* e = state->entities_selected[i];
-                        if(e->selected){
-                            if(e->pos.x > max_x){
-                                max_x = e->pos.x;
-                            }
-                            if(e->pos.y > max_y){
-                                max_y = e->pos.y;
-                            }
-                            if(e->pos.x < min_x){
-                                min_x = e->pos.x;
-                            }
-                            if(e->pos.y < min_y){
-                                min_y = e->pos.y;
+                r_render_space(Render_Space_World)
+                {
+                    if(state->entities_selected_count == 1){
+                        Entity* e = state->entities_selected[0];
+                        Rect rect = rect_from_entity(e);
+                            draw_bounding_box(rect, 0.1f, RED);
+                    }
+                    else{
+                        for(s32 i=0; i < state->entities_selected_count; ++i){
+                            Entity* e = state->entities_selected[i];
+                            if(e->selected){
+                                if(e->pos.x > max_x){
+                                    max_x = e->pos.x;
+                                }
+                                if(e->pos.y > max_y){
+                                    max_y = e->pos.y;
+                                }
+                                if(e->pos.x < min_x){
+                                    min_x = e->pos.x;
+                                }
+                                if(e->pos.y < min_y){
+                                    min_y = e->pos.y;
+                                }
                             }
                         }
+                        min_x -= 0.5f;
+                        min_y -= 0.5f;
+                        max_x += 0.5f;
+                        max_y += 0.5f;
+                        Rect rect = make_rect(make_v2(min_x, min_y), make_v2(max_x, max_y));
+                        draw_bounding_box(rect, 0.1f, RED);
                     }
-                    min_x -= 0.5f;
-                    min_y -= 0.5f;
-                    max_x += 0.5f;
-                    max_y += 0.5f;
-                    Rect rect = make_rect(make_v2(min_x, min_y), make_v2(max_x, max_y));
-                    draw_bounding_box(rect, 0.1f, RED);
                 }
             }
 
@@ -2357,42 +2371,39 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //    }
             //}
 
-            // no
-            //debug_draw_mouse_cell_pos();
-
-            //draw_line(tp, wm, 0.1f, RED);
-
             if(state->selecting && !state->dragging_world){
-                //state->selection_rect.min.y *= -1;
-                //state->selection_rect.max.y *= -1;
-                draw_bounding_box(state->selection_rect, 0.1f, RED);
+                r_render_space(Render_Space_World)
+                {
+                    draw_bounding_box(state->selection_rect, 0.1f, RED);
+                }
             }
             if(state->terrain_selected){
-                r_set_texture(state->terrain_selected_id);
-                draw_texture(controller.mouse.pos, make_v2(50, 50));
-
-                draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
+                r_render_space(Render_Space_World)
+                r_texture(state->terrain_selected_id)
+                {
+                    draw_texture(controller.mouse.pos, make_v2(50, 50));
+                    draw_bounding_box(make_rect_size(controller.mouse.pos, make_v2(50, 50)), 0.1f, RED);
+                }
             }
 
-            r_set_render_space(Render_Space_Screen);
             ui_end();
 
-            r_set_render_space(Render_Space_Screen);
-            r_set_font(FontAsset_Arial1);
-            String8 text = str8_formatted(ts->frame_arena, "FPS: %.2f", FPS);
-            draw_text(text, make_v2(window.width-130, 20), RED);
-            text = str8_formatted(ts->frame_arena, "MSPF: %.2f", MSPF);
-            draw_text(text, make_v2(window.width-130, 40), RED);
-            //r_set_font(state->font_id);
-
-            //r_set_font(state->font_id);
-            //String8 str_fmt = str8_formatted(ts->frame_arena, "entities_count: %i\n", state->entities_count);
+            r_render_space(Render_Space_Screen)
+            r_font(FontAsset_Arial1)
+            {
+                String8 text = str8_formatted(ts->frame_arena, "FPS: %.2f", FPS);
+                draw_text(text, make_v2(window.width-130, 20), RED);
+                text = str8_formatted(ts->frame_arena, "MSPF: %.2f", MSPF);
+                draw_text(text, make_v2(window.width-130, 40), RED);
+            }
 
             if(state->scene_state == SceneState_Editor){
-                r_set_render_space(Render_Space_Screen);
-                r_set_texture(TextureAsset_Castle1);
-                Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
-                draw_texture(rr, WHITE);
+                r_render_space(Render_Space_Screen)
+                r_texture(TextureAsset_Castle1)
+                {
+                    Rect rr = make_rect(make_v2(0, 0), make_v2(100, 100));
+                    draw_texture(rr, WHITE);
+                }
             }
 
             console_draw();

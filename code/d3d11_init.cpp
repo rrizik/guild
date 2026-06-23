@@ -297,6 +297,35 @@ init_d3d(HWND window_handle, u32 width, u32 height){
         white_texture->Release();
     }
 
+    // ---------------------------------------------------------------------------------
+    // Magenta Texture
+    // ---------------------------------------------------------------------------------
+    {
+        D3D11_TEXTURE2D_DESC desc = {
+            .Width = (u32)1,
+            .Height = (u32)1,
+            .MipLevels = 1,
+            .ArraySize = 1,
+            .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+            .SampleDesc = {1, 0},
+            .Usage = D3D11_USAGE_IMMUTABLE,
+            .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+        };
+
+        u32 magenta = 0xFFFF00FF;
+        D3D11_SUBRESOURCE_DATA data = {
+            .pSysMem = &magenta,
+            .SysMemPitch = sizeof(u32),
+        };
+
+        hr = d3d_device->CreateTexture2D(&desc, &data, &magenta_texture);
+        assert_hr(hr);
+
+        hr = d3d_device->CreateShaderResourceView(magenta_texture, 0, &magenta_shader_resource);
+        assert_hr(hr);
+        magenta_texture->Release();
+    }
+
     base_device->Release();
     base_device_context->Release();
     dxgiAdapter->Release();
@@ -306,32 +335,39 @@ init_d3d(HWND window_handle, u32 width, u32 height){
 
 static void
 d3d_init_texture_resource(Texture* texture, Bitmap* bitmap){
-    D3D11_TEXTURE2D_DESC desc = {
-        .Width = (u32)bitmap->width,
-        .Height = (u32)bitmap->height,
-        .MipLevels = 1,
-        .ArraySize = 1,
-        .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-        .SampleDesc = {1, 0},
-        .Usage = D3D11_USAGE_IMMUTABLE,
-        .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-    };
+    if(bitmap->base){
+        D3D11_TEXTURE2D_DESC desc = {
+            .Width = (u32)bitmap->width,
+            .Height = (u32)bitmap->height,
+            .MipLevels = 1,
+            .ArraySize = 1,
+            .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+            .SampleDesc = {1, 0},
+            .Usage = D3D11_USAGE_IMMUTABLE,
+            .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+        };
 
-    D3D11_SUBRESOURCE_DATA data = {
-        .pSysMem = bitmap->base,
-        .SysMemPitch = (u32)bitmap->stride,
-    };
+        D3D11_SUBRESOURCE_DATA data = {
+            .pSysMem = bitmap->base,
+            .SysMemPitch = (u32)bitmap->stride,
+        };
 
-    ID3D11Texture2D* d3d_tex;
-    hr = d3d_device->CreateTexture2D(&desc, &data, &d3d_tex);
-assert_hr(hr);
+        ID3D11Texture2D* d3d_tex;
+        hr = d3d_device->CreateTexture2D(&desc, &data, &d3d_tex);
+        assert_hr(hr);
 
-    hr = d3d_device->CreateShaderResourceView(d3d_tex, 0, &texture->view);
-    assert_hr(hr);
-    d3d_tex->Release();
+        hr = d3d_device->CreateShaderResourceView(d3d_tex, 0, &texture->view);
+        assert_hr(hr);
+        d3d_tex->Release();
 
-    texture->width = bitmap->width;
-    texture->height = bitmap->height;
+        texture->width = bitmap->width;
+        texture->height = bitmap->height;
+    }
+    else{
+        texture->view = magenta_shader_resource;
+        texture->width = 1;
+        texture->height = 1;
+    }
 }
 
 static void

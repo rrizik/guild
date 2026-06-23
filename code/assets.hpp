@@ -82,6 +82,7 @@ typedef enum TextureAsset{
     TextureAsset_Castle1,
 
     TextureAsset_White,
+    TextureAsset_Magenta,
 
     TextureAsset_Count,
 } TextureAsset;

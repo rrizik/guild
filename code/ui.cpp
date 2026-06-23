@@ -54,8 +54,11 @@ ui_begin(void){
 
 static void
 ui_end(void){
-    ui_layout();
-    ui_draw(ui_root());
+    r_render_space(Render_Space_Screen)
+    {
+        ui_layout();
+        ui_draw(ui_root());
+    }
 
     ui_state->parent_stack.top = &ui_parent_null;
     ui_state->pos_x_stack.top = &ui_pos_x_null;
@@ -131,20 +134,22 @@ ui_draw(UI_Box* box){
         draw_quad(box->rect, box->background_color);
     }
     if(has_flags(box->flags, UI_BoxFlag_DrawText)){
-        r_set_font(box->font_id);
-        Font* font = a_get_font(box->font_id);
+        r_font(box->font_id)
+        {
+            Font* font = a_get_font(box->font_id);
 
-        String8 text = ui_text_part_from_key(box->string);
+            String8 text = ui_text_part_from_key(box->string);
 
-        f32 width = font_string_width(font, text);
-        f32 vertical_offset = font_vertical_offset(font);
-        f32 ascent = font_ascent(font);
-        f32 descent = font_descent(font);
+            f32 width = font_string_width(font, text);
+            f32 vertical_offset = font_vertical_offset(font);
+            f32 ascent = font_ascent(font);
+            f32 descent = font_descent(font);
 
-        f32 center = ascent - (ascent - descent)/2;
-        v2 pos = make_v2(box->rect.min.x + box->size[Axis_X]/2 - width/2,
-                         box->rect.min.y + box->size[Axis_Y]/2 + center);
-        draw_text(text, pos, box->text_color);
+            f32 center = ascent - (ascent - descent)/2;
+            v2 pos = make_v2(box->rect.min.x + box->size[Axis_X]/2 - width/2,
+                             box->rect.min.y + box->size[Axis_Y]/2 + center);
+            draw_text(text, pos, box->text_color);
+        }
     }
 
     if(box->first){

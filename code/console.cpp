@@ -275,7 +275,7 @@ static void
 console_draw(void){
 
     if(console_is_visible()){
-        r_set_render_space(Render_Space_Screen);
+        r_push_render_space(Render_Space_Screen);
         //r_set_transform(m4_make_ident());
         Font* font = a_get_font(console.font_id);
 
@@ -303,7 +303,7 @@ console_draw(void){
         draw_quad(cursor_p0, cursor_p1, cursor_p2, cursor_p3, console.cursor_color);
 
         // draw text input
-        r_set_font(console.font_id);
+        r_push_font(console.font_id);
         f32 input_pos_y = input_p2.y + ((f32)font->descent * font->scale);
         draw_text(str8_literal(">"), make_v2(console.text_left_pad, input_pos_y), console.input_color);
         if(console.input.count > 0){

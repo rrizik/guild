@@ -29,26 +29,30 @@ assets_load(Arena* arena){
     ScratchArena scratch = begin_scratch();
     String8 build_path = os_application_path(scratch.arena);
 
-    Texture texture = {white_shader_resource};
-    texture.width, texture.height = 1;
-    assets.textures[TextureAsset_White] = texture;
+    Texture white_texture = {white_shader_resource};
+    white_texture.width, white_texture.height = 1;
+    assets.textures[TextureAsset_White] = white_texture;
 
-    load_texture(scratch.arena, TextureAsset_Human_Attack, build_path, str8_lit("sprites/Base_Humanoids/Human/Base_Human/HumanAttack.png"));
-    load_texture(scratch.arena, TextureAsset_Human_Charged_Attack, build_path, str8_lit("sprites/Base_Humanoids/Human/Base_Human/HumanChargedAttack.png"));
-    load_texture(scratch.arena, TextureAsset_Human_Dmg, build_path, str8_lit("sprites/Base_Humanoids/Human/Base_Human/HumanDmg.png"));
-    load_texture(scratch.arena, TextureAsset_Human_Idle, build_path, str8_lit("sprites/Base_Humanoids/Human/Base_Human/HumanIdle.png"));
-    load_texture(scratch.arena, TextureAsset_Human_Jump, build_path, str8_lit("sprites/Base_Humanoids/Human/Base_Human/HumanJump.png"));
-    load_texture(scratch.arena, TextureAsset_Human_Soul_Die, build_path, str8_lit("sprites/Base_Humanoids/Human/Base_Human/HumanSoulDie.png"));
-    load_texture(scratch.arena, TextureAsset_Human_Spin_Die, build_path, str8_lit("sprites/Base_Humanoids/Human/Base_Human/HumanSpinDie.png"));
-    load_texture(scratch.arena, TextureAsset_Human_Walk, build_path, str8_lit("sprites/Base_Humanoids/Human/Base_Human/HumanWalk.png"));
+    Texture magenta_texture = {magenta_shader_resource};
+    magenta_texture.width, magenta_texture.height = 1;
+    assets.textures[TextureAsset_Magenta] = magenta_texture;
 
-    load_texture(scratch.arena, TextureAsset_Orc_Attack, build_path, str8_lit("sprites/Base_Humanoids/Orc/Base_Orc/OrcBaseAttack.png"));
-    load_texture(scratch.arena, TextureAsset_Orc_Charged_Attack, build_path, str8_lit("sprites/Base_Humanoids/Orc/Base_Orc/OrcChargedAttack.png"));
-    load_texture(scratch.arena, TextureAsset_Orc_Dmg, build_path, str8_lit("sprites/Base_Humanoids/Orc/Base_Orc/OrcDmg.png"));
-    load_texture(scratch.arena, TextureAsset_Orc_Idle, build_path, str8_lit("sprites/Base_Humanoids/Orc/Base_Orc/OrcIdle.png"));
-    load_texture(scratch.arena, TextureAsset_Orc_Jump, build_path, str8_lit("sprites/Base_Humanoids/Orc/Base_Orc/OrcJump.png"));
-    load_texture(scratch.arena, TextureAsset_Orc_Die, build_path, str8_lit("sprites/Base_Humanoids/Orc/Base_Orc/OrcDie.png"));
-    load_texture(scratch.arena, TextureAsset_Orc_Walk, build_path, str8_lit("sprites/Base_Humanoids/Orc/Base_Orc/OrcWalk.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Attack, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_attack.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Charged_Attack, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_charged_attack.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Dmg, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_dmg.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Idle, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_idle.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Jump, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_jump.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Soul_Die, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_soul_die.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Spin_Die, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_spin_die.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Walk, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_walk.png"));
+
+    load_texture(scratch.arena, TextureAsset_Orc_Attack, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_base_attack.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Charged_Attack, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_charged_attack.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Dmg, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_dmg.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Idle, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_idle.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Jump, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_jump.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Die, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_die.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Walk, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_walk.png"));
 
     load_texture(scratch.arena, TextureAsset_Grass1, build_path, str8_lit("sprites/tiles/grass1.png"));
     load_texture(scratch.arena, TextureAsset_Water1, build_path, str8_lit("sprites/tiles/water1.png"));

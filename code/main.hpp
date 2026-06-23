@@ -218,7 +218,6 @@ static void generate_new_world(f32 width, f32 height);
 static void draw_grid(f32 size, RGBA color);
 static void draw_world_terrain(void);
 static void draw_entities(State* state);
-static void debug_draw_mouse_cell_pos(void);
 static void ui_editor(void);
 static void ui_castle(void);
 

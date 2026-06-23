@@ -50,6 +50,8 @@ global ID3D11Buffer* d3d_constant_buffer;
 
 global ID3D11Texture2D* white_texture;
 global ID3D11ShaderResourceView* white_shader_resource;
+global ID3D11Texture2D* magenta_texture;
+global ID3D11ShaderResourceView* magenta_shader_resource;
 
 global D3D11_INPUT_ELEMENT_DESC il_2d_textured[] = {
         {"POS",  0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
