@@ -3,6 +3,9 @@
 
 static Bitmap
 stb_load_image(Arena* arena, String8 dir, String8 file, bool vertical_flip){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     Bitmap result = {0};
     ScratchArena scratch = begin_scratch();
     String8 full_path = str8_path_append(scratch.arena, dir, file);
@@ -12,9 +15,18 @@ stb_load_image(Arena* arena, String8 dir, String8 file, bool vertical_flip){
     }
 
     int x = 0, y = 0, n = 0;
-    u8* base = (u8*)stbi_load((char const*)full_path.str, &x, &y, &n, 4); // specify 4 channels
+    u8* base = 0;
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("decode image");
+
+        base = (u8*)stbi_load((char const*)full_path.str, &x, &y, &n, 4); // specify 4 channels
+    }
 
     if(base){
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("copy image pixels");
+
         result.base = push_array(arena, u8, (x * y * 4));
         memcpy(result.base, base, (u32)(x * y * 4));
 

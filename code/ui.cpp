@@ -7,12 +7,16 @@
 
 static void
 ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     ui_state = push_struct(arena, UI_State);
     ui_state->window = window;
     ui_state->controller = controller;
     ui_state->default_font_id = FontAsset_Arial2;
     //ui_state->generation = 0;
     ui_state->table = ui_make_table(arena);
+    //ui_state->arena = push_arena(arena, (MB(100));
     ui_state->arena = make_arena(MB(100));
 
     ui_state->parent_stack.top = &ui_parent_null;
@@ -30,6 +34,9 @@ ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
 
 static void
 ui_begin(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     //ui_state->generation += 1;
     ui_state->hot = 0;
 
@@ -54,10 +61,23 @@ ui_begin(void){
 
 static void
 ui_end(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     r_render_space(Render_Space_Screen)
     {
-        ui_layout();
-        ui_draw(ui_root());
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("ui layout");
+
+            ui_layout();
+        }
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("ui draw");
+
+            ui_draw(ui_root());
+        }
     }
 
     ui_state->parent_stack.top = &ui_parent_null;
@@ -90,12 +110,35 @@ ui_end(void){
 
 static void
 ui_layout(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     for(Axis axis=(Axis)0; axis < Axis_Count; axis = (Axis)(axis + 1)){
-        ui_traverse_independent(ui_root(), axis);
-        ui_traverse_children(ui_root(), axis);
-        ui_traverse_positions(ui_root(), axis);
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("ui independent sizing");
+
+            ui_traverse_independent(ui_root(), axis);
+        }
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("ui children sizing");
+
+            ui_traverse_children(ui_root(), axis);
+        }
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("ui positioning");
+
+            ui_traverse_positions(ui_root(), axis);
+        }
     }
-    ui_traverse_rects(ui_root());
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("ui rect generation");
+
+        ui_traverse_rects(ui_root());
+    }
 }
 
 static void

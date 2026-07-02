@@ -3,6 +3,9 @@
 
 static Font
 font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     // open file
     ScratchArena scratch = begin_scratch();
     String8 full_path = str8_concatenate(scratch.arena, dir, filename);
@@ -33,24 +36,29 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     bitmap_a.size = (u64)(result.texture_w * result.texture_h);
     bitmap_a.str = push_array(scratch.arena, u8, bitmap_a.size);
 
-    stbtt_pack_context context;
-    if (!stbtt_PackBegin(&context, bitmap_a.str, result.texture_w, result.texture_h, 0, 1, 0)) {
-        result.succeed = false;
-        return(result);
-    }
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("pack font atlas");
 
-    stbtt_pack_range range;
-    range.chardata_for_range = result.packed_chars;
-    range.array_of_unicode_codepoints = 0; // Indicates that we are using the range
-    range.first_unicode_codepoint_in_range = 32;
-    range.num_chars = 95;
-    range.font_size = size;
+        stbtt_pack_context context;
+        if (!stbtt_PackBegin(&context, bitmap_a.str, result.texture_w, result.texture_h, 0, 1, 0)) {
+            result.succeed = false;
+            return(result);
+        }
 
-    if (!stbtt_PackFontRanges(&context, (u8*)file_data.str, 0, &range, 1)) {
-        result.succeed = false;
-        return(result);
+        stbtt_pack_range range;
+        range.chardata_for_range = result.packed_chars;
+        range.array_of_unicode_codepoints = 0; // Indicates that we are using the range
+        range.first_unicode_codepoint_in_range = 32;
+        range.num_chars = 95;
+        range.font_size = size;
+
+        if (!stbtt_PackFontRanges(&context, (u8*)file_data.str, 0, &range, 1)) {
+            result.succeed = false;
+            return(result);
+        }
+        stbtt_PackEnd(&context);
     }
-    stbtt_PackEnd(&context);
 
     // u32 data 4 channel as rgba
     // warning: incomplete: todo: we do this to avoide having to create another shader for fonts. This is a huge waste of space and instead we should create the additional shader and keep it single byte.
@@ -59,15 +67,20 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     bitmap_rgba.str = push_array(scratch.arena, u8, bitmap_rgba.size);
 
     // note todo: Convert 1 channel to 4 channel. Get rid of this when you create a text specific shader, this is a waste.
-    u32* base_rgba = (u32*)bitmap_rgba.str;
-    u8* base_a = (u8*)bitmap_a.str;
-    for(s32 i=0; i < bitmap_a.size; ++i){
-        *base_rgba = (u32)(*base_a << 24 |
-                               255 << 16 |
-                               255 << 8  |
-                               255 << 0);
-        base_rgba++;
-        base_a++;
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("expand font atlas rgba");
+
+        u32* base_rgba = (u32*)bitmap_rgba.str;
+        u8* base_a = (u8*)bitmap_a.str;
+        for(s32 i=0; i < bitmap_a.size; ++i){
+            *base_rgba = (u32)(*base_a << 24 |
+                                   255 << 16 |
+                                   255 << 8  |
+                                   255 << 0);
+            base_rgba++;
+            base_a++;
+        }
     }
 
     D3D11_TEXTURE2D_DESC desc = {
@@ -86,10 +99,15 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
         .SysMemPitch = (u32)(result.texture_w * 4),
     };
     ID3D11Texture2D* texture;
-    hr = d3d_device->CreateTexture2D(&desc, &shader_data, &texture);
-    assert_hr(hr);
-    hr = d3d_device->CreateShaderResourceView(texture, 0, &result.texture.view);
-    assert_hr(hr);
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("upload font atlas");
+
+        hr = d3d_device->CreateTexture2D(&desc, &shader_data, &texture);
+        assert_hr(hr);
+        hr = d3d_device->CreateShaderResourceView(texture, 0, &result.texture.view);
+        assert_hr(hr);
+    }
 
     result.texture.width = result.texture_w;
     result.texture.height = result.texture_h;

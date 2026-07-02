@@ -206,6 +206,7 @@ static Entity* add_castle(TextureAsset texture, v2 pos, v2 dim, RGBA color=WHITE
 static Entity* add_skeleton(TextureAsset texture, v2 pos, v2 dim, v2 dir, RGBA color=WHITE, u32 flags=0);
 static Entity* add_human(v2 cell, v2 dim, v2 dir={0, 0}, RGBA color=WHITE, u32 flags=0);
 static Entity* add_monster(v2 cell, v2 dim, v2 dir={0, 0}, RGBA color=WHITE, u32 flags=0);
+static Entity* add_fire(v2 cell, v2 dim, v2 dir={0, 0}, RGBA color=WHITE, u32 flags=0);
 static void entities_clear(void);
 
 static bool handle_global_events(Event event);
@@ -222,7 +223,7 @@ static void ui_editor(void);
 static void ui_castle(void);
 
 static bool mouse_in_cell(v2 cell);
-static bool mouse_in_boundingbox(Entity* e);
+static bool mouse_in_bounding_box(Entity* e);
 static v2 grid_pos_from_cell(v2 cell);
 static v2 grid_pos_from_cell(v2 cell, f32 size);
 static v2 grid_cell_from_pos(v2 pos);

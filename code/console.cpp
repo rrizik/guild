@@ -5,6 +5,9 @@
 
 static void
 init_console(Arena* arena, Camera2D* camera, Window* window, Assets* assets){ 
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     console.state = CLOSED;
     //console.font = &assets->fonts[FontAsset_Consolas];
     console.font_id = FontAsset_Consolas;
@@ -220,6 +223,9 @@ console_push_output(String8 text){
 
 static void
 console_update(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     f32 epsilon = 0.001f;
     f32 open_d = console.open_dt * (f32)clock.dt;
     if(console.open_t < console.open_t_target){
@@ -273,6 +279,8 @@ console_push_input(String8 text){
 
 static void
 console_draw(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     if(console_is_visible()){
         r_push_render_space(Render_Space_Screen);

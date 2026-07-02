@@ -70,6 +70,15 @@ typedef enum TextureAsset{
     TextureAsset_Human_Spin_Die,
     TextureAsset_Human_Soul_Die,
 
+    TextureAsset_Human_Idle_Shadow,
+    TextureAsset_Human_Dmg_Shadow,
+    TextureAsset_Human_Walk_Shadow,
+    TextureAsset_Human_Attack_Shadow,
+    TextureAsset_Human_Charged_Attack_Shadow,
+    TextureAsset_Human_Jump_Shadow,
+    TextureAsset_Human_Spin_Die_Shadow,
+    TextureAsset_Human_Soul_Die_Shadow,
+
     TextureAsset_Orc_Idle,
     TextureAsset_Orc_Walk,
     TextureAsset_Orc_Attack,
@@ -77,6 +86,17 @@ typedef enum TextureAsset{
     TextureAsset_Orc_Jump,
     TextureAsset_Orc_Dmg,
     TextureAsset_Orc_Die,
+
+    TextureAsset_Orc_Idle_Shadow,
+    TextureAsset_Orc_Walk_Shadow,
+    TextureAsset_Orc_Attack_Shadow,
+    TextureAsset_Orc_Charged_Attack_Shadow,
+    TextureAsset_Orc_Jump_Shadow,
+    TextureAsset_Orc_Dmg_Shadow,
+    TextureAsset_Orc_Die_Shadow,
+
+    TextureAsset_Fire,
+    TextureAsset_Fire_Shadow,
 
 
     TextureAsset_Castle1,
@@ -92,15 +112,17 @@ typedef struct Assets{
     Font    fonts[FontAsset_Count];
     Texture textures[TextureAsset_Count];
 } Assets;
+global Assets assets;
+
 static void load_texture(Arena* arena, TextureAsset texture_id, String8 build_path, String8 path);
 static void load_audio(Arena* arena, WaveAsset audio_id, String8 build_path, String8 path);
 static void load_font(Arena* arena, FontAsset font_id, String8 build_path, String8 path);
 static void assets_load(Arena* arena);
+static void assets_release(void);
 
 static Wave* a_get_texture(s32 texture_id);
 static Texture* a_get_audio(s32 audio_id);
 static Font* a_get_font(s32 font_id);
 
-global Assets assets;
 
 #endif

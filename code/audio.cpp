@@ -10,6 +10,9 @@
 
 static void
 audio_init(u16 channels, u32 samples_per_sec, u16 bits_per_sample){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     audio = {0};
     audio_cursors_clear();
 
@@ -84,6 +87,9 @@ audio_init(u16 channels, u32 samples_per_sec, u16 bits_per_sample){
 
 static void
 audio_release(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     audio_stream_stop();
 
     if(audio.render_client){
@@ -101,6 +107,9 @@ audio_release(void){
 
 static Audio_Cursor*
 audio_play(Wave* wave, f32 volume, bool loop){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     Audio_Cursor* cursor = audio_cursor_alloc();
     if(cursor){
         cursor->base = wave->base;
@@ -129,6 +138,9 @@ audio_stop(Audio_Cursor* cursor){
 // todo: create a wave drawing function to draw the audio waves. Will be cool to do
 static void 
 audio_update(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     HRESULT hr = S_OK;
 
     u32 padding;
@@ -151,55 +163,73 @@ audio_update(void){
     }
 
     if(audio.cursor_count <= 0){
-        hr = audio.render_client->ReleaseBuffer(available_samples, AUDCLNT_BUFFERFLAGS_SILENT); 
-        if (FAILED(hr)) {
-            assert_hr(hr);
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("submit silent audio buffer");
+
+            hr = audio.render_client->ReleaseBuffer(available_samples, AUDCLNT_BUFFERFLAGS_SILENT); 
+            if (FAILED(hr)) {
+                assert_hr(hr);
+            }
         }
         audio_stream_stop();
         return;
     }
 
-    memset(buffer, 0, available_samples * audio.format.nBlockAlign); // clear buffer from previously written data
-    f32* buffer_f32 = (f32*)buffer;
-    for(s32 cursor_i=0; cursor_i < AUDIO_CURSORS_MAX; ++cursor_i){
-        Audio_Cursor* cursor = audio.cursors + cursor_i;
-        if(cursor->active){
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("mix audio cursors");
 
-            u32 wave_remainder = cursor->sample_count - cursor->at;
-            u32 buffer_size = wave_remainder > available_samples ? available_samples : wave_remainder;
+        memset(buffer, 0, available_samples * audio.format.nBlockAlign); // clear buffer from previously written data
+        f32* buffer_f32 = (f32*)buffer;
+        for(s32 cursor_i=0; cursor_i < AUDIO_CURSORS_MAX; ++cursor_i){
+            Audio_Cursor* cursor = audio.cursors + cursor_i;
+            if(cursor->active){
 
-            if(cursor->at < cursor->sample_count){
-                for(s32 i=0; i < buffer_size; ++i){
-                    f32 sample = ((s16)(cursor->base[(cursor->at + i)])) * (1.0f / 32767.0f); // note: normalize to a range of -1.0f to 1.0f by multiplying by 1/(max s16)
+                u32 wave_remainder = cursor->sample_count - cursor->at;
+                u32 buffer_size = wave_remainder > available_samples ? available_samples : wave_remainder;
 
-                    // todo: iterate over number of channels, this is a bit hardcoded.
-                    buffer_f32[(i * audio.format.nChannels) + 0] += sample * cursor->volume; // channel 1
-                    buffer_f32[(i * audio.format.nChannels) + 1] += sample * cursor->volume; // channel 2
+                if(cursor->at < cursor->sample_count){
+                    for(s32 i=0; i < buffer_size; ++i){
+                        f32 sample = ((s16)(cursor->base[(cursor->at + i)])) * (1.0f / 32767.0f); // note: normalize to a range of -1.0f to 1.0f by multiplying by 1/(max s16)
+
+                        // todo: iterate over number of channels, this is a bit hardcoded.
+                        buffer_f32[(i * audio.format.nChannels) + 0] += sample * cursor->volume; // channel 1
+                        buffer_f32[(i * audio.format.nChannels) + 1] += sample * cursor->volume; // channel 2
+                    }
+
+                }
+
+                cursor->at += buffer_size;
+                if(cursor->at >= cursor->sample_count){
+                    if(cursor->loop){
+                        cursor->at = 0;
+                    }
+                    else{
+                        audio_cursor_remove(cursor);
+                    }
                 }
 
             }
-
-            cursor->at += buffer_size;
-            if(cursor->at >= cursor->sample_count){
-                if(cursor->loop){
-                    cursor->at = 0;
-                }
-                else{
-                    audio_cursor_remove(cursor);
-                }
-            }
-
         }
     }
 
-    hr = audio.render_client->ReleaseBuffer(available_samples, 0); // Audio handoff
-    if(FAILED(hr)){
-        assert_hr(hr);
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("submit audio buffer");
+
+        hr = audio.render_client->ReleaseBuffer(available_samples, 0); // Audio handoff
+        if(FAILED(hr)){
+            assert_hr(hr);
+        }
     }
 }
 
 static void 
 audio_stream_start(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     if(!audio.running){
         HRESULT hr = audio.audio_client->Start();
         if(FAILED(hr)){
@@ -212,6 +242,9 @@ audio_stream_start(void){
 
 static void 
 audio_stream_stop(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     if(audio.running){
         HRESULT hr = audio.audio_client->Stop();
         if(FAILED(hr)){

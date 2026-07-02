@@ -87,7 +87,7 @@ typedef enum ParticleType{
     ParticleType_Bullet,
 } ParticleType;
 
-typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Structure, EntityType_Skeleton1, EntityType_Monster, EntityType_Player} EntityType;
+typedef enum EntityType {EntityType_None, EntityType_Quad, EntityType_Texture, EntityType_Text, EntityType_Line, EntityType_Structure, EntityType_Skeleton1, EntityType_Monster, EntityType_Fire, EntityType_Player} EntityType;
 
 typedef enum StructureType{
     StructureType_None,
@@ -123,6 +123,8 @@ typedef struct Entity{
     v2 rallypoint;
     v2 rallypoint_cell;
     
+    f32 size;
+    v2 bounding_box_scale;
     Rect bounding_box;
     Rect attack_box;
     v2 attack_box_max;
@@ -197,11 +199,10 @@ typedef struct EntityHandle{
 static EntityHandle zero_entity_handle(void);
 //static Entity* entity_from_handle(PermanentMemory* pm, EntityHandle handle);
 //static EntityHandle handle_from_entity(PermanentMemory* pm, Entity *e);
-static Rect rect_from_entity(Entity* e);
+static Rect rect_from_center(Entity* e);
 static Rect collision_box_from_entity(Entity* e);
 
-static Quad quad_from_entity_world(Entity* e);
-static Quad quad_from_entity_screen(Entity* e);
+static Quad quad_from_center(Entity* e);
 
 static u32 entity_commands_count(Entity* e);
 static bool entity_commands_empty(Entity* e);

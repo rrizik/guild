@@ -173,10 +173,15 @@ srgb_from_linear(RGBA color){
 // todo: revisit this, I don't like that I'm passing in assets here...
 static void
 draw_init(Arena* arena, Arena* batch_arena, Assets* assets){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     render_state = push_struct(arena, Render_State);
 
     render_state->batch_arena = batch_arena;
     render_state->stack_arena = make_arena(MB(100));
+    //render_state->batch_arena = push_arena(arena, GB(4)); 
+    //render_state->stack_arena = push_arena(arena, MB(100));
     render_state->space = Render_Space_Screen;
     render_state->assets = assets;
 
@@ -463,6 +468,7 @@ draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
     command->quad = make_quad(p0, p1, p2, p3);
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -479,6 +485,7 @@ draw_quad(v2 pos, v2 dim, RGBA color){
                               make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x, pos.y + dim.h));
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -495,6 +502,7 @@ draw_quad(Rect rect, RGBA color){
                               make_v2(rect.x1, rect.y1), make_v2(rect.x0, rect.y1));
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -510,6 +518,7 @@ draw_quad(Quad quad, RGBA color){
     command->quad = quad;
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -525,6 +534,7 @@ draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
     command->quad = make_quad(p0, p1, p2, p3);
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -541,6 +551,7 @@ draw_texture(v2 pos, v2 dim, RGBA color){
                               make_v2(pos.x + dim.w, pos.y + dim.h), make_v2(pos.x, pos.y + dim.h));
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -557,6 +568,7 @@ draw_texture(Rect rect, RGBA color){
                               make_v2(rect.x1, rect.y1), make_v2(rect.x0, rect.y1));
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -572,6 +584,7 @@ draw_texture(Quad quad, RGBA color){
     command->quad = quad;
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -588,6 +601,7 @@ draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
     command->sprite = sprite;
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -604,6 +618,7 @@ draw_bounding_box(v2 p0, v2 p1, v2 p2, v2 p3, f32 width, RGBA color){
     command->width = width;
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -621,6 +636,7 @@ draw_bounding_box(v2 pos, v2 dim, f32 width, RGBA color){
     command->width = width;
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -638,6 +654,7 @@ draw_bounding_box(Rect rect, f32 width, RGBA color){
     command->width = width;
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -654,6 +671,7 @@ draw_bounding_box(Quad quad, f32 width, RGBA color){
     command->width = width;
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -671,6 +689,7 @@ draw_line(v2 p0, v2 p1, f32 width, RGBA color){
     command->width = width;
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -687,6 +706,7 @@ draw_text(String8 text, v2 pos, RGBA color){
     command->pos = pos;
     command->color = color;
 
+    command->submission_order = *draw_commands_at;
     *draw_commands_at += 1;
 }
 
@@ -695,108 +715,147 @@ draw_command_compare_layer_z(void* left, void* right){
     Draw_Command* a = (Draw_Command*)left;
     Draw_Command* b = (Draw_Command*)right;
 
+    // first compare layer
     if(a->layer < b->layer) return(-1);
     if(a->layer > b->layer) return( 1);
 
+    // then comapre z order
     if(a->z > b->z) return(-1);
     if(a->z < b->z) return( 1);
+
+    // finally compare submission order
+    if(a->submission_order > b->submission_order) return(-1);
+    if(a->submission_order < b->submission_order) return( 1);
 
     return(0);
 }
 
 static void
 draw_render_commands(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
-    for(s32 i=0; i<draw_world_commands_at; ++i){
-        Draw_Command* c = draw_world_commands + i;
-        r_set_texture(c->texture_id);
-        r_set_transform(c->transform);
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("process world commands");
 
-        switch(c->kind){
-            case Draw_Command_Quad:{
-                imm_draw_quad(c->quad, c->color);
-            } break;
-            case Draw_Command_Bounding_Box:{
-                imm_draw_bounding_box(c->quad, c->width, c->color);
-            } break;
-            case Draw_Command_Line:{
-                imm_draw_line(c->p0, c->p1, c->width, c->color);
-            } break;
-            case Draw_Command_Texture:{
-                imm_draw_texture(c->quad, c->color);
-            } break;
-            case Draw_Command_Sprite:{
-                imm_draw_sprite(c->sprite, c->quad, c->color);
-            } break;
-            case Draw_Command_Text:{
-                r_set_font(c->font_id);
-                imm_draw_text(c->text, c->pos, c->color);
-            } break;
+        for(s32 i=0; i<draw_world_commands_at; ++i){
+            Draw_Command* c = draw_world_commands + i;
+            r_set_texture(c->texture_id);
+            r_set_transform(c->transform);
+
+            switch(c->kind){
+                case Draw_Command_Quad:{
+                    imm_draw_quad(c->quad, c->color);
+                } break;
+                case Draw_Command_Bounding_Box:{
+                    imm_draw_bounding_box(c->quad, c->width, c->color);
+                } break;
+                case Draw_Command_Line:{
+                    imm_draw_line(c->p0, c->p1, c->width, c->color);
+                } break;
+                case Draw_Command_Texture:{
+                    imm_draw_texture(c->quad, c->color);
+                } break;
+                case Draw_Command_Sprite:{
+                    imm_draw_sprite(c->sprite, c->quad, c->color);
+                } break;
+                case Draw_Command_Text:{
+                    r_set_font(c->font_id);
+                    imm_draw_text(c->text, c->pos, c->color);
+                } break;
+            }
         }
     }
 
-    quick_sort(draw_world_sorted_commands, (size_t)draw_world_sorted_commands_at, draw_command_compare_layer_z);
-    for(s32 i=0; i<draw_world_sorted_commands_at; ++i){
-        Draw_Command* c = draw_world_sorted_commands + i;
-        r_set_texture(c->texture_id);
-        r_set_transform(c->transform);
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("sort world commands");
 
-        switch(c->kind){
-            case Draw_Command_Quad:{
-                imm_draw_quad(c->quad, c->color);
-            } break;
-            case Draw_Command_Bounding_Box:{
-                imm_draw_bounding_box(c->quad, c->width, c->color);
-            } break;
-            case Draw_Command_Line:{
-                imm_draw_line(c->p0, c->p1, c->width, c->color);
-            } break;
-            case Draw_Command_Texture:{
-                imm_draw_texture(c->quad, c->color);
-            } break;
-            case Draw_Command_Sprite:{
-                imm_draw_sprite(c->sprite, c->quad, c->color);
-            } break;
-            case Draw_Command_Text:{
-                r_set_font(c->font_id);
-                imm_draw_text(c->text, c->pos, c->color);
-            } break;
+        quick_sort(draw_world_sorted_commands, (size_t)draw_world_sorted_commands_at, draw_command_compare_layer_z);
+    }
+
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("process sorted world commands");
+
+        for(s32 i=0; i<draw_world_sorted_commands_at; ++i){
+            Draw_Command* c = draw_world_sorted_commands + i;
+            r_set_texture(c->texture_id);
+            r_set_transform(c->transform);
+
+            switch(c->kind){
+                case Draw_Command_Quad:{
+                    imm_draw_quad(c->quad, c->color);
+                } break;
+                case Draw_Command_Bounding_Box:{
+                    imm_draw_bounding_box(c->quad, c->width, c->color);
+                } break;
+                case Draw_Command_Line:{
+                    imm_draw_line(c->p0, c->p1, c->width, c->color);
+                } break;
+                case Draw_Command_Texture:{
+                    imm_draw_texture(c->quad, c->color);
+                } break;
+                case Draw_Command_Sprite:{
+                    imm_draw_sprite(c->sprite, c->quad, c->color);
+                } break;
+                case Draw_Command_Text:{
+                    r_set_font(c->font_id);
+                    imm_draw_text(c->text, c->pos, c->color);
+                } break;
+            }
         }
     }
 
-    for(s32 i=0; i<draw_screen_commands_at; ++i){
-        Draw_Command* c = draw_screen_commands + i;
-        r_set_texture(c->texture_id);
-        r_set_transform(c->transform);
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("process screen commands");
 
-        switch(c->kind){
-            case Draw_Command_Quad:{
-                imm_draw_quad(c->quad, c->color);
-            } break;
-            case Draw_Command_Bounding_Box:{
-                imm_draw_bounding_box(c->quad, c->width, c->color);
-            } break;
-            case Draw_Command_Line:{
-                imm_draw_line(c->p0, c->p1, c->width, c->color);
-            } break;
-            case Draw_Command_Texture:{
-                imm_draw_texture(c->quad, c->color);
-            } break;
-            case Draw_Command_Sprite:{
-                imm_draw_sprite(c->sprite, c->quad, c->color);
-            } break;
-            case Draw_Command_Text:{
-                r_set_font(c->font_id);
-                imm_draw_text(c->text, c->pos, c->color);
-            } break;
+        for(s32 i=0; i<draw_screen_commands_at; ++i){
+            Draw_Command* c = draw_screen_commands + i;
+            r_set_texture(c->texture_id);
+            r_set_transform(c->transform);
+
+            switch(c->kind){
+                case Draw_Command_Quad:{
+                    imm_draw_quad(c->quad, c->color);
+                } break;
+                case Draw_Command_Bounding_Box:{
+                    imm_draw_bounding_box(c->quad, c->width, c->color);
+                } break;
+                case Draw_Command_Line:{
+                    imm_draw_line(c->p0, c->p1, c->width, c->color);
+                } break;
+                case Draw_Command_Texture:{
+                    imm_draw_texture(c->quad, c->color);
+                } break;
+                case Draw_Command_Sprite:{
+                    imm_draw_sprite(c->sprite, c->quad, c->color);
+                } break;
+                case Draw_Command_Text:{
+                    r_set_font(c->font_id);
+                    imm_draw_text(c->text, c->pos, c->color);
+                } break;
+            }
         }
     }
 
-    draw_render_batches();
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("render command batches");
 
-    render_batches_reset();
-    draw_commands_clear();
-    draw_stack_clear();
+        draw_render_batches();
+    }
+
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("reset renderer frame state");
+
+        render_batches_reset();
+        draw_commands_clear();
+        draw_stack_clear();
+    }
 }
 
 static void 
@@ -808,6 +867,9 @@ draw_commands_clear(void){
 
 static void
 draw_stack_clear(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     render_state->render_space_stack.top = &r_render_space_null;
     render_state->texture_stack.top = &r_texture_null;
     render_state->font_stack.top = &r_font_null;
@@ -816,6 +878,9 @@ draw_stack_clear(void){
     render_state->z_stack.top = &r_z_null;
 
     arena_free(render_state->stack_arena);
+
+    r_push_render_space(Render_Space_Screen);
+    r_push_texture(TextureAsset_White);
 }
 
 static RenderBatch*
@@ -825,6 +890,8 @@ get_render_batch(u64 vertex_count){
        batch->vertex_count + vertex_count >= batch->vertex_cap || 
        batch->texture != render_state->texture || 
        batch->transform_gen != render_state->transform_gen){
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("allocate render batch");
 
         batch = push_array_zero(render_state->batch_arena, RenderBatch, 1);
         batch->buffer = push_array(render_state->batch_arena, Vertex2, DEFAULT_BATCH_SIZE / sizeof(Vertex2));
@@ -848,17 +915,31 @@ get_render_batch(u64 vertex_count){
 
 static void 
 draw_render_batches(){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     s32 required_size = 0;
-    for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-        required_size += batch->vertex_count * sizeof(Vertex2);
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("count batch vertices");
+
+        for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+            required_size += batch->vertex_count * sizeof(Vertex2);
+        }
     }
 
     if(required_size > d3d_vertex_buffer_size){
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("resize vertex buffer");
+
         d3d_release_vertex_buffer(d3d_vertex_buffer);
         d3d_vertex_buffer = d3d_make_vertex_buffer(required_size);
     }
 
     {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("upload vertex buffer");
+
         D3D11_MAPPED_SUBRESOURCE resource;
         d3d_context->Map(d3d_vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
         s32 vertex_idx = 0;
@@ -874,44 +955,57 @@ draw_render_batches(){
         d3d_context->Unmap(d3d_vertex_buffer, 0);
     }
 
-    ID3D11Buffer* buffers[] = {d3d_vertex_buffer};
-    u32 strides[] = {sizeof(Vertex2)};
-    u32 offset[] = {0};
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("bind render pipeline");
 
-    d3d_context->IASetVertexBuffers(0, 1, buffers, strides, offset);
+        ID3D11Buffer* buffers[] = {d3d_vertex_buffer};
+        u32 strides[] = {sizeof(Vertex2)};
+        u32 offset[] = {0};
 
-    d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    d3d_context->PSSetSamplers(0, 1, &d3d_sampler_state);
+        d3d_context->IASetVertexBuffers(0, 1, buffers, strides, offset);
 
-    d3d_context->OMSetRenderTargets(1, &d3d_framebuffer_view, 0);
-    d3d_context->OMSetBlendState(d3d_blend_state, 0, 0xFFFFFFFF);
-    d3d_context->RSSetState(d3d_rasterizer_state);
+        d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        d3d_context->PSSetSamplers(0, 1, &d3d_sampler_state);
 
-    d3d_context->VSSetConstantBuffers(0, 1, &d3d_constant_buffer);
+        d3d_context->OMSetRenderTargets(1, &d3d_framebuffer_view, 0);
+        d3d_context->OMSetBlendState(d3d_blend_state, 0, 0xFFFFFFFF);
+        d3d_context->RSSetState(d3d_rasterizer_state);
 
-    d3d_context->RSSetViewports(1, &d3d_viewport);
-    d3d_context->IASetInputLayout(d3d_2d_textured_il);
-    d3d_context->VSSetShader(d3d_2d_textured_vs, 0, 0);
-    d3d_context->PSSetShader(d3d_2d_textured_ps, 0, 0);
+        d3d_context->VSSetConstantBuffers(0, 1, &d3d_constant_buffer);
 
-    for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
-        //----constant buffer----
-        {
-            D3D11_MAPPED_SUBRESOURCE mapped_subresource;
-            d3d_context->Map(d3d_constant_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_subresource);
-            ConstantBuffer2D* constants = (ConstantBuffer2D*)mapped_subresource.pData;
-            constants->screen_res = make_v2s32((s32)window.width, (s32)window.height);
-            constants->transform = batch->transform;
-            d3d_context->Unmap(d3d_constant_buffer, 0);
+        d3d_context->RSSetViewports(1, &d3d_viewport);
+        d3d_context->IASetInputLayout(d3d_2d_textured_il);
+        d3d_context->VSSetShader(d3d_2d_textured_vs, 0, 0);
+        d3d_context->PSSetShader(d3d_2d_textured_ps, 0, 0);
+    }
+
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("submit render batches");
+
+        for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+            //----constant buffer----
+            {
+                D3D11_MAPPED_SUBRESOURCE mapped_subresource;
+                d3d_context->Map(d3d_constant_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_subresource);
+                ConstantBuffer2D* constants = (ConstantBuffer2D*)mapped_subresource.pData;
+                constants->screen_res = make_v2s32((s32)window.width, (s32)window.height);
+                constants->transform = batch->transform;
+                d3d_context->Unmap(d3d_constant_buffer, 0);
+            }
+
+            d3d_context->PSSetShaderResources(0, 1, &batch->texture->view);
+            d3d_context->Draw((u32)batch->vertex_count, (u32)batch->idx_in_vertex_buffer);
         }
-
-        d3d_context->PSSetShaderResources(0, 1, &batch->texture->view);
-        d3d_context->Draw((u32)batch->vertex_count, (u32)batch->idx_in_vertex_buffer);
     }
 }
 
 static void
 render_batches_reset(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     render_batches.first = 0;
     render_batches.last = 0;
     render_batches.count = 0;

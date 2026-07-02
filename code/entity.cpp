@@ -24,38 +24,30 @@ zero_entity_handle(void){
 }
 
 static Rect
-rect_from_entity(Entity* e){
-    Rect result = make_rect(make_v2(e->pos.x - e->dim.w/2, e->pos.y - e->dim.h/2),
-                            make_v2(e->pos.x + e->dim.x/2, e->pos.y + e->dim.h/2));
+rect_from_center(Entity* e){
+    Rect result = make_rect(make_v2(e->pos.x - (e->dim.w/2 * e->bounding_box_scale.x), 
+                            e->pos.y - (e->dim.h/2 * e->bounding_box_scale.y)),
+                            make_v2(e->pos.x + (e->dim.x/2 * e->bounding_box_scale.x), 
+                            e->pos.y + (e->dim.h/2 * e->bounding_box_scale.y)));
     return(result);
 }
 
 static Rect
 collision_box_from_entity(Entity* e){
     Rect result = make_rect(
-        make_v2(e->pos.x - e->dim.w/2 + e->collision_padding, e->pos.y - e->dim.h/2 + e->collision_padding),
-        make_v2(e->pos.x + e->dim.x/2 - e->collision_padding, e->pos.y + e->dim.h/2 - e->collision_padding)
+        make_v2(e->pos.x - e->size, e->pos.y - e->size),
+        make_v2(e->pos.x + e->size, e->pos.y + e->size)
     );
     return(result);
 }
 
 static Quad
-quad_from_entity_world(Entity* e){
+quad_from_center(Entity* e){
     Quad result = {0};
     result.p0 = make_v2(e->pos.x - e->dim.w/2, e->pos.y + e->dim.h/2);
     result.p1 = make_v2(e->pos.x + e->dim.w/2, e->pos.y + e->dim.h/2);
     result.p2 = make_v2(e->pos.x + e->dim.w/2, e->pos.y - e->dim.h/2);
     result.p3 = make_v2(e->pos.x - e->dim.w/2, e->pos.y - e->dim.h/2);
-    return(result);
-}
-
-static Quad
-quad_from_entity_screen(Entity* e){
-    Quad result = {0};
-    result.p0 = make_v2(e->pos.x - e->dim.w/2, e->pos.y - e->dim.h/2);
-    result.p1 = make_v2(e->pos.x + e->dim.w/2, e->pos.y - e->dim.h/2);
-    result.p2 = make_v2(e->pos.x + e->dim.w/2, e->pos.y + e->dim.h/2);
-    result.p3 = make_v2(e->pos.x - e->dim.w/2, e->pos.y + e->dim.h/1);
     return(result);
 }
 
@@ -212,8 +204,11 @@ sprite_update(Spritesheet* sprite, f32 dt){
             return(true);
         }
 
-        anim->col = (s32)(anim->col + 1) % sequence->frame_count;
-        anim->time_at = 0;
+        // note: some sequences don't have any frame counts, we don't want to divide by 0
+        if(sequence->frame_count != 0){
+            anim->col = (s32)(anim->col + 1) % sequence->frame_count;
+            anim->time_at = 0;
+        }
     }
     return(false);
 }

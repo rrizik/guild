@@ -12,6 +12,9 @@ d3d_init_debug_stuff(void){
 
 static void
 d3d_load_shader(String8 shader_path, D3D11_INPUT_ELEMENT_DESC* il, u32 layout_count, ID3D11VertexShader** d3d_vs, ID3D11PixelShader** d3d_ps, ID3D11InputLayout** d3d_il){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     // ---------------------------------------------------------------------------------
     // Vertex/Pixel Shader
     // ---------------------------------------------------------------------------------
@@ -52,11 +55,18 @@ d3d_load_shader(String8 shader_path, D3D11_INPUT_ELEMENT_DESC* il, u32 layout_co
     hr = d3d_device->CreateInputLayout(il, layout_count, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), d3d_il);
     assert_hr(hr);
 
+    if(vs_blob) vs_blob->Release();
+    if(ps_blob) ps_blob->Release();
+    if(error) error->Release();
+
     end_scratch(scratch);
 };
 
 static void
 init_d3d(HWND window_handle, u32 width, u32 height){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     // ---------------------------------------------------------------------------------
     // Device + Context
     // ---------------------------------------------------------------------------------
@@ -268,64 +278,6 @@ init_d3d(HWND window_handle, u32 width, u32 height){
         assert_hr(hr);
     }
 
-    // ---------------------------------------------------------------------------------
-    // White Texture
-    // ---------------------------------------------------------------------------------
-    {
-        D3D11_TEXTURE2D_DESC desc = {
-            .Width = (u32)1,
-            .Height = (u32)1,
-            .MipLevels = 1,
-            .ArraySize = 1,
-            .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-            .SampleDesc = {1, 0},
-            .Usage = D3D11_USAGE_IMMUTABLE,
-            .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-        };
-
-        u32 white = 0xFFFFFFFF;
-        D3D11_SUBRESOURCE_DATA data = {
-            .pSysMem = &white,
-            .SysMemPitch = sizeof(u32),
-        };
-
-        hr = d3d_device->CreateTexture2D(&desc, &data, &white_texture);
-        assert_hr(hr);
-
-        hr = d3d_device->CreateShaderResourceView(white_texture, 0, &white_shader_resource);
-        assert_hr(hr);
-        white_texture->Release();
-    }
-
-    // ---------------------------------------------------------------------------------
-    // Magenta Texture
-    // ---------------------------------------------------------------------------------
-    {
-        D3D11_TEXTURE2D_DESC desc = {
-            .Width = (u32)1,
-            .Height = (u32)1,
-            .MipLevels = 1,
-            .ArraySize = 1,
-            .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-            .SampleDesc = {1, 0},
-            .Usage = D3D11_USAGE_IMMUTABLE,
-            .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-        };
-
-        u32 magenta = 0xFFFF00FF;
-        D3D11_SUBRESOURCE_DATA data = {
-            .pSysMem = &magenta,
-            .SysMemPitch = sizeof(u32),
-        };
-
-        hr = d3d_device->CreateTexture2D(&desc, &data, &magenta_texture);
-        assert_hr(hr);
-
-        hr = d3d_device->CreateShaderResourceView(magenta_texture, 0, &magenta_shader_resource);
-        assert_hr(hr);
-        magenta_texture->Release();
-    }
-
     base_device->Release();
     base_device_context->Release();
     dxgiAdapter->Release();
@@ -335,48 +287,50 @@ init_d3d(HWND window_handle, u32 width, u32 height){
 
 static void
 d3d_init_texture_resource(Texture* texture, Bitmap* bitmap){
-    if(bitmap->base){
-        D3D11_TEXTURE2D_DESC desc = {
-            .Width = (u32)bitmap->width,
-            .Height = (u32)bitmap->height,
-            .MipLevels = 1,
-            .ArraySize = 1,
-            .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-            .SampleDesc = {1, 0},
-            .Usage = D3D11_USAGE_IMMUTABLE,
-            .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-        };
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
-        D3D11_SUBRESOURCE_DATA data = {
-            .pSysMem = bitmap->base,
-            .SysMemPitch = (u32)bitmap->stride,
-        };
+    D3D11_TEXTURE2D_DESC desc = {
+        .Width = (u32)bitmap->width,
+        .Height = (u32)bitmap->height,
+        .MipLevels = 1,
+        .ArraySize = 1,
+        .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+        .SampleDesc = {1, 0},
+        .Usage = D3D11_USAGE_IMMUTABLE,
+        .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+    };
 
-        ID3D11Texture2D* d3d_tex;
-        hr = d3d_device->CreateTexture2D(&desc, &data, &d3d_tex);
-        assert_hr(hr);
+    D3D11_SUBRESOURCE_DATA data = {
+        .pSysMem = bitmap->base,
+        .SysMemPitch = (u32)bitmap->stride,
+    };
 
-        hr = d3d_device->CreateShaderResourceView(d3d_tex, 0, &texture->view);
-        assert_hr(hr);
-        d3d_tex->Release();
+    ID3D11Texture2D* d3d_tex;
+    hr = d3d_device->CreateTexture2D(&desc, &data, &d3d_tex);
+    assert_hr(hr);
 
-        texture->width = bitmap->width;
-        texture->height = bitmap->height;
-    }
-    else{
-        texture->view = magenta_shader_resource;
-        texture->width = 1;
-        texture->height = 1;
-    }
+    hr = d3d_device->CreateShaderResourceView(d3d_tex, 0, &texture->view);
+    assert_hr(hr);
+    d3d_tex->Release();
+
+    texture->width = bitmap->width;
+    texture->height = bitmap->height;
 }
 
 static void
 d3d_clear_color(RGBA color){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     d3d_context->ClearRenderTargetView(d3d_framebuffer_view, color.e);
 }
 
 static void
 d3d_resize_window(f32 width, f32 height){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     if(!d3d_framebuffer_view || !d3d_framebuffer){
         return;
     }
@@ -483,20 +437,32 @@ d3d_make_vertex_buffer(s32 size){
 
 static void
 d3d_present(){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     d3d_swapchain->Present(1, 0);
 }
 
 static void
 d3d_release(void){
-    if(d3d_device) d3d_device->Release();
-    if(d3d_context) d3d_context->Release();
-    d3d_swapchain->SetFullscreenState(false, 0);
-    if(d3d_swapchain) d3d_swapchain->Release();
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
-    if(d3d_framebuffer)      d3d_framebuffer->Release();
+    if(d3d_context){
+        d3d_context->ClearState();
+        d3d_context->Flush();
+    }
+
     if(d3d_framebuffer_view) d3d_framebuffer_view->Release();
-    if(d3d_depthbuffer)      d3d_depthbuffer->Release();
+    if(d3d_framebuffer)      d3d_framebuffer->Release();
+
+    if(d3d_swapchain){
+        d3d_swapchain->SetFullscreenState(false, 0);
+        d3d_swapchain->Release();
+    }
+
     if(d3d_depthbuffer_view) d3d_depthbuffer_view->Release();
+    if(d3d_depthbuffer)      d3d_depthbuffer->Release();
 
     if(d3d_depthstencil_state) d3d_depthstencil_state->Release();
     if(d3d_rasterizer_state)   d3d_rasterizer_state->Release();
@@ -512,7 +478,9 @@ d3d_release(void){
     if(d3d_instance_buffer)   d3d_instance_buffer->Release();
     if(d3d_constant_buffer)   d3d_constant_buffer->Release();
 
-    if(white_shader_resource) white_shader_resource->Release();
+    if(d3d_context) d3d_context->Release();
+    if(d3d_device) d3d_device->Release();
+
 
 #ifdef DEBUG
     IDXGIDebug1* pDxgiDebug;

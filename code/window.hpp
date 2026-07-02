@@ -1,7 +1,6 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-
 typedef enum WindowType{
     WindowType_Fullscreen,
     WindowType_Windowed,

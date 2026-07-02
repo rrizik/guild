@@ -3,6 +3,9 @@
 
 static void
 load_font(Arena* arena, FontAsset font_id, String8 build_path, String8 path, s32 size){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     assets.fonts[font_id] = font_ttf_read(arena, build_path, path, size);
     assets.fonts[font_id].texture_id = font_id;
     s32 a = 1;
@@ -10,13 +13,31 @@ load_font(Arena* arena, FontAsset font_id, String8 build_path, String8 path, s32
 
 static void
 load_audio(Arena* arena, WaveAsset audio_id, String8 build_path, String8 path){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     assets.waves[audio_id] = wave_file_read(arena, build_path, path);
 }
 
 static void
 load_texture(Arena* arena, TextureAsset texture_id, String8 build_path, String8 path){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     Bitmap bm = stb_load_image(arena, build_path, path);
-    d3d_init_texture_resource(&assets.textures[texture_id], &bm);
+    Texture* texture = &assets.textures[texture_id];
+
+    if(bm.base){
+        d3d_init_texture_resource(texture, &bm);
+    }
+    else{
+        Texture* fallback = &assets.textures[TextureAsset_Magenta];
+
+        texture->view = fallback->view;
+        texture->width = fallback->width;
+        texture->height = fallback->height;
+        texture->view->AddRef();
+    }
 }
 
 static Font*
@@ -26,16 +47,40 @@ a_get_font(s32 font_id){
 
 static void
 assets_load(Arena* arena){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
     ScratchArena scratch = begin_scratch();
     String8 build_path = os_application_path(scratch.arena);
 
-    Texture white_texture = {white_shader_resource};
-    white_texture.width, white_texture.height = 1;
-    assets.textures[TextureAsset_White] = white_texture;
+    //Texture white_texture = {white_shader_resource};
+    //white_texture.width = 1;
+    //white_texture.height = 1;
 
-    Texture magenta_texture = {magenta_shader_resource};
-    magenta_texture.width, magenta_texture.height = 1;
-    assets.textures[TextureAsset_Magenta] = magenta_texture;
+    u32 white = 0xFFFFFFFF;
+    Bitmap white_bitmap = {
+        .base = (u8*)&white,
+        .width = 1,
+        .height = 1,
+        .stride = sizeof(u32),
+    };
+    d3d_init_texture_resource(&assets.textures[TextureAsset_White], &white_bitmap);
+
+    u32 magenta = 0xFFFF00FF;
+    Bitmap magenta_bitmap = {
+        .base = (u8*)&magenta,
+        .width = 1,
+        .height = 1,
+        .stride = sizeof(u32),
+    };
+    d3d_init_texture_resource(&assets.textures[TextureAsset_Magenta], &magenta_bitmap);
+
+    //assets.textures[TextureAsset_White] = white_texture;
+
+    //Texture magenta_texture = {magenta_shader_resource};
+    //magenta_texture.width = 1;
+    //magenta_texture.height = 1;
+    //assets.textures[TextureAsset_Magenta] = magenta_texture;
 
     load_texture(scratch.arena, TextureAsset_Human_Attack, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_attack.png"));
     load_texture(scratch.arena, TextureAsset_Human_Charged_Attack, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_charged_attack.png"));
@@ -46,6 +91,15 @@ assets_load(Arena* arena){
     load_texture(scratch.arena, TextureAsset_Human_Spin_Die, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_spin_die.png"));
     load_texture(scratch.arena, TextureAsset_Human_Walk, build_path, str8_lit("sprites/base_humanoids/human/base_human/human_walk.png"));
 
+    load_texture(scratch.arena, TextureAsset_Human_Attack_Shadow, build_path, str8_lit("sprites/base_humanoids/human/base_human/_shadows/shadow_humanoid_attack.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Charged_Attack_Shadow, build_path, str8_lit("sprites/base_humanoids/human/base_human/_shadows/shadow_humanoid_charged_attack.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Dmg_Shadow, build_path, str8_lit("sprites/base_humanoids/human/base_human/_shadows/shadow_humanoid_dmg.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Idle_Shadow, build_path, str8_lit("sprites/base_humanoids/human/base_human/_shadows/shadow_humanoid_idle.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Jump_Shadow, build_path, str8_lit("sprites/base_humanoids/human/base_human/_shadows/shadow_humanoid_jump.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Soul_Die_Shadow, build_path, str8_lit("sprites/base_humanoids/human/base_human/_shadows/shadow_humanoid_soul_die.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Spin_Die_Shadow, build_path, str8_lit("sprites/base_humanoids/human/base_human/_shadows/shadow_humanoid_spin_die.png"));
+    load_texture(scratch.arena, TextureAsset_Human_Walk_Shadow, build_path, str8_lit("sprites/base_humanoids/human/base_human/_shadows/shadow_humanoid_walk.png"));
+
     load_texture(scratch.arena, TextureAsset_Orc_Attack, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_base_attack.png"));
     load_texture(scratch.arena, TextureAsset_Orc_Charged_Attack, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_charged_attack.png"));
     load_texture(scratch.arena, TextureAsset_Orc_Dmg, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_dmg.png"));
@@ -53,6 +107,17 @@ assets_load(Arena* arena){
     load_texture(scratch.arena, TextureAsset_Orc_Jump, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_jump.png"));
     load_texture(scratch.arena, TextureAsset_Orc_Die, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_die.png"));
     load_texture(scratch.arena, TextureAsset_Orc_Walk, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/orc_walk.png"));
+
+    load_texture(scratch.arena, TextureAsset_Orc_Attack_Shadow, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/_shadows/shadow_humanoid_attack.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Charged_Attack_Shadow, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/_shadows/shadow_humanoid_charged_attack.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Dmg_Shadow, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/_shadows/shadow_humanoid_dmg.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Idle_Shadow, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/_shadows/shadow_humanoid_idle.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Jump_Shadow, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/_shadows/shadow_humanoid_jump.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Die_Shadow, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/_shadows/shadow_humanoid_spin_die.png"));
+    load_texture(scratch.arena, TextureAsset_Orc_Walk_Shadow, build_path, str8_lit("sprites/base_humanoids/orc/base_orc/_shadows/shadow_humanoid_walk.png"));
+
+    load_texture(scratch.arena, TextureAsset_Fire, build_path, str8_lit("sprites/props/floor_fireplace.png"));
+    load_texture(scratch.arena, TextureAsset_Fire_Shadow, build_path, str8_lit("sprites/props/floor_fireplace_light.png"));
 
     load_texture(scratch.arena, TextureAsset_Grass1, build_path, str8_lit("sprites/tiles/grass1.png"));
     load_texture(scratch.arena, TextureAsset_Water1, build_path, str8_lit("sprites/tiles/water1.png"));
@@ -91,6 +156,31 @@ assets_load(Arena* arena){
     load_font(arena, FontAsset_Consolas, build_path, str8_lit("fonts/consola.ttf"), 16);
 
     end_scratch(scratch);
+}
+
+static void
+assets_release(){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
+
+    // release textures
+    for(s32 i=0; i < TextureAsset_Count; ++i){
+        ID3D11ShaderResourceView* view = assets.textures[i].view;
+        if(view){
+            view->Release();
+        }
+        assets.textures[i].view = 0;
+    }
+
+    // release fonts
+    for(s32 i=0; i < FontAsset_Count; ++i){
+        ID3D11ShaderResourceView* view = assets.fonts[i].texture.view;
+        if(view){
+            view->Release();
+        }
+        assets.fonts[i].texture.view = 0;
+    }
+
 }
 
 

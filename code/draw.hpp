@@ -63,13 +63,9 @@ typedef struct Render_State{
 
     Render_Space space;
     Texture*     texture;
-    //s32          texture_id;
     Font*        font;
-    //s32          font_id;
     m4           transform;
     u32          transform_gen;
-    //s32          layer;
-    //f32          z;
 
     R_RenderSpaceStack render_space_stack;
     R_TextureStack     texture_stack;
@@ -115,6 +111,7 @@ typedef struct Draw_Command{
 
     s32 layer;
     f32 z;
+    s32 submission_order;
 } Draw_Command;
 
 #define DRAW_COMMANDS_COUNT 409600
@@ -172,8 +169,6 @@ static RGBA linear_from_srgb(RGBA value);
 static RGBA srgb_from_linear(RGBA value);
 
 static void draw_init(Arena* arena, Arena* batch_arena, Arena* sprite_arena, Assets* assets);
-
-static void push_texture_quad();
 
 static void imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color=WHITE);
 static void imm_draw_quad(v2 pos, v2 dim, RGBA color=WHITE);
