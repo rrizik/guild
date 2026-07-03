@@ -2341,7 +2341,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
         }
 
-        partition_entities_in_bins();
+        //partition_entities_in_bins();
 
         // note todo fixme: consumes input so needs to be here, input needs to be 1 frame later
         // so that ui drawing doesn't have to happen before simulation and stuff like that
