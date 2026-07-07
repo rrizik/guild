@@ -260,23 +260,6 @@ sim_game(void){
             }
         }
     }
-
-    // resolve death todo(rr): this will be different
-    //for(s32 i = 0; i < array_count(state->entities); ++i){
-    //    Entity *e = state->entities + i;
-    //    if(!has_flag(e->flags, EntityFlag_Active)){
-    //        continue;
-    //    }
-    //}
-
-    // type loop
-    //for(s32 i = 0; i < array_count(state->entities); ++i){
-    //    Entity *e = state->entities + i;
-    //    Rect e_rect = rect_from_entity(e);
-
-    //    //switch(e->type){
-    //    //}
-    //}
 }
 
 static bool
@@ -1506,7 +1489,7 @@ draw_world_terrain(void){
     begin_timed_function();
     // note: only draws terrain that is within that camera space.
 
-    r_render_space(Render_Space_World_Terrain)
+    r_render_space(Render_Space_World)
     r_layer(0)
     r_z(0)
     {
@@ -2415,221 +2398,221 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             time_elapsed += clock.dt;
             simulations++;
 
-    }
-
-    if(controller_button_pressed(KeyCode_F1)){
-        if(state->scene_state == SceneState_Editor){
-            state->scene_state = SceneState_Game;
-            state->terrain_selected = false;
-            state->terrain_selected_id = 0;
         }
-        else if(state->scene_state == SceneState_Game){
-            state->scene_state = SceneState_Editor;
+
+        if(controller_button_pressed(KeyCode_F1)){
+            if(state->scene_state == SceneState_Editor){
+                state->scene_state = SceneState_Game;
+                state->terrain_selected = false;
+                state->terrain_selected_id = 0;
+            }
+            else if(state->scene_state == SceneState_Game){
+                state->scene_state = SceneState_Editor;
+            }
         }
-    }
 
-    // camera drag
-    if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT, false)){
-        world_camera_record = camera;
-        world_mouse_record = controller.mouse.world_pos;
-        state->dragging_world = true;
-    }
-    if(controller.ctrl_pressed && controller_button_held(MOUSE_BUTTON_RIGHT)){
-        v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
-        v2 world_rel_pos = world_mouse_record - world_mouse_current;
-        state->selecting = false;
-        camera.x = world_camera_record.x + world_rel_pos.x;
-        camera.y = world_camera_record.y + world_rel_pos.y;
-    }
-    if(state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT)){
-        world_camera_record = {0};
-        world_mouse_record = {0};
-        state->dragging_world = false;
-    }
-
-    // Entity Selection.
-    if(!state->dragging_world){
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("entity hover and selection");
-
-        if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
-            state->selection_mouse_record = controller.mouse.world_pos;
-            state->selecting = true;
+        // camera drag
+        if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT, false)){
+            world_camera_record = camera;
+            world_mouse_record = controller.mouse.world_pos;
+            state->dragging_world = true;
         }
-        if(state->selecting && controller_button_held(MOUSE_BUTTON_LEFT)){
-            min.x = state->selection_mouse_record.x <= controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
-            min.y = state->selection_mouse_record.y <= controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
-            max.x = state->selection_mouse_record.x >  controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
-            max.y = state->selection_mouse_record.y >  controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
-            state->selection_rect = make_rect(min, max);
+        if(controller.ctrl_pressed && controller_button_held(MOUSE_BUTTON_RIGHT)){
+            v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
+            v2 world_rel_pos = world_mouse_record - world_mouse_current;
+            state->selecting = false;
+            camera.x = world_camera_record.x + world_rel_pos.x;
+            camera.y = world_camera_record.y + world_rel_pos.y;
         }
-        if(controller_button_released(MOUSE_BUTTON_LEFT)){
-                state->selection_mouse_record = {0};
-                state->selecting = false;
+        if(state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT)){
+            world_camera_record = {0};
+            world_mouse_record = {0};
+            state->dragging_world = false;
+        }
 
-                s32 count = 0;
-                bool selected_new_units = false;
-                //for(s32 i=0; i < array_count(state->entities); ++i){
-                //    Entity* e = state->entities + i;
+        // Entity Selection.
+        if(!state->dragging_world){
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("entity hover and selection");
+
+            if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
+                state->selection_mouse_record = controller.mouse.world_pos;
+                state->selecting = true;
+            }
+            if(state->selecting && controller_button_held(MOUSE_BUTTON_LEFT)){
+                min.x = state->selection_mouse_record.x <= controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
+                min.y = state->selection_mouse_record.y <= controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
+                max.x = state->selection_mouse_record.x >  controller.mouse.world_x ? state->selection_mouse_record.x : controller.mouse.world_x;
+                max.y = state->selection_mouse_record.y >  controller.mouse.world_y ? state->selection_mouse_record.y : controller.mouse.world_y;
+                state->selection_rect = make_rect(min, max);
+            }
+            if(controller_button_released(MOUSE_BUTTON_LEFT)){
+                    state->selection_mouse_record = {0};
+                    state->selecting = false;
+
+                    s32 count = 0;
+                    bool selected_new_units = false;
+                    //for(s32 i=0; i < array_count(state->entities); ++i){
+                    //    Entity* e = state->entities + i;
+                    for(s32 i = 0; i < state->active_entities_count; ++i){
+                        Entity *e = state->active_entities[i];
+                        if(e == player) continue;
+                        if(!has_flags(e->flags, EntityFlag_Active)) continue;
+
+                        if(rect_contains_point(state->selection_rect, e->pos)){
+                            selected_new_units = true;
+                            if(controller.ctrl_pressed){
+                                state->entities_selected[state->entities_selected_count++] = e;
+                            }
+                            else{
+                                state->entities_selected[count] = e;
+                            }
+                            e->selected = true;
+                            count++;
+                        }
+                    }
+
+                    if(!controller.ctrl_pressed && selected_new_units == true){
+                        state->entities_selected_count = count;
+                    }
+
+                    state->selection_rect = {0};
+                }
+
+                // mouse hover
+                bool found = false;
+                //for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+                //    Entity *e = state->entities + idx;
                 for(s32 i = 0; i < state->active_entities_count; ++i){
                     Entity *e = state->active_entities[i];
-                    if(e == player) continue;
                     if(!has_flags(e->flags, EntityFlag_Active)) continue;
 
-                    if(rect_contains_point(state->selection_rect, e->pos)){
-                        selected_new_units = true;
-                        if(controller.ctrl_pressed){
-                            state->entities_selected[state->entities_selected_count++] = e;
-                        }
-                        else{
-                            state->entities_selected[count] = e;
-                        }
-                        e->selected = true;
-                        count++;
+                    if(mouse_in_bounding_box(e)){
+                        state->entity_hovered = e;
+                        found = true;
+                    }
+                }
+                if(!found){
+                    state->entity_hovered = 0;
+                }
+
+                // single select
+                if(state->entity_hovered != player){
+                    if(state->entity_hovered && !controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                        clear_entities_selected();
+                        state->entities_selected[0] = state->entity_hovered;
+                        state->entities_selected[0]->selected = true;
+                        state->entities_selected_count = 1;
+                    }
+                    if(state->entity_hovered && controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                        state->entities_selected[state->entities_selected_count] = state->entity_hovered;
+                        state->entities_selected[state->entities_selected_count]->selected = true;
+                        state->entities_selected_count++;
                     }
                 }
 
-                if(!controller.ctrl_pressed && selected_new_units == true){
-                    state->entities_selected_count = count;
+            }
+
+            {
+                // DUMB DUMB ADDED THIS
+                begin_timed_scope("selected entity commands");
+
+                // Calc center position of selection.
+                v2 average_position = make_v2(0, 0);
+                for(s32 i=0; i < state->entities_selected_count; ++i){
+                    Entity* e = state->entities_selected[i];
+                    average_position.x += e->pos.x;
+                    average_position.y += e->pos.y;
+                }
+                state->entities_selected_center.x = average_position.x/(f32)state->entities_selected_count;
+                state->entities_selected_center.y = average_position.y/(f32)state->entities_selected_count;
+
+                v2 world_mouse = controller.mouse.world_pos;
+                for(s32 i=0; i < state->entities_selected_count; ++i){
+                    Entity* e = state->entities_selected[i];
+
+                    switch(e->structure_type){
+                        case StructureType_Castle:{
+                            if(!controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT)){
+                                e->rallypoint = world_mouse;
+                                e->rallypoint_cell = grid_cell_from_pos(world_mouse, state->world_cell_size);
+                            }
+                            ui_castle();
+                        }
+                    }
+
+                    switch(e->type){
+                        case EntityType_Skeleton1:{
+                            if(!state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT, false)){
+                                f32 projected_distance  = distance_v2(state->entities_selected_center, world_mouse);
+                                v2  projected_direction = direction_v2(state->entities_selected_center, world_mouse);
+                                f32 projected_rad = rad_from_dir(projected_direction);
+
+                                v2 target_direction = direction_v2(e->pos, world_mouse);
+                                f32 target_rad = rad_from_dir(target_direction);
+
+                                projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
+                                v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
+                                v2 target_pos = e->pos + projected_offset;
+
+                                if(!controller.shift_pressed){
+                                    entity_commands_clear(e);
+                                }
+                                tp = e->pos;
+                                wm = world_mouse;
+                                entity_commands_move(e, target_pos, world_mouse);
+                            }
+                        }
+                        case EntityType_Monster:{
+                            if(!state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT, false)){
+                                f32 projected_distance  = distance_v2(state->entities_selected_center, world_mouse);
+                                v2  projected_direction = direction_v2(state->entities_selected_center, world_mouse);
+                                f32 projected_rad = rad_from_dir(projected_direction);
+
+                                v2 target_direction = direction_v2(e->pos, world_mouse);
+                                f32 target_rad = rad_from_dir(target_direction);
+
+                                projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
+                                v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
+                                v2 target_pos = e->pos + projected_offset;
+
+                                if(!controller.shift_pressed){
+                                    entity_commands_clear(e);
+                                }
+                                tp = e->pos;
+                                wm = world_mouse;
+                                entity_commands_move(e, target_pos, world_mouse);
+                            }
+                        }
+                    }
                 }
 
-                state->selection_rect = {0};
-            }
-
-            // mouse hover
-            bool found = false;
-            //for(s32 idx = 0; idx < array_count(state->entities); ++idx){
-            //    Entity *e = state->entities + idx;
-            for(s32 i = 0; i < state->active_entities_count; ++i){
-                Entity *e = state->active_entities[i];
-                if(!has_flags(e->flags, EntityFlag_Active)) continue;
-
-                if(mouse_in_bounding_box(e)){
-                    state->entity_hovered = e;
-                    found = true;
-                }
-            }
-            if(!found){
-                state->entity_hovered = 0;
-            }
-
-            // single select
-            if(state->entity_hovered != player){
-                if(state->entity_hovered && !controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                // CLEAR SELECTION
+                if(!controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
                     clear_entities_selected();
-                    state->entities_selected[0] = state->entity_hovered;
-                    state->entities_selected[0]->selected = true;
-                    state->entities_selected_count = 1;
-                }
-                if(state->entity_hovered && controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                    state->entities_selected[state->entities_selected_count] = state->entity_hovered;
-                    state->entities_selected[state->entities_selected_count]->selected = true;
-                    state->entities_selected_count++;
                 }
             }
 
-        }
+            console_update();
 
-        {
-            // DUMB DUMB ADDED THIS
-            begin_timed_scope("selected entity commands");
-
-            // Calc center position of selection.
-            v2 average_position = make_v2(0, 0);
-            for(s32 i=0; i < state->entities_selected_count; ++i){
-                Entity* e = state->entities_selected[i];
-                average_position.x += e->pos.x;
-                average_position.y += e->pos.y;
+            // zoom
+            if(camera.size > 30){
+                camera.size -= (f32)controller.mouse.wheel_dir * 10;
             }
-            state->entities_selected_center.x = average_position.x/(f32)state->entities_selected_count;
-            state->entities_selected_center.y = average_position.y/(f32)state->entities_selected_count;
-
-            v2 world_mouse = controller.mouse.world_pos;
-            for(s32 i=0; i < state->entities_selected_count; ++i){
-                Entity* e = state->entities_selected[i];
-
-                switch(e->structure_type){
-                    case StructureType_Castle:{
-                        if(!controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT)){
-                            e->rallypoint = world_mouse;
-                            e->rallypoint_cell = grid_cell_from_pos(world_mouse, state->world_cell_size);
-                        }
-                        ui_castle();
-                    }
-                }
-
-                switch(e->type){
-                    case EntityType_Skeleton1:{
-                        if(!state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT, false)){
-                            f32 projected_distance  = distance_v2(state->entities_selected_center, world_mouse);
-                            v2  projected_direction = direction_v2(state->entities_selected_center, world_mouse);
-                            f32 projected_rad = rad_from_dir(projected_direction);
-
-                            v2 target_direction = direction_v2(e->pos, world_mouse);
-                            f32 target_rad = rad_from_dir(target_direction);
-
-                            projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
-                            v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
-                            v2 target_pos = e->pos + projected_offset;
-
-                            if(!controller.shift_pressed){
-                                entity_commands_clear(e);
-                            }
-                            tp = e->pos;
-                            wm = world_mouse;
-                            entity_commands_move(e, target_pos, world_mouse);
-                        }
-                    }
-                    case EntityType_Monster:{
-                        if(!state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT, false)){
-                            f32 projected_distance  = distance_v2(state->entities_selected_center, world_mouse);
-                            v2  projected_direction = direction_v2(state->entities_selected_center, world_mouse);
-                            f32 projected_rad = rad_from_dir(projected_direction);
-
-                            v2 target_direction = direction_v2(e->pos, world_mouse);
-                            f32 target_rad = rad_from_dir(target_direction);
-
-                            projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
-                            v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
-                            v2 target_pos = e->pos + projected_offset;
-
-                            if(!controller.shift_pressed){
-                                entity_commands_clear(e);
-                            }
-                            tp = e->pos;
-                            wm = world_mouse;
-                            entity_commands_move(e, target_pos, world_mouse);
-                        }
-                    }
+            if(camera.size <= 30){
+                camera.size -= (f32)controller.mouse.wheel_dir;
+                if(camera.size < 3){
+                    camera.size = 3;
                 }
             }
 
-            // CLEAR SELECTION
-            if(!controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                clear_entities_selected();
+            {
+                // DUMB DUMB ADDED THIS
+                begin_timed_scope("camera update");
+
+                camera_2d_update(&camera, window.aspect_ratio);
             }
-        }
-
-        console_update();
-
-        // zoom
-        if(camera.size > 30){
-            camera.size -= (f32)controller.mouse.wheel_dir * 10;
-        }
-        if(camera.size <= 30){
-            camera.size -= (f32)controller.mouse.wheel_dir;
-            if(camera.size < 3){
-                camera.size = 3;
-            }
-        }
-
-        {
-            // DUMB DUMB ADDED THIS
-            begin_timed_scope("camera update");
-
-            camera_2d_update(&camera, window.aspect_ratio);
-        }
-        audio_update();
+            audio_update();
 
         // rendering
         {
