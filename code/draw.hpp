@@ -24,6 +24,7 @@ static RGBA BACKGROUND_COLOR = {1.0f/255.0f, 1.0f/255.0f, 1.0f/255.0f};
 typedef enum Render_Space{
     Render_Space_Screen,
     Render_Space_World,
+    Render_Space_World_Terrain,
     Render_Space_World_Sorted,
 
     Render_Space_Count,
@@ -117,10 +118,12 @@ typedef struct Draw_Command{
 #define DRAW_COMMANDS_COUNT 409600
 global Draw_Command  draw_screen_commands[DRAW_COMMANDS_COUNT];
 global Draw_Command  draw_world_commands[DRAW_COMMANDS_COUNT];
+global Draw_Command  draw_world_terrain_commands[DRAW_COMMANDS_COUNT];
 global Draw_Command  draw_world_sorted_commands[DRAW_COMMANDS_COUNT];
 
 global s32 draw_screen_commands_at = 0;
 global s32 draw_world_commands_at = 0;
+global s32 draw_world_terrain_commands_at = 0;
 global s32 draw_world_sorted_commands_at = 0;
 
 global Draw_Command* draw_commands;
@@ -129,8 +132,8 @@ global s32* draw_commands_at;
 //#define DEFAULT_BATCH_SIZE MB(8)
 //#define DEFAULT_BATCH_SIZE KB(200)
 #define DEFAULT_BATCH_SIZE KB(100)
-typedef struct RenderBatch{
-    RenderBatch* next;
+typedef struct Render_Batch{
+    Render_Batch* next;
     Vertex2* buffer;
     s32 id;
     s32 idx_in_vertex_buffer;
@@ -141,14 +144,15 @@ typedef struct RenderBatch{
 
     m4 transform;
     u32 transform_gen;
-} RenderBatch;
+} Render_Batch;
 
 typedef struct RenderBatchNode{
-    RenderBatch* first;
-    RenderBatch* last;
+    Render_Batch* first;
+    Render_Batch* last;
     s32 count;
 } RenderBatchNode;
 global RenderBatchNode render_batches = {0};
+static s32 render_batches_count = 0;
 
 static Spritesheet*
 push_spritesheet(s32 texture_id, f32 col, f32 row, f32 anim_speed);
@@ -218,13 +222,14 @@ static void draw_text(String8 text, v2 pos, RGBA color=WHITE);
 static void draw_render_commands(void);
 static void draw_commands_clear(void);
 
-static RenderBatch* get_render_batch(u64 vertex_count);
+static Render_Batch* get_render_batch(u64 vertex_count);
 static void draw_render_batches(void);
 static void render_batches_reset(void);
 
 static void draw_stack_clear(void);
 static void draw_end(void);
 
+// todo maybe: simplify this into a list stack.
 //------------------------------------------------------------
 // Stack Macros
 
@@ -266,6 +271,11 @@ static void r_push_render_space(Render_Space v) {
             draw_commands = draw_world_commands;
             draw_commands_at = &draw_world_commands_at;
         } break;
+        case Render_Space_World_Terrain:{
+            r_stack_push_impl(render_state->stack_arena, Transform, transform, m4_screen_from_world())
+            draw_commands = draw_world_terrain_commands;
+            draw_commands_at = &draw_world_terrain_commands_at;
+        } break;
         case Render_Space_World_Sorted:{
             r_stack_push_impl(render_state->stack_arena, Transform, transform, m4_screen_from_world())
             draw_commands = draw_world_sorted_commands;
@@ -291,6 +301,10 @@ static void r_pop_render_space(void) {
         case Render_Space_World:{
             draw_commands = draw_world_commands;
             draw_commands_at = &draw_world_commands_at;
+        } break;
+        case Render_Space_World_Terrain:{
+            draw_commands = draw_world_terrain_commands;
+            draw_commands_at = &draw_world_terrain_commands_at;
         } break;
         case Render_Space_World_Sorted:{
             draw_commands = draw_world_sorted_commands;

@@ -134,6 +134,7 @@ typedef struct Entity{
     u32 index;
     u32 generation;
     bool active;
+    u32 active_list_idx;
 
     s32 left_right;
     s32 up_down;

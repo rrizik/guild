@@ -440,7 +440,7 @@ d3d_present(){
     // DUMB DUMB ADDED THIS
     begin_timed_function();
 
-    d3d_swapchain->Present(1, 0);
+    d3d_swapchain->Present(0, 0);
 }
 
 static void

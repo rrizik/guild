@@ -209,7 +209,8 @@ r_set_font(s32 font_id){
 
 static void
 r_set_transform(m4 transform){
-    if(!m4_equal(r_top_transform(), transform, 0.1f)){
+    //if(!m4_equal(r_top_transform(), transform, 0.1f)){
+    if(!m4_equal(render_state->transform, transform, 0.1f)){
         render_state->transform_gen++;
     }
     render_state->transform = transform; 
@@ -220,7 +221,7 @@ static void
 imm_draw_quad(v2 p0, v2 p1, v2 p2, v2 p3, RGBA color){
     RGBA linear_color = linear_from_srgb(color); 
                                                 
-    RenderBatch *batch = get_render_batch(6);
+    Render_Batch *batch = get_render_batch(6);
     // note: 0.5 UV values because we have a 1x1 white texture and we don't want 
     // to hit the edges of the texture causing artifacts with .AddressUVW = D3D11_TEXTURE_ADDRESS_BORDER
     batch->buffer[batch->vertex_count++] = { p0, make_v2(0.5f, 0.5f), linear_color };
@@ -260,7 +261,7 @@ static void
 imm_draw_texture(v2 p0, v2 p1, v2 p2, v2 p3, v2 u0, v2 u1, v2 u2, v2 u3, RGBA color){
     RGBA linear_color = linear_from_srgb(color); 
                                                 
-    RenderBatch *batch = get_render_batch(6);
+    Render_Batch *batch = get_render_batch(6);
     batch->buffer[batch->vertex_count++] = { p0, u0, linear_color };
     batch->buffer[batch->vertex_count++] = { p1, u1, linear_color };
     batch->buffer[batch->vertex_count++] = { p2, u2, linear_color };
@@ -354,7 +355,7 @@ imm_draw_sprite(Spritesheet sprite, Quad quad, RGBA color){
     v2 u2 = make_v2(right, bottom);
     v2 u3 = make_v2(left,  bottom);
                                                 
-    RenderBatch *batch = get_render_batch(6);
+    Render_Batch *batch = get_render_batch(6);
     batch->buffer[batch->vertex_count++] = { quad.p0, u0, linear_color };
     batch->buffer[batch->vertex_count++] = { quad.p1, u1, linear_color };
     batch->buffer[batch->vertex_count++] = { quad.p2, u2, linear_color };
@@ -405,7 +406,7 @@ imm_draw_line(v2 p0, v2 p1, f32 thickness, RGBA color){
 
     RGBA linear_color = linear_from_srgb(color); 
                                                  
-    RenderBatch *batch = get_render_batch(6);
+    Render_Batch *batch = get_render_batch(6);
     batch->buffer[batch->vertex_count++] = { p0, make_v2(0.0f, 0.0f), linear_color };
     batch->buffer[batch->vertex_count++] = { p1, make_v2(1.0f, 0.0f), linear_color };
     batch->buffer[batch->vertex_count++] = { p2, make_v2(1.0f, 1.0f), linear_color };
@@ -417,7 +418,7 @@ imm_draw_line(v2 p0, v2 p1, f32 thickness, RGBA color){
 static void
 imm_draw_text(String8 text, v2 pos, RGBA color){
     u64 count = text.size * 6;
-    RenderBatch* batch = get_render_batch(count);
+    Render_Batch* batch = get_render_batch(count);
     RGBA linear_color = linear_from_srgb(color);
 
     f32 start_x = pos.x;
@@ -730,6 +731,22 @@ draw_command_compare_layer_z(void* left, void* right){
     return(0);
 }
 
+static s32
+draw_command_compare_texture_id(void* left, void* right){
+    Draw_Command* a = (Draw_Command*)left;
+    Draw_Command* b = (Draw_Command*)right;
+
+    // first compare texture id
+    if(a->texture_id < b->texture_id) return(-1);
+    if(a->texture_id > b->texture_id) return( 1);
+
+    // finally compare submission order
+    if(a->submission_order > b->submission_order) return(-1);
+    if(a->submission_order < b->submission_order) return( 1);
+
+    return(0);
+}
+
 static void
 draw_render_commands(void){
     // DUMB DUMB ADDED THIS
@@ -739,31 +756,65 @@ draw_render_commands(void){
         // DUMB DUMB ADDED THIS
         begin_timed_scope("process world commands");
 
-        for(s32 i=0; i<draw_world_commands_at; ++i){
-            Draw_Command* c = draw_world_commands + i;
-            r_set_texture(c->texture_id);
-            r_set_transform(c->transform);
+        {
+            begin_timed_scope("draw world commands terrain");
+            for(s32 i=0; i<draw_world_terrain_commands_at; ++i){
+                Draw_Command* c = draw_world_terrain_commands + i;
+                r_set_texture(c->texture_id);
+                r_set_transform(c->transform);
 
-            switch(c->kind){
-                case Draw_Command_Quad:{
-                    imm_draw_quad(c->quad, c->color);
-                } break;
-                case Draw_Command_Bounding_Box:{
-                    imm_draw_bounding_box(c->quad, c->width, c->color);
-                } break;
-                case Draw_Command_Line:{
-                    imm_draw_line(c->p0, c->p1, c->width, c->color);
-                } break;
-                case Draw_Command_Texture:{
-                    imm_draw_texture(c->quad, c->color);
-                } break;
-                case Draw_Command_Sprite:{
-                    imm_draw_sprite(c->sprite, c->quad, c->color);
-                } break;
-                case Draw_Command_Text:{
-                    r_set_font(c->font_id);
-                    imm_draw_text(c->text, c->pos, c->color);
-                } break;
+                switch(c->kind){
+                    case Draw_Command_Quad:{
+                        imm_draw_quad(c->quad, c->color);
+                    } break;
+                    case Draw_Command_Bounding_Box:{
+                        imm_draw_bounding_box(c->quad, c->width, c->color);
+                    } break;
+                    case Draw_Command_Line:{
+                        imm_draw_line(c->p0, c->p1, c->width, c->color);
+                    } break;
+                    case Draw_Command_Texture:{
+                        imm_draw_texture(c->quad, c->color);
+                    } break;
+                    case Draw_Command_Sprite:{
+                        imm_draw_sprite(c->sprite, c->quad, c->color);
+                    } break;
+                    case Draw_Command_Text:{
+                        r_set_font(c->font_id);
+                        imm_draw_text(c->text, c->pos, c->color);
+                    } break;
+                }
+            }
+        }
+
+        {
+            begin_timed_scope("draw world commands");
+            for(s32 i=0; i<draw_world_commands_at; ++i){
+                Draw_Command* c = draw_world_commands + i;
+                r_set_texture(c->texture_id);
+                r_set_transform(c->transform);
+
+                switch(c->kind){
+                    case Draw_Command_Quad:{
+                        imm_draw_quad(c->quad, c->color);
+                    } break;
+                    case Draw_Command_Bounding_Box:{
+                        imm_draw_bounding_box(c->quad, c->width, c->color);
+                    } break;
+                    case Draw_Command_Line:{
+                        imm_draw_line(c->p0, c->p1, c->width, c->color);
+                    } break;
+                    case Draw_Command_Texture:{
+                        imm_draw_texture(c->quad, c->color);
+                    } break;
+                    case Draw_Command_Sprite:{
+                        imm_draw_sprite(c->sprite, c->quad, c->color);
+                    } break;
+                    case Draw_Command_Text:{
+                        r_set_font(c->font_id);
+                        imm_draw_text(c->text, c->pos, c->color);
+                    } break;
+                }
             }
         }
     }
@@ -777,7 +828,7 @@ draw_render_commands(void){
 
     {
         // DUMB DUMB ADDED THIS
-        begin_timed_scope("process sorted world commands");
+        begin_timed_scope("draw world sorted commands");
 
         for(s32 i=0; i<draw_world_sorted_commands_at; ++i){
             Draw_Command* c = draw_world_sorted_commands + i;
@@ -810,7 +861,7 @@ draw_render_commands(void){
 
     {
         // DUMB DUMB ADDED THIS
-        begin_timed_scope("process screen commands");
+        begin_timed_scope("draw screen commands");
 
         for(s32 i=0; i<draw_screen_commands_at; ++i){
             Draw_Command* c = draw_screen_commands + i;
@@ -862,6 +913,7 @@ static void
 draw_commands_clear(void){
     draw_screen_commands_at = 0;
     draw_world_commands_at = 0;
+    draw_world_terrain_commands_at = 0;
     draw_world_sorted_commands_at = 0;
 }
 
@@ -883,9 +935,9 @@ draw_stack_clear(void){
     r_push_texture(TextureAsset_White);
 }
 
-static RenderBatch*
+static Render_Batch*
 get_render_batch(u64 vertex_count){
-    RenderBatch *batch = render_batches.last;
+    Render_Batch *batch = render_batches.last;
     if(batch == 0 || 
        batch->vertex_count + vertex_count >= batch->vertex_cap || 
        batch->texture != render_state->texture || 
@@ -893,12 +945,13 @@ get_render_batch(u64 vertex_count){
         // DUMB DUMB ADDED THIS
         begin_timed_scope("allocate render batch");
 
-        batch = push_array_zero(render_state->batch_arena, RenderBatch, 1);
+        batch = push_array_zero(render_state->batch_arena, Render_Batch, 1);
         batch->buffer = push_array(render_state->batch_arena, Vertex2, DEFAULT_BATCH_SIZE / sizeof(Vertex2));
         batch->vertex_cap = DEFAULT_BATCH_SIZE / sizeof(Vertex2);
         batch->vertex_count = 0;
         batch->texture = render_state->texture;
         batch->transform = render_state->transform;
+        batch->transform_gen = render_state->transform_gen;
         batch->id = render_batches.count;
         if(render_batches.last == 0){
             render_batches.last = batch;
@@ -923,7 +976,7 @@ draw_render_batches(){
         // DUMB DUMB ADDED THIS
         begin_timed_scope("count batch vertices");
 
-        for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+        for(Render_Batch* batch = render_batches.first; batch != 0; batch = batch->next){
             required_size += batch->vertex_count * sizeof(Vertex2);
         }
     }
@@ -943,7 +996,7 @@ draw_render_batches(){
         D3D11_MAPPED_SUBRESOURCE resource;
         d3d_context->Map(d3d_vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
         s32 vertex_idx = 0;
-        for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+        for(Render_Batch* batch = render_batches.first; batch != 0; batch = batch->next){
             batch->idx_in_vertex_buffer = vertex_idx;
 
             memcpy((u8*)resource.pData + (vertex_idx * sizeof(Vertex2)),
@@ -984,7 +1037,7 @@ draw_render_batches(){
         // DUMB DUMB ADDED THIS
         begin_timed_scope("submit render batches");
 
-        for(RenderBatch* batch = render_batches.first; batch != 0; batch = batch->next){
+        for(Render_Batch* batch = render_batches.first; batch != 0; batch = batch->next){
             //----constant buffer----
             {
                 D3D11_MAPPED_SUBRESOURCE mapped_subresource;
@@ -1008,6 +1061,7 @@ render_batches_reset(void){
 
     render_batches.first = 0;
     render_batches.last = 0;
+    render_batches_count = render_batches.count;
     render_batches.count = 0;
     arena_free(render_state->batch_arena);
 }

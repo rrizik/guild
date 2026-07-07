@@ -93,124 +93,128 @@ sim_game(void){
             // DUMB DUMB ADDED THIS
             begin_timed_scope("entity movement and flocking");
 
-            for(s32 i = 0; i < array_count(state->entities); ++i){
-            Entity *e = state->entities + i;
-            if(!has_flags(e->flags, EntityFlag_Active)) continue;
-            if(!has_flags(e->flags, EntityFlag_MoveWithPhys)) continue;
+            //for(s32 i = 0; i < array_count(state->entities); ++i){
+                //Entity *e = state->entities + i;
+            for(s32 i = 0; i < state->active_entities_count; ++i){
+                Entity *e = state->active_entities[i];
+                if(!has_flags(e->flags, EntityFlag_Active)) continue;
+                if(!has_flags(e->flags, EntityFlag_MoveWithPhys)) continue;
 
-            // update attack_box
-            //e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.3f);
-            //e->attack_box.max = make_v2(e->pos.x + 0.6f, e->pos.y + 0.3f);
-            if(e->sprite.direction == RIGHT_FRONT){
-                e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.42f);
-                e->attack_box.max = make_v2(e->pos.x + 0.7f, e->pos.y + 0.25f);
-            }
-            if(e->sprite.direction == RIGHT_BACK){
-                e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.25f);
-                e->attack_box.max = make_v2(e->pos.x + 0.7f, e->pos.y + 0.4f);
-            }
-            if(e->sprite.direction == LEFT_FRONT){
+                // update attack_box
+                //e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.3f);
+                //e->attack_box.max = make_v2(e->pos.x + 0.6f, e->pos.y + 0.3f);
+                if(e->sprite.direction == RIGHT_FRONT){
+                    e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.42f);
+                    e->attack_box.max = make_v2(e->pos.x + 0.7f, e->pos.y + 0.25f);
+                }
+                if(e->sprite.direction == RIGHT_BACK){
+                    e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.25f);
+                    e->attack_box.max = make_v2(e->pos.x + 0.7f, e->pos.y + 0.4f);
+                }
+                if(e->sprite.direction == LEFT_FRONT){
                 e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.36f);
                 e->attack_box.max = make_v2(e->pos.x - 0.65f, e->pos.y + 0.2);
-            }
-            if(e->sprite.direction == LEFT_BACK){
-                e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.2f);
-                e->attack_box.max = make_v2(e->pos.x - 0.65f, e->pos.y + 0.35f);
-            }
-            //e->bounding_box = make_rect(make_v2(e->pos.x - 0.3f, e->pos.y - 0.3f), make_v2(e->pos.x + 0.3f, e->pos.y + 0.3f));
+                }
+                if(e->sprite.direction == LEFT_BACK){
+                    e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.2f);
+                    e->attack_box.max = make_v2(e->pos.x - 0.65f, e->pos.y + 0.35f);
+                }
+                //e->bounding_box = make_rect(make_v2(e->pos.x - 0.3f, e->pos.y - 0.3f), make_v2(e->pos.x + 0.3f, e->pos.y + 0.3f));
 
-            // All 9 surrounding cells.
-            v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
-            v2 all_coords[9] = {
-                cell_coords,
-                make_v2(cell_coords.x - 1, cell_coords.y - 1),
-                make_v2(cell_coords.x - 1, cell_coords.y),
-                make_v2(cell_coords.x - 1, cell_coords.y + 1),
-                make_v2(cell_coords.x,     cell_coords.y - 1),
-                make_v2(cell_coords.x,     cell_coords.y + 1),
-                make_v2(cell_coords.x + 1, cell_coords.y - 1),
-                make_v2(cell_coords.x + 1, cell_coords.y),
-                make_v2(cell_coords.x + 1, cell_coords.y + 1),
-            };
+                // All 9 surrounding cells.
+                v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
+                v2 all_coords[9] = {
+                    cell_coords,
+                    make_v2(cell_coords.x - 1, cell_coords.y - 1),
+                    make_v2(cell_coords.x - 1, cell_coords.y),
+                    make_v2(cell_coords.x - 1, cell_coords.y + 1),
+                    make_v2(cell_coords.x,     cell_coords.y - 1),
+                    make_v2(cell_coords.x,     cell_coords.y + 1),
+                    make_v2(cell_coords.x + 1, cell_coords.y - 1),
+                    make_v2(cell_coords.x + 1, cell_coords.y),
+                    make_v2(cell_coords.x + 1, cell_coords.y + 1),
+                };
 
-            //if(controller_button_pressed(KeyCode_1)){
-            //    do_motion = !do_motion;
-            //}
-            //if(controller_button_pressed(KeyCode_2)){
-            //    for(s32 i=0; i < array_count(state->entities_selected); ++i){
-            //        Entity* e = state->entities_selected[i];
-            //        entity_commands_clear(e);
-            //    }
-            //}
+                //if(controller_button_pressed(KeyCode_1)){
+                //    do_motion = !do_motion;
+                //}
+                //if(controller_button_pressed(KeyCode_2)){
+                //    for(s32 i=0; i < array_count(state->entities_selected); ++i){
+                //        Entity* e = state->entities_selected[i];
+                //        entity_commands_clear(e);
+                //    }
+                //}
 
-            // Flocking, cumulative velocity.
-            for(s32 j=0; j < array_count(all_coords); ++j){
-                v2 coords = all_coords[j];
-                if(!grid_cell_coords_in_bounds(coords)) continue;
+                // Flocking, cumulative velocity.
+                for(s32 j=0; j < array_count(all_coords); ++j){
+                    v2 coords = all_coords[j];
+                    if(!grid_cell_coords_in_bounds(coords)) continue;
 
-                Cell* cell = state->cells + ((s32)coords.x + (WORLD_WIDTH_IN_TILES_MAX * (s32)coords.y));
-                for(BinNode* bin = cell->bin; bin != 0; bin = bin->next){
-                    for(s32 k = 0; k < bin->at; ++k){
-                        Entity* other = bin->entities[k];
-                        if(!has_flags(other->flags, EntityFlag_MoveWithPhys)) continue;
-                        if(e == other) continue;
+                    Cell* cell = state->cells + ((s32)coords.x + (WORLD_WIDTH_IN_TILES_MAX * (s32)coords.y));
+                    if(cell->generation != cell_generation) continue;
 
-                        f32 separation_radius = 0.45f;
-                        f32 distance_squared = distance_squared_v2(e->pos, other->pos);
-                        if(distance_squared > 0 && distance_squared < separation_radius){
-                            f32 distance = sqrtf(distance_squared);
-                            v2 dir = (e->pos - other->pos);
-                            dir.x /= distance;
-                            dir.y /= distance;
+                    for(BinNode* bin = cell->bin; bin != 0; bin = bin->next){
+                        for(s32 k = 0; k < bin->at; ++k){
+                            Entity* other = bin->entities[k];
+                            if(!has_flags(other->flags, EntityFlag_MoveWithPhys)) continue;
+                            if(e == other) continue;
 
-                            f32 push_strength = 1.0f;
-                            if(e == player){
-                                push_strength = 10.0f;
-                            }
-                            if(e != player){
-                                e->velocity.x += (dir.x * push_strength * (f32)clock.dt) / distance;
-                                e->velocity.y += (dir.y * push_strength * (f32)clock.dt) / distance;
-                            }
-                            if(other != player){
-                                other->velocity.x -= (dir.x * push_strength * (f32)clock.dt) / distance;
-                                other->velocity.y -= (dir.y * push_strength * (f32)clock.dt) / distance;
+                            f32 separation_radius = 0.45f;
+                            f32 distance_squared = distance_squared_v2(e->pos, other->pos);
+                            if(distance_squared > 0 && distance_squared < separation_radius){
+                                f32 distance = sqrtf(distance_squared);
+                                v2 dir = (e->pos - other->pos);
+                                dir.x /= distance;
+                                dir.y /= distance;
+
+                                f32 push_strength = 1.0f;
+                                if(e == player){
+                                    push_strength = 10.0f;
+                                }
+                                if(e != player){
+                                    e->velocity.x += (dir.x * push_strength * (f32)clock.dt) / distance;
+                                    e->velocity.y += (dir.y * push_strength * (f32)clock.dt) / distance;
+                                }
+                                if(other != player){
+                                    other->velocity.x -= (dir.x * push_strength * (f32)clock.dt) / distance;
+                                    other->velocity.y -= (dir.y * push_strength * (f32)clock.dt) / distance;
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // Look for command.
-            if(!entity_commands_empty(e) && !e->active_command){
-                EntityCommand* c = entity_commands_next(e);
-                e->active_command = c;
-            }
+                // Look for command.
+                if(!entity_commands_empty(e) && !e->active_command){
+                    EntityCommand* c = entity_commands_next(e);
+                    e->active_command = c;
+                }
 
-            // Resolve command.
-            if(e->active_command){
-                EntityCommand* c = e->active_command;
+                // Resolve command.
+                if(e->active_command){
+                    EntityCommand* c = e->active_command;
 
-                switch(c->type){
-                    case EntityCommandType_Move:{
-                        v2 move_dir = direction_v2(e->pos, c->move_to);
-                        e->dir = move_dir;
-                        if(!v2_close_enough(e->pos, c->move_to, 0.01f)){
-                            e->velocity.x += (move_dir.x * e->speed) * (f32)clock.dt;
-                            e->velocity.y += (move_dir.y * e->speed) * (f32)clock.dt;
-                        }
-                        else{
-                            e->active_command = 0;
+                    switch(c->type){
+                        case EntityCommandType_Move:{
+                            v2 move_dir = direction_v2(e->pos, c->move_to);
+                            e->dir = move_dir;
+                            if(!v2_close_enough(e->pos, c->move_to, 0.01f)){
+                                e->velocity.x += (move_dir.x * e->speed) * (f32)clock.dt;
+                                e->velocity.y += (move_dir.y * e->speed) * (f32)clock.dt;
+                            }
+                            else{
+                                e->active_command = 0;
+                            }
                         }
                     }
                 }
-            }
 
-            // Apply friction.
-            e->velocity.x *= 0.75f;
-            e->velocity.y *= 0.75f;
+                // Apply friction.
+                e->velocity.x *= 0.75f;
+                e->velocity.y *= 0.75f;
 
-            e->pos.x += e->velocity.x * (f32)clock.dt;
-            e->pos.y += e->velocity.y * (f32)clock.dt;
+                e->pos.x += e->velocity.x * (f32)clock.dt;
+                e->pos.y += e->velocity.y * (f32)clock.dt;
             }
         }
 
@@ -235,6 +239,8 @@ sim_game(void){
                 if(!grid_cell_coords_in_bounds(coords)) continue;
 
                 Cell* cell = state->cells + ((s32)coords.x + (WORLD_WIDTH_IN_TILES_MAX * (s32)coords.y));
+                if(cell->generation != cell_generation) continue;
+
                 for(BinNode* bin = cell->bin; bin != 0; bin = bin->next){
                     for(s32 k = 0; k < bin->at; ++k){
                         Entity* other = bin->entities[k];
@@ -293,6 +299,31 @@ entity_from_handle(EntityHandle handle){
     return(result);
 }
 
+static void 
+activate_entity(Entity* e){
+    assert(!has_flags(e->flags, EntityFlag_Active));
+
+    e->active_list_idx = state->active_entities_count;
+    state->active_entities[state->active_entities_count++] = e;
+
+    set_flags(&e->flags, EntityFlag_Active);
+}
+
+static void 
+deactive_entity(Entity* e){
+    assert(has_flags(e->flags, EntityFlag_Active));
+
+    u32 remove_idx = e->active_list_idx;
+    u32 move_idx = --state->active_entities_count;
+
+    Entity* move_e = state->active_entities[move_idx];
+    state->active_entities[remove_idx] = move_e;
+    move_e->active_list_idx = remove_idx;
+
+    e->active_list_idx = u32_max;
+    clear_flags(&e->flags, EntityFlag_Active);
+}
+
 static EntityHandle
 handle_from_entity(Entity *e){
     assert(e != 0);
@@ -317,13 +348,13 @@ static Entity*
 add_entity(EntityType type){
     if(state->free_entities_at < ENTITIES_MAX){
         u32 free_entity_index = state->free_entities[state->free_entities_at--];
-        Entity *e = state->entities + free_entity_index;
+        Entity* e = state->entities + free_entity_index;
         e->index = free_entity_index;
-        set_flags(&e->flags, EntityFlag_Active);
         state->generation[e->index]++;
         state->entities_count++;
         e->generation = state->generation[e->index]; // CONSIDER: this might not be necessary
         e->type = type;
+        activate_entity(e);
 
         return(e);
     }
@@ -422,7 +453,6 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
 
         e->sprite.kind = SPRITE_ANIM_IDLE;
         e->sprite.direction = (Sprite_Direction)random_range_u32(SPRITE_DIRECTION_COUNT);
-        print("%i\n", e->sprite.direction);
 
         Texture* tex = {0};
         tex = &assets.textures[TextureAsset_Orc_Idle];
@@ -896,8 +926,10 @@ entity_sprite_update(){
     // DUMB DUMB ADDED THIS
     begin_timed_function();
 
-    for(s32 idx = 0; idx < array_count(state->entities); ++idx){
-        Entity *e = state->entities + idx;
+    //for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+    //    Entity *e = state->entities + idx;
+    for(s32 i = 0; i < state->active_entities_count; ++i){
+        Entity *e = state->active_entities[i];
 
         if(has_flags(e->flags, EntityFlag_Active|EntityFlag_HasSprite)){
             if(!e->dead){
@@ -968,11 +1000,13 @@ draw_entities(State* state){
     r_layer(1)
     r_render_space(Render_Space_World_Sorted)
     {
-        for(s32 idx = 0; idx < array_count(state->entities); ++idx){
-            Entity *e = state->entities + idx;
+        //for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+        //    Entity *e = state->entities + idx;
+        for(s32 i = 0; i < state->active_entities_count; ++i){
+            Entity *e = state->active_entities[i];
 
-            Quad quad = quad_from_center(e);
             if(has_flags(e->flags, EntityFlag_Active)){
+                Quad quad = quad_from_center(e);
 
                 switch(e->type){
                     case EntityType_Texture:{
@@ -988,7 +1022,7 @@ draw_entities(State* state){
 
                         Sprite_Animation_Kind kind = e->sprite.kind;
                         Sprite_Animation anim = e->sprite.animations[kind];
-                        Quad quad = quad_from_center(e);
+                        //Quad quad = quad_from_center(e);
                         r_texture(anim.texture_id)
                         r_z(e->pos.y)
                         {
@@ -1023,7 +1057,7 @@ draw_entities(State* state){
                     case EntityType_Fire:{
                         Sprite_Animation_Kind kind = e->sprite.kind;
                         Sprite_Animation anim = e->sprite.animations[kind];
-                        Quad quad = quad_from_center(e);
+                        //Quad quad = quad_from_center(e);
 
                         r_texture(anim.texture_id)
                         r_z(e->pos.y)
@@ -1231,7 +1265,10 @@ ui_editor(void){
             ui_label(fmt);
             ui_spacer(10);
 
-            fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches.count);
+            fmt = str8_format(ts->frame_arena, "Render Batches Count: %i", render_batches_count);
+            if(controller_button_pressed(KeyCode_M)){
+                debug_break();
+            }
             ui_label(fmt);
 
 
@@ -1467,8 +1504,9 @@ static void
 draw_world_terrain(void){
     // DUMB DUMB ADDED THIS
     begin_timed_function();
+    // note: only draws terrain that is within that camera space.
 
-    r_render_space(Render_Space_World)
+    r_render_space(Render_Space_World_Terrain)
     r_layer(0)
     r_z(0)
     {
@@ -1477,6 +1515,7 @@ draw_world_terrain(void){
                           floor_f32(camera.p3.y/state->world_cell_size) * state->world_cell_size);
         v2 high = make_v2(ceil_f32(camera.p1.x/state->world_cell_size) * state->world_cell_size,
                           ceil_f32(camera.p1.y/state->world_cell_size) * state->world_cell_size);
+
 
         for(s32 i=1; i < TextureAsset_Count; ++i){
             f32 y = high.y;
@@ -1848,21 +1887,28 @@ partition_entities_in_bins(){
     // DUMB DUMB ADDED THIS
     begin_timed_function();
 
-    memset(state->cells, 0, sizeof(state->cells));
-    for(s32 i=0; i < array_count(state->entities); ++i){
-        Entity* e = state->entities + i;
+    cell_generation += 1;
+    if(cell_generation == 0){ // if we overflow, reset generations.
+        memset(state->cells, 0, sizeof(state->cells));
+        cell_generation = 1;
+    }
+
+    //for(s32 i=0; i < array_count(state->entities); ++i){
+    //    Entity* e = state->entities + i;
+    for(s32 i = 0; i < state->active_entities_count; ++i){
+        Entity *e = state->active_entities[i];
         if(!has_flags(e->flags, EntityFlag_Active)) continue;
 
         v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
         if(!grid_cell_coords_in_bounds(cell_coords)) continue;
 
         Cell* cell = state->cells + ((s32)cell_coords.x + (WORLD_WIDTH_IN_TILES_MAX * (s32)cell_coords.y));
-        if(cell->bin_count == 0){ // Is it empty?
-            cell->bin_count = 1;
+        if(cell->generation != cell_generation){
+            cell->generation = cell_generation;
 
             BinNode* bin = push_struct_zero(ts->bin_arena, BinNode); // Will change to default zero.
             cell->bin = bin;
-
+            cell->bin_count = 1;
             bin->cap = BIN_SIZE;
         }
 
@@ -2341,7 +2387,16 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
         }
 
-        //partition_entities_in_bins();
+        //state->active_entities_count = 0;
+        //for(s32 i=0; i < array_count(state->entities); ++i){
+        //    Entity* e = state->entities + i;
+        //    if(has_flags(e->flags, EntityFlag_Active)){
+        //        state->active_entities[state->active_entities_count] = e;
+        //        state->active_entities_count++;
+        //    }
+        //}
+
+        partition_entities_in_bins();
 
         // note todo fixme: consumes input so needs to be here, input needs to be 1 frame later
         // so that ui drawing doesn't have to happen before simulation and stuff like that
@@ -2414,8 +2469,10 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
                 s32 count = 0;
                 bool selected_new_units = false;
-                for(s32 i=0; i < array_count(state->entities); ++i){
-                    Entity* e = state->entities + i;
+                //for(s32 i=0; i < array_count(state->entities); ++i){
+                //    Entity* e = state->entities + i;
+                for(s32 i = 0; i < state->active_entities_count; ++i){
+                    Entity *e = state->active_entities[i];
                     if(e == player) continue;
                     if(!has_flags(e->flags, EntityFlag_Active)) continue;
 
@@ -2441,8 +2498,12 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
             // mouse hover
             bool found = false;
-            for(s32 idx = 0; idx < array_count(state->entities); ++idx){
-                Entity *e = state->entities + idx;
+            //for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+            //    Entity *e = state->entities + idx;
+            for(s32 i = 0; i < state->active_entities_count; ++i){
+                Entity *e = state->active_entities[i];
+                if(!has_flags(e->flags, EntityFlag_Active)) continue;
+
                 if(mouse_in_bounding_box(e)){
                     state->entity_hovered = e;
                     found = true;
@@ -2703,11 +2764,19 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
 
             console_draw();
+
             // draw border
-            //draw_line(camera.p0, camera.p1, 5, RED);
-            //draw_line(camera.p1, camera.p2, 5, RED);
-            //draw_line(camera.p2, camera.p3, 5, RED);
-            //draw_line(camera.p3, camera.p0, 5, RED);
+            r_render_space(Render_Space_World)
+            {
+                v2 p00 = make_v2(camera.p0.x + 0.1, camera.p0.y - 0.1);
+                v2 p11 = make_v2(camera.p1.x - 0.1, camera.p1.y - 0.1);
+                v2 p22 = make_v2(camera.p2.x - 0.1, camera.p2.y + 0.1);
+                v2 p33 = make_v2(camera.p3.x + 0.1, camera.p3.y + 0.1);
+                draw_line(p00, p11, 0.2f, RED);
+                draw_line(p11, p22, 0.2f, RED);
+                draw_line(p22, p33, 0.2f, RED);
+                draw_line(p33, p00, 0.2f, RED);
+            }
 
             {
                 begin_timed_scope("    draw_commands");

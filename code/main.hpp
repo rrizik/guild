@@ -92,7 +92,9 @@ typedef struct BinNode{
 typedef struct Cell{
     BinNode* bin;
     u32 bin_count;
+    u32 generation;
 } Cell;
+static u32 cell_generation = 0;
 
 typedef enum SceneState{
     SceneState_None,
@@ -118,6 +120,9 @@ typedef struct State{
     u32 generation[ENTITIES_MAX];
     u32 free_entities[ENTITIES_MAX];
     u32 free_entities_at;
+
+    Entity* active_entities[ENTITIES_MAX];
+    u32 active_entities_count;
     //Font* font;
     s32 font_id;
 
@@ -197,6 +202,9 @@ static void sim_game(void);
 
 // todo(rr): get rid of this
 global f32 text_padding = 20;
+
+static void activate_entity(Entity* e);
+static void deactive_entity(Entity* e);
 
 static    void remove_entity(Entity* e);
 static Entity* add_entity(EntityType type);
