@@ -2,8 +2,6 @@
 
 static void
 sim_game(void){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     if(controller_button_pressed(KeyCode_Q)){ 
         player->dead = !player->dead;
@@ -90,8 +88,6 @@ sim_game(void){
     // Resolve motion.
         begin_timed_scope("flocking");
         {
-            // DUMB DUMB ADDED THIS
-            begin_timed_scope("entity movement and flocking");
 
             //for(s32 i = 0; i < array_count(state->entities); ++i){
                 //Entity *e = state->entities + i;
@@ -219,8 +215,6 @@ sim_game(void){
         }
 
         {
-            // DUMB DUMB ADDED THIS
-            begin_timed_scope("player attack query");
 
             v2 cell_coords = grid_cell_from_pos(player->pos, state->flocking_cell_size);
             v2 all_coords[9] = {
@@ -888,8 +882,6 @@ handle_game_events(Event event){
 
 static void
 generate_new_world(f32 width, f32 height){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     f32 y = 0;
     while(y < width){
@@ -906,8 +898,6 @@ generate_new_world(f32 width, f32 height){
 
 static void
 entity_sprite_update(){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     //for(s32 idx = 0; idx < array_count(state->entities); ++idx){
     //    Entity *e = state->entities + idx;
@@ -977,8 +967,6 @@ entity_sprite_update(){
 
 static void
 draw_entities(State* state){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     r_layer(1)
     r_render_space(Render_Space_World_Sorted)
@@ -1169,8 +1157,6 @@ draw_entities(State* state){
 
 static void
 ui_editor(void){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     r_render_space(Render_Space_Screen)
     {
@@ -1329,8 +1315,6 @@ ui_editor(void){
 
 static void
 ui_castle(void){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     ui_layout_axis(Axis_X)
     {
@@ -1429,8 +1413,6 @@ ui_castle(void){
 
 static void
 draw_grid(f32 size, RGBA color){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     r_render_space(Render_Space_World){
         v2 low  = make_v2(floor_f32(camera.p3.x/size) * size,
@@ -1485,8 +1467,6 @@ draw_grid(f32 size, RGBA color){
 
 static void
 draw_world_terrain(void){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
     // note: only draws terrain that is within that camera space.
 
     r_render_space(Render_Space_World)
@@ -1568,9 +1548,6 @@ grid_pos_from_cell(v2 cell, f32 size){
     result.y = cell.y * size;
     return(result);
 }
-
-global v2 tp;
-global v2 wm;
 
 static v2
 grid_cell_from_pos(v2 pos){
@@ -1666,8 +1643,6 @@ change_resolution(Window* window, f32 width, f32 height) {
 
 static void
 init_paths(Arena* arena){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     build_path = os_application_path(global_arena);
     fonts_path = str8_path_append(global_arena, build_path, str8_literal("fonts"));
@@ -1679,8 +1654,6 @@ init_paths(Arena* arena){
 
 static void
 init_memory(u64 permanent, u64 transient){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     memory.permanent_size = permanent;
     memory.transient_size = transient;
@@ -1743,8 +1716,6 @@ show_cursor(bool show){
 
 static void
 serialize_world(String8 world){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     Arena* arena = ts->data_arena;
 
@@ -1774,8 +1745,6 @@ serialize_world(String8 world){
 
 static void
 deserialize_world(String8 world){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     ScratchArena scratch = begin_scratch();
     String8 full_path = str8_path_append(scratch.arena, saves_path, world);
@@ -1815,8 +1784,6 @@ deserialize_world(String8 world){
 
 static void
 deserialize_state(void){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     ScratchArena scratch = begin_scratch();
     String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
@@ -1843,8 +1810,6 @@ deserialize_state(void){
 
 static void
 serialize_state(void){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     serialize_world(state->current_world);
 
@@ -1867,8 +1832,6 @@ serialize_state(void){
 // incomplete
 static void
 partition_entities_in_bins(){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     cell_generation += 1;
     if(cell_generation == 0){ // if we overflow, reset generations.
@@ -2334,8 +2297,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         last_ticks = now_ticks;
 
         {
-            // DUMB DUMB ADDED THIS
-            begin_timed_scope("windows message pump");
 
             MSG message;
             while(PeekMessageW(&message, window.handle, 0, 0, PM_REMOVE)){
@@ -2345,8 +2306,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         }
 
         {
-            // DUMB DUMB ADDED THIS
-            begin_timed_scope("dispatch input events");
 
             // handle events
             bool handled;
@@ -2432,8 +2391,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         // Entity Selection.
         if(!state->dragging_world){
-            // DUMB DUMB ADDED THIS
-            begin_timed_scope("entity hover and selection");
 
             if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
                 state->selection_mouse_record = controller.mouse.world_pos;
@@ -2514,8 +2471,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
 
             {
-                // DUMB DUMB ADDED THIS
-                begin_timed_scope("selected entity commands");
 
                 // Calc center position of selection.
                 v2 average_position = make_v2(0, 0);
@@ -2607,8 +2562,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
 
             {
-                // DUMB DUMB ADDED THIS
-                begin_timed_scope("camera update");
 
                 camera_2d_update(&camera, window.aspect_ratio);
             }

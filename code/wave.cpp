@@ -4,8 +4,6 @@
 // todo: samples to bytes - bytes to samples. Maybe
 static Wave
 wave_file_read(Arena* arena, String8 dir, String8 filename){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     Wave result = {0};
 
@@ -24,8 +22,6 @@ wave_file_read(Arena* arena, String8 dir, String8 filename){
     bool fmt_found = false;
 
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("parse wave chunks");
 
         // todo: improve this somewhat. check for RIFF and WAVE, otherwise something is wrong.
         while(!data_found || !fmt_found){

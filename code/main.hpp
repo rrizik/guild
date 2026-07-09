@@ -268,6 +268,9 @@ static Font* font5;
 static Font* font6;
 static Entity* player;
 
+global v2 tp;
+global v2 wm;
+
 #endif
 
 

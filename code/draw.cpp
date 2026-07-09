@@ -173,8 +173,6 @@ srgb_from_linear(RGBA color){
 // todo: revisit this, I don't like that I'm passing in assets here...
 static void
 draw_init(Arena* arena, Arena* batch_arena, Assets* assets){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     render_state = push_struct(arena, Render_State);
 
@@ -749,12 +747,8 @@ draw_command_compare_texture_id(void* left, void* right){
 
 static void
 draw_render_commands(void){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("process world commands");
 
         {
             begin_timed_scope("draw world commands terrain");
@@ -820,15 +814,11 @@ draw_render_commands(void){
     }
 
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("sort world commands");
 
         quick_sort(draw_world_sorted_commands, (size_t)draw_world_sorted_commands_at, draw_command_compare_layer_z);
     }
 
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("draw world sorted commands");
 
         for(s32 i=0; i<draw_world_sorted_commands_at; ++i){
             Draw_Command* c = draw_world_sorted_commands + i;
@@ -860,8 +850,6 @@ draw_render_commands(void){
     }
 
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("draw screen commands");
 
         for(s32 i=0; i<draw_screen_commands_at; ++i){
             Draw_Command* c = draw_screen_commands + i;
@@ -893,15 +881,11 @@ draw_render_commands(void){
     }
 
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("render command batches");
 
         draw_render_batches();
     }
 
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("reset renderer frame state");
 
         render_batches_reset();
         draw_commands_clear();
@@ -919,8 +903,6 @@ draw_commands_clear(void){
 
 static void
 draw_stack_clear(void){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     render_state->render_space_stack.top = &r_render_space_null;
     render_state->texture_stack.top = &r_texture_null;
@@ -942,8 +924,6 @@ get_render_batch(u64 vertex_count){
        batch->vertex_count + vertex_count >= batch->vertex_cap || 
        batch->texture != render_state->texture || 
        batch->transform_gen != render_state->transform_gen){
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("allocate render batch");
 
         batch = push_array_zero(render_state->batch_arena, Render_Batch, 1);
         batch->buffer = push_array(render_state->batch_arena, Vertex2, DEFAULT_BATCH_SIZE / sizeof(Vertex2));
@@ -968,13 +948,9 @@ get_render_batch(u64 vertex_count){
 
 static void 
 draw_render_batches(){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     s32 required_size = 0;
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("count batch vertices");
 
         for(Render_Batch* batch = render_batches.first; batch != 0; batch = batch->next){
             required_size += batch->vertex_count * sizeof(Vertex2);
@@ -982,16 +958,12 @@ draw_render_batches(){
     }
 
     if(required_size > d3d_vertex_buffer_size){
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("resize vertex buffer");
 
         d3d_release_vertex_buffer(d3d_vertex_buffer);
         d3d_vertex_buffer = d3d_make_vertex_buffer(required_size);
     }
 
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("upload vertex buffer");
 
         D3D11_MAPPED_SUBRESOURCE resource;
         d3d_context->Map(d3d_vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
@@ -1009,8 +981,6 @@ draw_render_batches(){
     }
 
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("bind render pipeline");
 
         ID3D11Buffer* buffers[] = {d3d_vertex_buffer};
         u32 strides[] = {sizeof(Vertex2)};
@@ -1034,8 +1004,6 @@ draw_render_batches(){
     }
 
     {
-        // DUMB DUMB ADDED THIS
-        begin_timed_scope("submit render batches");
 
         for(Render_Batch* batch = render_batches.first; batch != 0; batch = batch->next){
             //----constant buffer----
@@ -1056,8 +1024,6 @@ draw_render_batches(){
 
 static void
 render_batches_reset(void){
-    // DUMB DUMB ADDED THIS
-    begin_timed_function();
 
     render_batches.first = 0;
     render_batches.last = 0;
