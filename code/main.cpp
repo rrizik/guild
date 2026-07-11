@@ -2,6 +2,8 @@
 
 static void
 sim_game(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     if(controller_button_pressed(KeyCode_Q)){ 
         player->dead = !player->dead;
@@ -63,6 +65,7 @@ sim_game(void){
 
     // draw terrain
     if(state->scene_state == SceneState_Editor){
+        // DUMB DUMB ADDED THIS
         begin_timed_scope("draw terrain");
         if(controller_button_held(MOUSE_BUTTON_LEFT) &&
            controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
@@ -86,8 +89,11 @@ sim_game(void){
 
     if(do_motion){
     // Resolve motion.
+        // DUMB DUMB ADDED THIS
         begin_timed_scope("flocking");
         {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("entity movement and flocking");
 
             //for(s32 i = 0; i < array_count(state->entities); ++i){
                 //Entity *e = state->entities + i;
@@ -215,6 +221,8 @@ sim_game(void){
         }
 
         {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("player attack query");
 
             v2 cell_coords = grid_cell_from_pos(player->pos, state->flocking_cell_size);
             v2 all_coords[9] = {
@@ -882,6 +890,8 @@ handle_game_events(Event event){
 
 static void
 generate_new_world(f32 width, f32 height){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     f32 y = 0;
     while(y < width){
@@ -898,6 +908,8 @@ generate_new_world(f32 width, f32 height){
 
 static void
 entity_sprite_update(){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     //for(s32 idx = 0; idx < array_count(state->entities); ++idx){
     //    Entity *e = state->entities + idx;
@@ -967,6 +979,8 @@ entity_sprite_update(){
 
 static void
 draw_entities(State* state){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     r_layer(1)
     r_render_space(Render_Space_World_Sorted)
@@ -1157,6 +1171,8 @@ draw_entities(State* state){
 
 static void
 ui_editor(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     r_render_space(Render_Space_Screen)
     {
@@ -1315,6 +1331,8 @@ ui_editor(void){
 
 static void
 ui_castle(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     ui_layout_axis(Axis_X)
     {
@@ -1413,6 +1431,8 @@ ui_castle(void){
 
 static void
 draw_grid(f32 size, RGBA color){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     r_render_space(Render_Space_World){
         v2 low  = make_v2(floor_f32(camera.p3.x/size) * size,
@@ -1467,20 +1487,33 @@ draw_grid(f32 size, RGBA color){
 
 static void
 draw_world_terrain(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
     // note: only draws terrain that is within that camera space.
 
-    r_render_space(Render_Space_World)
+    r_render_space(Render_Space_World_Terrain)
     r_layer(0)
     r_z(0)
     {
 
-        v2 low  = make_v2(floor_f32(camera.p3.x/state->world_cell_size) * state->world_cell_size,
-                          floor_f32(camera.p3.y/state->world_cell_size) * state->world_cell_size);
-        v2 high = make_v2(ceil_f32(camera.p1.x/state->world_cell_size) * state->world_cell_size,
-                          ceil_f32(camera.p1.y/state->world_cell_size) * state->world_cell_size);
+        v2 low;
+        v2 high;
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("terrain visible bounds");
+
+            low  = make_v2(floor_f32(camera.p3.x/state->world_cell_size) * state->world_cell_size,
+                           floor_f32(camera.p3.y/state->world_cell_size) * state->world_cell_size);
+            high = make_v2(ceil_f32(camera.p1.x/state->world_cell_size) * state->world_cell_size,
+                           ceil_f32(camera.p1.y/state->world_cell_size) * state->world_cell_size);
+        }
 
 
-        for(s32 i=1; i < TextureAsset_Count; ++i){
+        //for(s32 i=1; i < TextureAsset_Count; ++i){
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("terrain texture pass");
+
             f32 y = high.y;
             while(y >= low.y){
 
@@ -1493,7 +1526,7 @@ draw_world_terrain(void){
 
                             s32 idx = (s32)(((y/state->world_cell_size) * state->world_width_in_cells) + (x/state->world_cell_size));
                             s32 cell_tex = state->world_grid[idx];
-                            if(cell_tex == i){
+                            if(cell_tex > 0){
                                 r_texture(cell_tex)
                                 {
                                     Rect tex_rect = make_rect_size(cell, make_v2(state->world_cell_size, state->world_cell_size));
@@ -1643,6 +1676,8 @@ change_resolution(Window* window, f32 width, f32 height) {
 
 static void
 init_paths(Arena* arena){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     build_path = os_application_path(global_arena);
     fonts_path = str8_path_append(global_arena, build_path, str8_literal("fonts"));
@@ -1654,6 +1689,8 @@ init_paths(Arena* arena){
 
 static void
 init_memory(u64 permanent, u64 transient){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     memory.permanent_size = permanent;
     memory.transient_size = transient;
@@ -1716,6 +1753,8 @@ show_cursor(bool show){
 
 static void
 serialize_world(String8 world){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     Arena* arena = ts->data_arena;
 
@@ -1745,6 +1784,8 @@ serialize_world(String8 world){
 
 static void
 deserialize_world(String8 world){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     ScratchArena scratch = begin_scratch();
     String8 full_path = str8_path_append(scratch.arena, saves_path, world);
@@ -1784,6 +1825,8 @@ deserialize_world(String8 world){
 
 static void
 deserialize_state(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     ScratchArena scratch = begin_scratch();
     String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
@@ -1810,6 +1853,8 @@ deserialize_state(void){
 
 static void
 serialize_state(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     serialize_world(state->current_world);
 
@@ -1832,6 +1877,8 @@ serialize_state(void){
 // incomplete
 static void
 partition_entities_in_bins(){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     cell_generation += 1;
     if(cell_generation == 0){ // if we overflow, reset generations.
@@ -1853,9 +1900,9 @@ partition_entities_in_bins(){
             cell->generation = cell_generation;
 
             BinNode* bin = push_struct_zero(ts->bin_arena, BinNode); // Will change to default zero.
-            cell->bin = bin;
-            cell->bin_count = 1;
             bin->cap = BIN_SIZE;
+            cell->bin = bin;
+            cell->bin_count = 0;
         }
 
         if(cell->bin->at == cell->bin->cap){
@@ -2171,7 +2218,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
 
     init_paths(global_arena);
-    init_memory(MB(500), GB(4));
+    init_memory(MB(500), GB(8));
     init_clock(&clock);
 
     //random_seed(0, 1);
@@ -2275,7 +2322,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->scene_state = SceneState_Game;
         //state->scene_state = SceneState_Editor;
         //init_camera_2d(&camera, make_v2((state->world_width_in_cells/2) * state->world_cell_size, (state->world_height_in_cells/2) * state->world_cell_size), 30);
-        init_camera_2d(&camera, make_v2(200, 100), 5);
+        init_camera_2d(&camera, make_v2(200, 100), 25);
         //init_camera_2d(&camera, make_v2(0, 0), 1);
 
         Arena* arena = push_arena(&state->arena, MB(8));
@@ -2286,6 +2333,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
     should_quit = false;
     while(!should_quit){
+        // DUMB DUMB ADDED THIS
         begin_timed_scope("while(!should_quit)");
 
         ui_begin();
@@ -2297,6 +2345,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         last_ticks = now_ticks;
 
         {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("windows message pump");
 
             MSG message;
             while(PeekMessageW(&message, window.handle, 0, 0, PM_REMOVE)){
@@ -2306,6 +2356,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         }
 
         {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("dispatch input events");
 
             // handle events
             bool handled;
@@ -2338,11 +2390,19 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         //    }
         //}
 
-        partition_entities_in_bins();
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("partition phase");
+
+            partition_entities_in_bins();
+        }
 
         // note todo fixme: consumes input so needs to be here, input needs to be 1 frame later
         // so that ui drawing doesn't have to happen before simulation and stuff like that
         if(state->scene_state == SceneState_Editor){
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("editor ui phase");
+
             ui_editor();
         }
 
@@ -2350,6 +2410,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         simulations = 0;
         accumulator += frame_time;
         while(accumulator >= clock.dt){
+            // DUMB DUMB ADDED THIS
             begin_timed_scope("sim loop");
             sim_game();
 
@@ -2391,6 +2452,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
 
         // Entity Selection.
         if(!state->dragging_world){
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("entity hover and selection");
 
             if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){
                 state->selection_mouse_record = controller.mouse.world_pos;
@@ -2471,6 +2534,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
 
             {
+                // DUMB DUMB ADDED THIS
+                begin_timed_scope("selected entity commands");
 
                 // Calc center position of selection.
                 v2 average_position = make_v2(0, 0);
@@ -2562,23 +2627,33 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
 
             {
+                // DUMB DUMB ADDED THIS
+                begin_timed_scope("camera update");
 
                 camera_2d_update(&camera, window.aspect_ratio);
             }
-            audio_update();
+            {
+                // DUMB DUMB ADDED THIS
+                begin_timed_scope("audio phase");
+
+                audio_update();
+            }
 
         // rendering
         {
+            // DUMB DUMB ADDED THIS
             begin_timed_scope("rendering");
             //render_batches_reset();
 
             //arena_free(ts->batch_arena);
             {
+                // DUMB DUMB ADDED THIS
                 begin_timed_scope("    draw_world_terrain");
                 draw_world_terrain();
             }
 
             {
+                // DUMB DUMB ADDED THIS
                 begin_timed_scope("    draw_grid");
                 if(state->scene_state == SceneState_Editor){
                     if(state->show_world_cells){
@@ -2594,11 +2669,13 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
 
             {
+                // DUMB DUMB ADDED THIS
                 begin_timed_scope("    draw_entities");
                 draw_entities(state);
             }
 
             {
+                // DUMB DUMB ADDED THIS
                 begin_timed_scope("    draw_selection_recs");
                 // draw selection rects
                 f32 max_x = 0;
@@ -2611,7 +2688,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                     {
                         if(state->entities_selected_count == 1){
                             Entity* e = state->entities_selected[0];
-                            //debug_break();
                             //Rect rect = rect_from_entity(e);
                             Rect rect = rect_from_center(e);
                             draw_bounding_box(rect, 0.1f, RED);
@@ -2715,6 +2791,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
 
             {
+                // DUMB DUMB ADDED THIS
                 begin_timed_scope("    draw_commands");
                 d3d_clear_color(BACKGROUND_COLOR);
 

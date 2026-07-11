@@ -3,6 +3,8 @@
 
 static Font
 font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     // open file
     ScratchArena scratch = begin_scratch();
@@ -14,12 +16,17 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     // init font
     Font result = {0};
     String8 file_data =  os_file_read(arena, file); // note: stb ttf fonts need to remain loaded in memory.
-    if(!stbtt_InitFont(&result.info, (u8*)file_data.str, 0)){
-        result.succeed = false;
-        return(result);
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("init font metadata");
+
+        if(!stbtt_InitFont(&result.info, (u8*)file_data.str, 0)){
+            result.succeed = false;
+            return(result);
+        }
+        result.scale = stbtt_ScaleForPixelHeight(&result.info, size);
+        stbtt_GetFontVMetrics(&result.info, &result.ascent, &result.descent, &result.line_gap);
     }
-    result.scale = stbtt_ScaleForPixelHeight(&result.info, size);
-    stbtt_GetFontVMetrics(&result.info, &result.ascent, &result.descent, &result.line_gap);
 
     // note: I don't see value in keeping this in unscaled.
     result.vertical_offset = round_f32((f32)(result.ascent - result.descent + result.line_gap) * result.scale);
@@ -35,6 +42,8 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     bitmap_a.str = push_array(scratch.arena, u8, bitmap_a.size);
 
     {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("pack font atlas");
 
         stbtt_pack_context context;
         if (!stbtt_PackBegin(&context, bitmap_a.str, result.texture_w, result.texture_h, 0, 1, 0)) {
@@ -64,6 +73,8 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
 
     // note todo: Convert 1 channel to 4 channel. Get rid of this when you create a text specific shader, this is a waste.
     {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("expand font atlas rgba");
 
         u32* base_rgba = (u32*)bitmap_rgba.str;
         u8* base_a = (u8*)bitmap_a.str;
@@ -94,6 +105,8 @@ font_ttf_read(Arena* arena, String8 dir, String8 filename, f32 size){
     };
     ID3D11Texture2D* texture;
     {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("upload font atlas");
 
         hr = d3d_device->CreateTexture2D(&desc, &shader_data, &texture);
         assert_hr(hr);

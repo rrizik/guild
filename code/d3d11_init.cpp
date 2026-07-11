@@ -12,6 +12,8 @@ d3d_init_debug_stuff(void){
 
 static void
 d3d_load_shader(String8 shader_path, D3D11_INPUT_ELEMENT_DESC* il, u32 layout_count, ID3D11VertexShader** d3d_vs, ID3D11PixelShader** d3d_ps, ID3D11InputLayout** d3d_il){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     // ---------------------------------------------------------------------------------
     // Vertex/Pixel Shader
@@ -62,6 +64,8 @@ d3d_load_shader(String8 shader_path, D3D11_INPUT_ELEMENT_DESC* il, u32 layout_co
 
 static void
 init_d3d(HWND window_handle, u32 width, u32 height){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     // ---------------------------------------------------------------------------------
     // Device + Context
@@ -283,6 +287,8 @@ init_d3d(HWND window_handle, u32 width, u32 height){
 
 static void
 d3d_init_texture_resource(Texture* texture, Bitmap* bitmap){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     D3D11_TEXTURE2D_DESC desc = {
         .Width = (u32)bitmap->width,
@@ -314,12 +320,16 @@ d3d_init_texture_resource(Texture* texture, Bitmap* bitmap){
 
 static void
 d3d_clear_color(RGBA color){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     d3d_context->ClearRenderTargetView(d3d_framebuffer_view, color.e);
 }
 
 static void
 d3d_resize_window(f32 width, f32 height){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     if(!d3d_framebuffer_view || !d3d_framebuffer){
         return;
@@ -427,12 +437,16 @@ d3d_make_vertex_buffer(s32 size){
 
 static void
 d3d_present(){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     d3d_swapchain->Present(0, 0);
 }
 
 static void
 d3d_release(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     if(d3d_context){
         d3d_context->ClearState();

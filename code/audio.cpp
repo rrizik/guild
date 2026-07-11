@@ -10,6 +10,8 @@
 
 static void
 audio_init(u16 channels, u32 samples_per_sec, u16 bits_per_sample){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     audio = {0};
     audio_cursors_clear();
@@ -85,6 +87,8 @@ audio_init(u16 channels, u32 samples_per_sec, u16 bits_per_sample){
 
 static void
 audio_release(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     audio_stream_stop();
 
@@ -103,6 +107,8 @@ audio_release(void){
 
 static Audio_Cursor*
 audio_play(Wave* wave, f32 volume, bool loop){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     Audio_Cursor* cursor = audio_cursor_alloc();
     if(cursor){
@@ -132,6 +138,8 @@ audio_stop(Audio_Cursor* cursor){
 // todo: create a wave drawing function to draw the audio waves. Will be cool to do
 static void 
 audio_update(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     HRESULT hr = S_OK;
 
@@ -156,6 +164,8 @@ audio_update(void){
 
     if(audio.cursor_count <= 0){
         {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("submit silent audio buffer");
 
             hr = audio.render_client->ReleaseBuffer(available_samples, AUDCLNT_BUFFERFLAGS_SILENT); 
             if (FAILED(hr)) {
@@ -167,6 +177,8 @@ audio_update(void){
     }
 
     {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("mix audio cursors");
 
         memset(buffer, 0, available_samples * audio.format.nBlockAlign); // clear buffer from previously written data
         f32* buffer_f32 = (f32*)buffer;
@@ -203,6 +215,8 @@ audio_update(void){
     }
 
     {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("submit audio buffer");
 
         hr = audio.render_client->ReleaseBuffer(available_samples, 0); // Audio handoff
         if(FAILED(hr)){
@@ -213,6 +227,8 @@ audio_update(void){
 
 static void 
 audio_stream_start(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     if(!audio.running){
         HRESULT hr = audio.audio_client->Start();
@@ -226,6 +242,8 @@ audio_stream_start(void){
 
 static void 
 audio_stream_stop(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     if(audio.running){
         HRESULT hr = audio.audio_client->Stop();

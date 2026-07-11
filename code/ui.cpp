@@ -7,6 +7,8 @@
 
 static void
 ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     ui_state = push_struct(arena, UI_State);
     ui_state->window = window;
@@ -32,6 +34,8 @@ ui_init(Arena* arena, Window* window, Controller* controller, Assets* assets){
 
 static void
 ui_begin(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     //ui_state->generation += 1;
     ui_state->hot = 0;
@@ -57,9 +61,16 @@ ui_begin(void){
 
 static void
 ui_end(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     r_render_space(Render_Space_Screen)
-    ui_layout();
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("ui layout");
+
+        ui_layout();
+    }
 
     ui_state->parent_stack.top = &ui_parent_null;
     ui_state->pos_x_stack.top = &ui_pos_x_null;
@@ -74,27 +85,42 @@ ui_end(void){
     ui_state->font_id_stack.top = &ui_font_null;
 
     arena_free(ui_arena());
-    ui_draw(ui_root());
+    {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("ui draw");
+
+        ui_draw(ui_root());
+    }
 }
 
 static void
 ui_layout(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     for(Axis axis=(Axis)0; axis < Axis_Count; axis = (Axis)(axis + 1)){
         {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("ui independent sizing");
 
             ui_traverse_independent(ui_root(), axis);
         }
         {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("ui children sizing");
 
             ui_traverse_children(ui_root(), axis);
         }
         {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("ui positioning");
 
             ui_traverse_positions(ui_root(), axis);
         }
     }
     {
+        // DUMB DUMB ADDED THIS
+        begin_timed_scope("ui rect generation");
 
         ui_traverse_rects(ui_root());
     }

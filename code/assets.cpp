@@ -3,6 +3,8 @@
 
 static void
 load_font(Arena* arena, FontAsset font_id, String8 build_path, String8 path, s32 size){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     assets.fonts[font_id] = font_ttf_read(arena, build_path, path, size);
     assets.fonts[font_id].texture_id = font_id;
@@ -11,12 +13,16 @@ load_font(Arena* arena, FontAsset font_id, String8 build_path, String8 path, s32
 
 static void
 load_audio(Arena* arena, WaveAsset audio_id, String8 build_path, String8 path){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     assets.waves[audio_id] = wave_file_read(arena, build_path, path);
 }
 
 static void
 load_texture(Arena* arena, TextureAsset texture_id, String8 build_path, String8 path){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     Bitmap bm = stb_load_image(arena, build_path, path);
     Texture* texture = &assets.textures[texture_id];
@@ -41,6 +47,8 @@ a_get_font(s32 font_id){
 
 static void
 assets_load(Arena* arena){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     ScratchArena scratch = begin_scratch();
     String8 build_path = os_application_path(scratch.arena);
@@ -152,6 +160,8 @@ assets_load(Arena* arena){
 
 static void
 assets_release(){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     // release textures
     for(s32 i=0; i < TextureAsset_Count; ++i){

@@ -3,6 +3,8 @@
 
 static void
 init_console_commands(void){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     add_command(str8_literal("saves"),      str8_literal("saves: lists all save files"), 0, 0, command_saves);
     add_command(str8_literal("add"),        str8_literal("add: mathematicall add"), 2, 2, command_add);
@@ -188,6 +190,8 @@ push_str8(Arena* arena, String8 value){
 
 static s32
 command_parse_args(String8 line){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     command_args_count = 0;
 
@@ -217,6 +221,8 @@ command_parse_args(String8 line){
 
 static void
 run_command(String8 command){
+    // DUMB DUMB ADDED THIS
+    begin_timed_function();
 
     // run command proc
     bool found = false;
