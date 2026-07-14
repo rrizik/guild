@@ -81,6 +81,21 @@ global Camera2D world_camera_record;
 global bool game_in_focus = true;
 global bool tracking_mouse = false;
 
+global f32 spawner_timer;
+typedef struct Spawn_Point{
+    v2 pos;
+} Spawn_Point;
+
+typedef struct Spawner{
+    f32 render_size;
+    f32 pos_offset;
+    f64 timer;
+    Spawn_Point spawn_point[6];
+} Spawner;
+
+static void update_spawner();
+static void init_spawner();
+
 #define BIN_SIZE 8
 typedef struct BinNode{
     BinNode* next;
@@ -172,6 +187,8 @@ typedef struct State{
     String8 current_world;
     bool draw_terrain;
 
+    Spawner spawner;
+
 } State, PermanentMemory;
 global State* state;
 static bool move_randomly = false;
@@ -257,16 +274,16 @@ static void clear_entities_selected(void);
 #include "command.hpp"
 #include "console.cpp"
 #include "command.cpp"
-static bool do_motion = true;
-static v2 min;
-static v2 max;
-static Font* font1;
-static Font* font2;
-static Font* font3;
-static Font* font4;
-static Font* font5;
-static Font* font6;
-static Entity* player;
+global bool do_motion = true;
+global v2 min;
+global v2 max;
+global Font* font1;
+global Font* font2;
+global Font* font3;
+global Font* font4;
+global Font* font5;
+global Font* font6;
+global Entity* player;
 
 global v2 tp;
 global v2 wm;

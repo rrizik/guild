@@ -30,6 +30,8 @@ typedef struct Camera2D{
     v2 default_pos;
     f32 size;
     f32 default_size;
+    f32 speed;
+    f32 default_speed;
 
     f32 left_border;
     f32 right_border;

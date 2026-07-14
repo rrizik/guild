@@ -41,6 +41,8 @@ init_camera_2d(Camera2D* camera, v2 pos, f32 size){
     camera->default_pos = pos;
     camera->size = size;
     camera->default_size = size;
+    camera->speed = 3.5f;
+    camera->default_speed = camera->speed;
 }
 
 static void

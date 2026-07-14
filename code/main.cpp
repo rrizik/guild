@@ -1,6 +1,24 @@
 #include "main.hpp"
 
 static void
+init_spawner(){
+    state->spawner.pos_offset = 5.0f;
+    state->spawner.render_size = 0.5f;
+    state->spawner.timer = clock.get_os_timer();
+}
+
+static void
+update_spawners(){
+    state->spawner.spawn_point[0].pos = player->pos - make_v2(state->spawner.pos_offset * -1.5f, state->spawner.pos_offset * 1);
+    state->spawner.spawn_point[1].pos = player->pos - make_v2(state->spawner.pos_offset *  0,    state->spawner.pos_offset * 1.5f);
+    state->spawner.spawn_point[2].pos = player->pos - make_v2(state->spawner.pos_offset *  1.5f, state->spawner.pos_offset * 1);
+
+    state->spawner.spawn_point[3].pos = player->pos - make_v2(state->spawner.pos_offset * -1.5f, state->spawner.pos_offset * -1);
+    state->spawner.spawn_point[4].pos = player->pos - make_v2(state->spawner.pos_offset *  0,    state->spawner.pos_offset * -1.5f);
+    state->spawner.spawn_point[5].pos = player->pos - make_v2(state->spawner.pos_offset *  1.5f, state->spawner.pos_offset * -1);
+}
+
+static void
 sim_game(void){
     // DUMB DUMB ADDED THIS
     begin_timed_function();
@@ -9,57 +27,106 @@ sim_game(void){
         player->dead = !player->dead;
     }
 
-    if(!player->dead){
-        if(controller_button_held(KeyCode_D)){ 
-            player->velocity.x = player->speed;
-            player->left_right = 1;
-        }
-        if(controller_button_held(KeyCode_A)){ 
-            player->velocity.x = -player->speed;
-            player->left_right = -1;
-        }
-        if(controller_button_held(KeyCode_W)){ 
-            player->velocity.y = player->speed;
-            player->up_down = 1;
-        }
-        if(controller_button_held(KeyCode_S)){ 
-            player->velocity.y = -player->speed;
-            player->up_down = -1;
-        }
-
-        if(controller_button_pressed(KeyCode_SPACEBAR)){ 
-            player->jumping = true;
-        }
-        //if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){ 
-        if(controller_button_pressed(KeyCode_E)){ 
-            player->attacking = true;
-        }
+    f64 elapsed_time = clock.get_seconds_elapsed(clock.get_os_timer(), state->spawner.timer);
+    print("%f\n", elapsed_time);
+    if(elapsed_time > 2.5f){
+        state->spawner.timer = clock.get_os_timer();
+        v2 cell;
+        cell = grid_cell_from_pos(state->spawner.spawn_point[0].pos);
+        add_monster(cell, make_v2(2, 2));
+        cell = grid_cell_from_pos(state->spawner.spawn_point[1].pos);
+        add_monster(cell, make_v2(2, 2));
+        cell = grid_cell_from_pos(state->spawner.spawn_point[2].pos);
+        add_monster(cell, make_v2(2, 2));
+        cell = grid_cell_from_pos(state->spawner.spawn_point[3].pos);
+        add_monster(cell, make_v2(2, 2));
+        cell = grid_cell_from_pos(state->spawner.spawn_point[4].pos);
+        add_monster(cell, make_v2(2, 2));
+        cell = grid_cell_from_pos(state->spawner.spawn_point[5].pos);
+        add_monster(cell, make_v2(2, 2));
     }
 
-    // note(rr): Digonal movement adjustment.
-    if(player->left_right != 0 && player->up_down != 0){
-        player->velocity.x *= 0.707f;
-        player->velocity.y *= 0.707f;
+    if(state->scene_state == SceneState_Game){
+        if(!player->dead){
+            if(controller_button_held(KeyCode_D)){ 
+                player->velocity.x = player->speed;
+                player->left_right = 1;
+            }
+            if(controller_button_held(KeyCode_A)){ 
+                player->velocity.x = -player->speed;
+                player->left_right = -1;
+            }
+            if(controller_button_held(KeyCode_W)){ 
+                player->velocity.y = player->speed;
+                player->up_down = 1;
+            }
+            if(controller_button_held(KeyCode_S)){ 
+                player->velocity.y = -player->speed;
+                player->up_down = -1;
+            }
+
+            if(controller_button_pressed(KeyCode_SPACEBAR)){ 
+                player->jumping = true;
+            }
+            //if(controller_button_pressed(MOUSE_BUTTON_LEFT, false)){ 
+            if(controller_button_pressed(KeyCode_E)){ 
+                player->attacking = true;
+            }
+
+
+            // note(rr): Digonal movement adjustment.
+            if(player->left_right != 0 && player->up_down != 0){
+                player->velocity.x *= 0.707f;
+                player->velocity.y *= 0.707f;
+            }
+            player->left_right = 0;
+            player->up_down = 0;
+
+
+            // update attack_box
+            if(player->sprite.direction == RIGHT_FRONT){
+                player->attack_box.min = make_v2(player->pos.x, player->pos.y - 0.42f);
+                player->attack_box.max = make_v2(player->pos.x + 0.7f, player->pos.y + 0.25f);
+            }
+            if(player->sprite.direction == RIGHT_BACK){
+                player->attack_box.min = make_v2(player->pos.x, player->pos.y - 0.25f);
+                player->attack_box.max = make_v2(player->pos.x + 0.7f, player->pos.y + 0.4f);
+            }
+            if(player->sprite.direction == LEFT_FRONT){
+            player->attack_box.min = make_v2(player->pos.x, player->pos.y - 0.36f);
+            player->attack_box.max = make_v2(player->pos.x - 0.65f, player->pos.y + 0.2);
+            }
+            if(player->sprite.direction == LEFT_BACK){
+                player->attack_box.min = make_v2(player->pos.x, player->pos.y - 0.2f);
+                player->attack_box.max = make_v2(player->pos.x - 0.65f, player->pos.y + 0.35f);
+            }
+
+
+        }
     }
-    player->left_right = 0;
-    player->up_down = 0;
 
     entity_sprite_update();
+    update_spawners();
 
     // camera
     {
-        // movement
-        if(controller_button_held(KeyCode_UP)){ //|| controller_button_held(KeyCode_W)){
-            camera.y += ((camera.size) + 50) * (f32)clock.dt;
+        if(state->scene_state == SceneState_Editor){
+            if(controller_button_held(KeyCode_W)){
+                camera.y += ((camera.size) + 50) * (f32)clock.dt;
+            }
+            if(controller_button_held(KeyCode_S)){
+                camera.y -= ((camera.size) + 50) * (f32)clock.dt;
+            }
+            if(controller_button_held(KeyCode_A)){
+                camera.x -= ((camera.size) + 50) * (f32)clock.dt;
+            }
+            if(controller_button_held(KeyCode_D)){
+                camera.x += ((camera.size) + 50) * (f32)clock.dt;
+            }
         }
-        if(controller_button_held(KeyCode_DOWN)){ //|| controller_button_held(KeyCode_S)){
-            camera.y -= ((camera.size) + 50) * (f32)clock.dt;
-        }
-        if(controller_button_held(KeyCode_LEFT)){ //|| controller_button_held(KeyCode_A)){
-            camera.x -= ((camera.size) + 50) * (f32)clock.dt;
-        }
-        if(controller_button_held(KeyCode_RIGHT)){// || controller_button_held(KeyCode_D)){
-            camera.x += ((camera.size) + 50) * (f32)clock.dt;
+        else if(state->scene_state == SceneState_Game){
+            camera.x = player->pos.x;
+            camera.y = player->pos.y;
         }
     }
 
@@ -95,33 +162,10 @@ sim_game(void){
             // DUMB DUMB ADDED THIS
             begin_timed_scope("entity movement and flocking");
 
-            //for(s32 i = 0; i < array_count(state->entities); ++i){
-                //Entity *e = state->entities + i;
             for(s32 i = 0; i < state->active_entities_count; ++i){
                 Entity *e = state->active_entities[i];
                 if(!has_flags(e->flags, EntityFlag_Active)) continue;
                 if(!has_flags(e->flags, EntityFlag_MoveWithPhys)) continue;
-
-                // update attack_box
-                //e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.3f);
-                //e->attack_box.max = make_v2(e->pos.x + 0.6f, e->pos.y + 0.3f);
-                if(e->sprite.direction == RIGHT_FRONT){
-                    e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.42f);
-                    e->attack_box.max = make_v2(e->pos.x + 0.7f, e->pos.y + 0.25f);
-                }
-                if(e->sprite.direction == RIGHT_BACK){
-                    e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.25f);
-                    e->attack_box.max = make_v2(e->pos.x + 0.7f, e->pos.y + 0.4f);
-                }
-                if(e->sprite.direction == LEFT_FRONT){
-                e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.36f);
-                e->attack_box.max = make_v2(e->pos.x - 0.65f, e->pos.y + 0.2);
-                }
-                if(e->sprite.direction == LEFT_BACK){
-                    e->attack_box.min = make_v2(e->pos.x, e->pos.y - 0.2f);
-                    e->attack_box.max = make_v2(e->pos.x - 0.65f, e->pos.y + 0.35f);
-                }
-                //e->bounding_box = make_rect(make_v2(e->pos.x - 0.3f, e->pos.y - 0.3f), make_v2(e->pos.x + 0.3f, e->pos.y + 0.3f));
 
                 // All 9 surrounding cells.
                 v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
@@ -137,16 +181,6 @@ sim_game(void){
                     make_v2(cell_coords.x + 1, cell_coords.y + 1),
                 };
 
-                //if(controller_button_pressed(KeyCode_1)){
-                //    do_motion = !do_motion;
-                //}
-                //if(controller_button_pressed(KeyCode_2)){
-                //    for(s32 i=0; i < array_count(state->entities_selected); ++i){
-                //        Entity* e = state->entities_selected[i];
-                //        entity_commands_clear(e);
-                //    }
-                //}
-
                 // Flocking, cumulative velocity.
                 for(s32 j=0; j < array_count(all_coords); ++j){
                     v2 coords = all_coords[j];
@@ -160,14 +194,33 @@ sim_game(void){
                             Entity* other = bin->entities[k];
                             if(!has_flags(other->flags, EntityFlag_MoveWithPhys)) continue;
                             if(e == other) continue;
+                            if(e->index > other->index) continue;
 
                             f32 separation_radius = 0.45f;
+                            f32 separation_radius_squared = separation_radius * separation_radius;
                             f32 distance_squared = distance_squared_v2(e->pos, other->pos);
-                            if(distance_squared > 0 && distance_squared < separation_radius){
-                                f32 distance = sqrtf(distance_squared);
-                                v2 dir = (e->pos - other->pos);
-                                dir.x /= distance;
-                                dir.y /= distance;
+
+                            if(distance_squared < separation_radius_squared){
+                                f32 distance;
+                                v2 dir;
+
+                                if(distance_squared < 0.0001f){
+                                    if(e->index < other->index){
+                                        // todo: can randomize this more
+                                        dir = make_v2(1.0f, -1.0f);
+                                    }
+                                    else{
+                                        dir = make_v2(-1.0f, 1.0f);
+                                    }
+                                    distance = 0.01f;
+                                }
+                                else{
+                                    distance = sqrtf(distance_squared);
+                                    dir = (e->pos - other->pos);
+                                    dir.x /= distance;
+                                    dir.y /= distance;
+                                }
+
 
                                 f32 push_strength = 1.0f;
                                 if(e == player){
@@ -1345,12 +1398,11 @@ ui_castle(void){
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)
         {
-            if(ui_button(str8_literal("skeleton")).pressed_left){
+            if(ui_button(str8_literal("monster")).pressed_left){
                 Entity* castle = state->entities_selected[0];
 
                 v2 dir = direction_v2(castle->pos, castle->rallypoint);
                 Entity* e = add_monster(grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(2, 2), dir);
-                //Entity* e = add_skeleton(TextureAsset_Skeleton1, grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(1, 1), dir);
                 e->origin = castle;
                 e->rallypoint = castle->rallypoint;
                 e->rallypoint_cell = castle->rallypoint_cell;
@@ -1358,69 +1410,29 @@ ui_castle(void){
             }
 
             ui_spacer(10);
-            if(ui_button(str8_literal("skeleton - 15")).pressed_left){
-                Entity* castle = state->entities_selected[0];
-                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
-                v2 a = grid_cell_from_pos(castle->pos, 1);
-                v2 b = grid_pos_from_cell(castle->pos, state->world_cell_size);
-                v2 c = grid_pos_from_cell(castle->pos, 1);
-                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
-                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
-                f32 projected_rad = rad_from_dir(projected_direction);
+            if(ui_button(str8_literal("monster - 15")).pressed_left){
+                for(s32 i=0; i < 15; ++i){
+                    Entity* castle = state->entities_selected[0];
 
-                f32 y = -1;
-                for(s32 i=0; i<3; ++i){
-                    f32 x = -2;
-                    for(s32 j=0; j<5; ++j){
-                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
-
-                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                        Entity* e = add_monster(grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(2, 2), dir);
-                        //Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
-                        e->origin = castle;
-
-                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
-                        f32 target_rad = rad_from_dir(target_direction);
-
-                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
-                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
-                        v2 target_pos = e->pos + projected_offset;
-
-                        entity_commands_move(e, target_pos, target_pos);
-                        x += 1;
-                    }
-                    y += 1;
+                    v2 dir = direction_v2(castle->pos, castle->rallypoint);
+                    Entity* e = add_monster(grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(2, 2), dir);
+                    e->origin = castle;
+                    e->rallypoint = castle->rallypoint;
+                    e->rallypoint_cell = castle->rallypoint_cell;
+                    entity_commands_move(e, e->rallypoint, e->rallypoint);
                 }
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("skeleton - 50")).pressed_left){
-                Entity* castle = state->entities_selected[0];
-                v2 cell_coords = grid_cell_from_pos(castle->pos, state->world_cell_size);
-                f32 projected_distance  = distance_v2(castle->pos, castle->rallypoint);
-                v2  projected_direction = direction_v2(castle->pos, castle->rallypoint);
-                f32 projected_rad = rad_from_dir(projected_direction);
-                f32 y = -2;
-                for(s32 i=0; i<5; ++i){
-                    f32 x = -4;
-                    for(s32 j=0; j<10; ++j){
-                        v2 new_coords = make_v2(cell_coords.x + x, cell_coords.y + y);
+            if(ui_button(str8_literal("monster - 50")).pressed_left){
+                for(s32 i=0; i < 50; ++i){
+                    Entity* castle = state->entities_selected[0];
 
-                        v2 dir = direction_v2(castle->pos, castle->rallypoint);
-                        Entity* e = add_monster(grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(2, 2), dir);
-                        //Entity* e = add_skeleton(TextureAsset_Skeleton1, new_coords, make_v2(1, 1), dir);
-                        e->origin = castle;
-
-                        v2 target_direction = direction_v2(e->pos, castle->rallypoint);
-                        f32 target_rad = rad_from_dir(target_direction);
-
-                        projected_rad = slerp_f32(projected_rad, target_rad, 0.5);
-                        v2 projected_offset = dir_from_rad(projected_rad) * projected_distance;
-                        v2 target_pos = e->pos + projected_offset;
-
-                        entity_commands_move(e, target_pos, target_pos);
-                        x += 1;
-                    }
-                    y += 1;
+                    v2 dir = direction_v2(castle->pos, castle->rallypoint);
+                    Entity* e = add_monster(grid_cell_from_pos(castle->pos, state->world_cell_size), make_v2(2, 2), dir);
+                    e->origin = castle;
+                    e->rallypoint = castle->rallypoint;
+                    e->rallypoint_cell = castle->rallypoint_cell;
+                    entity_commands_move(e, e->rallypoint, e->rallypoint);
                 }
             }
         }
@@ -1891,6 +1903,7 @@ partition_entities_in_bins(){
     for(s32 i = 0; i < state->active_entities_count; ++i){
         Entity *e = state->active_entities[i];
         if(!has_flags(e->flags, EntityFlag_Active)) continue;
+        if(!has_flags(e->flags, EntityFlag_MoveWithPhys)) continue;
 
         v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
         if(!grid_cell_coords_in_bounds(cell_coords)) continue;
@@ -2293,37 +2306,36 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         deserialize_world(state->current_world);
 
         // load castle
-        //state->castle_cell = make_v2(10, 5);
         state->castle_cell = make_v2(198, 98);
         state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(2, 2));
         state->player = add_human(make_v2(200, 100), make_v2(2, 2));
         player = state->player;
 
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+        add_monster(make_v2(201, 100), make_v2(2, 2));
+
         add_fire(make_v2(195, 110), make_v2(1.25, 1.25));
-        //add_monster(make_v2(195, 110), make_v2(2, 2));
         add_monster(make_v2(195, 111), make_v2(2, 2));
         add_monster(make_v2(196, 110), make_v2(2, 2));
         add_monster(make_v2(194, 110), make_v2(2, 2));
         add_monster(make_v2(195, 109), make_v2(2, 2));
 
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
-        //add_skeleton(TextureAsset_Skeleton1, make_v2(51, 51), make_v2(1, 1), make_v2(1, 0));
+        init_spawner();
 
         state->scene_state = SceneState_Game;
-        //state->scene_state = SceneState_Editor;
-        //init_camera_2d(&camera, make_v2((state->world_width_in_cells/2) * state->world_cell_size, (state->world_height_in_cells/2) * state->world_cell_size), 30);
-        init_camera_2d(&camera, make_v2(200, 100), 25);
-        //init_camera_2d(&camera, make_v2(0, 0), 1);
+        init_camera_2d(&camera, make_v2(200, 100), 10);
 
         Arena* arena = push_arena(&state->arena, MB(8));
         init_console(arena, &camera, &window, &assets);
@@ -2650,6 +2662,24 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 // DUMB DUMB ADDED THIS
                 begin_timed_scope("    draw_world_terrain");
                 draw_world_terrain();
+            }
+
+            r_render_space(Render_Space_World){
+                //static void draw_quad(Quad quad, RGBA color = WHITE);
+
+                Rect rect1 = make_rect_size(state->spawner.spawn_point[0].pos, make_v2(state->spawner.render_size, state->spawner.render_size));
+                Rect rect2 = make_rect_size(state->spawner.spawn_point[1].pos, make_v2(state->spawner.render_size, state->spawner.render_size));
+                Rect rect3 = make_rect_size(state->spawner.spawn_point[2].pos, make_v2(state->spawner.render_size, state->spawner.render_size));
+
+                Rect rect4 = make_rect_size(state->spawner.spawn_point[3].pos, make_v2(state->spawner.render_size, state->spawner.render_size));
+                Rect rect5 = make_rect_size(state->spawner.spawn_point[4].pos, make_v2(state->spawner.render_size, state->spawner.render_size));
+                Rect rect6 = make_rect_size(state->spawner.spawn_point[5].pos, make_v2(state->spawner.render_size, state->spawner.render_size));
+                draw_quad(rect1);
+                draw_quad(rect2);
+                draw_quad(rect3);
+                draw_quad(rect4);
+                draw_quad(rect5);
+                draw_quad(rect6);
             }
 
             {

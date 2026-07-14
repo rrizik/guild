@@ -594,21 +594,4 @@ ui_table_insert(UITable* table, String8 key, BoxCache value){
     table->slots[slot_idx] = node;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif
