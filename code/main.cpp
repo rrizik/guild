@@ -49,21 +49,30 @@ sim_game(void){
     if(state->scene_state == SceneState_Game){
         if(!player->dead){
             if(controller_button_held(KeyCode_D)){ 
-                player->velocity.x = player->speed;
                 player->left_right = 1;
+                player->dir.x += 1;
             }
             if(controller_button_held(KeyCode_A)){ 
-                player->velocity.x = -player->speed;
                 player->left_right = -1;
+                player->dir.x += -1;
             }
             if(controller_button_held(KeyCode_W)){ 
-                player->velocity.y = player->speed;
                 player->up_down = 1;
+                player->dir.y += 1;
             }
             if(controller_button_held(KeyCode_S)){ 
-                player->velocity.y = -player->speed;
                 player->up_down = -1;
+                player->dir.y += -1;
             }
+
+            if(player->left_right != 0 && player->up_down != 0){
+                player->dir.y *= 0.707f;
+                player->dir.x *= 0.707f;
+            }
+
+            player->velocity.x += (player->dir.x * player->speed) * (f32)clock.dt;
+            player->velocity.y += (player->dir.y * player->speed) * (f32)clock.dt;
+            player->dir = make_v2(0, 0);
 
             if(controller_button_pressed(KeyCode_SPACEBAR)){ 
                 player->jumping = true;
@@ -75,10 +84,6 @@ sim_game(void){
 
 
             // note(rr): Digonal movement adjustment.
-            if(player->left_right != 0 && player->up_down != 0){
-                player->velocity.x *= 0.707f;
-                player->velocity.y *= 0.707f;
-            }
             player->left_right = 0;
             player->up_down = 0;
 
@@ -166,73 +171,76 @@ sim_game(void){
                 Entity *e = state->active_entities[i];
                 if(!has_flags(e->flags, EntityFlag_Active)) continue;
                 if(!has_flags(e->flags, EntityFlag_MoveWithPhys)) continue;
+                if(!has_flags(e->flags, EntityFlag_Alive)) continue;
 
-                // All 9 surrounding cells.
-                v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
-                v2 all_coords[9] = {
-                    cell_coords,
-                    make_v2(cell_coords.x - 1, cell_coords.y - 1),
-                    make_v2(cell_coords.x - 1, cell_coords.y),
-                    make_v2(cell_coords.x - 1, cell_coords.y + 1),
-                    make_v2(cell_coords.x,     cell_coords.y - 1),
-                    make_v2(cell_coords.x,     cell_coords.y + 1),
-                    make_v2(cell_coords.x + 1, cell_coords.y - 1),
-                    make_v2(cell_coords.x + 1, cell_coords.y),
-                    make_v2(cell_coords.x + 1, cell_coords.y + 1),
-                };
+                if(has_flags(e->flags, EntityFlag_Flocking)){
+                    // All 9 surrounding cells.
+                    v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
+                    v2 all_coords[9] = {
+                        cell_coords,
+                        make_v2(cell_coords.x - 1, cell_coords.y - 1),
+                        make_v2(cell_coords.x - 1, cell_coords.y),
+                        make_v2(cell_coords.x - 1, cell_coords.y + 1),
+                        make_v2(cell_coords.x,     cell_coords.y - 1),
+                        make_v2(cell_coords.x,     cell_coords.y + 1),
+                        make_v2(cell_coords.x + 1, cell_coords.y - 1),
+                        make_v2(cell_coords.x + 1, cell_coords.y),
+                        make_v2(cell_coords.x + 1, cell_coords.y + 1),
+                    };
 
-                // Flocking, cumulative velocity.
-                for(s32 j=0; j < array_count(all_coords); ++j){
-                    v2 coords = all_coords[j];
-                    if(!grid_cell_coords_in_bounds(coords)) continue;
+                    // Flocking, cumulative velocity.
+                    for(s32 j=0; j < array_count(all_coords); ++j){
+                        v2 coords = all_coords[j];
+                        if(!grid_cell_coords_in_bounds(coords)) continue;
 
-                    Cell* cell = state->cells + ((s32)coords.x + (WORLD_WIDTH_IN_TILES_MAX * (s32)coords.y));
-                    if(cell->generation != cell_generation) continue;
+                        Cell* cell = state->cells + ((s32)coords.x + (WORLD_WIDTH_IN_TILES_MAX * (s32)coords.y));
+                        if(cell->generation != cell_generation) continue;
 
-                    for(BinNode* bin = cell->bin; bin != 0; bin = bin->next){
-                        for(s32 k = 0; k < bin->at; ++k){
-                            Entity* other = bin->entities[k];
-                            if(!has_flags(other->flags, EntityFlag_MoveWithPhys)) continue;
-                            if(e == other) continue;
-                            if(e->index > other->index) continue;
+                        for(BinNode* bin = cell->bin; bin != 0; bin = bin->next){
+                            for(s32 k = 0; k < bin->at; ++k){
+                                Entity* other = bin->entities[k];
+                                if(!has_flags(other->flags, EntityFlag_MoveWithPhys)) continue;
+                                if(e == other) continue;
+                                if(e->index > other->index) continue;
 
-                            f32 separation_radius = 0.45f;
-                            f32 separation_radius_squared = separation_radius * separation_radius;
-                            f32 distance_squared = distance_squared_v2(e->pos, other->pos);
+                                f32 separation_radius = 0.45f;
+                                f32 separation_radius_squared = separation_radius * separation_radius;
+                                f32 distance_squared = distance_squared_v2(e->pos, other->pos);
 
-                            if(distance_squared < separation_radius_squared){
-                                f32 distance;
-                                v2 dir;
+                                if(distance_squared < separation_radius_squared){
+                                    f32 distance;
+                                    v2 dir;
 
-                                if(distance_squared < 0.0001f){
-                                    if(e->index < other->index){
-                                        // todo: can randomize this more
-                                        dir = make_v2(1.0f, -1.0f);
+                                    if(distance_squared < 0.0001f){
+                                        if(e->index < other->index){
+                                            // todo: can randomize this more
+                                            dir = make_v2(1.0f, -1.0f);
+                                        }
+                                        else{
+                                            dir = make_v2(-1.0f, 1.0f);
+                                        }
+                                        distance = 0.01f;
                                     }
                                     else{
-                                        dir = make_v2(-1.0f, 1.0f);
+                                        distance = sqrtf(distance_squared);
+                                        dir = (e->pos - other->pos);
+                                        dir.x /= distance;
+                                        dir.y /= distance;
                                     }
-                                    distance = 0.01f;
-                                }
-                                else{
-                                    distance = sqrtf(distance_squared);
-                                    dir = (e->pos - other->pos);
-                                    dir.x /= distance;
-                                    dir.y /= distance;
-                                }
 
 
-                                f32 push_strength = 1.0f;
-                                if(e == player){
-                                    push_strength = 10.0f;
-                                }
-                                if(e != player){
-                                    e->velocity.x += (dir.x * push_strength * (f32)clock.dt) / distance;
-                                    e->velocity.y += (dir.y * push_strength * (f32)clock.dt) / distance;
-                                }
-                                if(other != player){
-                                    other->velocity.x -= (dir.x * push_strength * (f32)clock.dt) / distance;
-                                    other->velocity.y -= (dir.y * push_strength * (f32)clock.dt) / distance;
+                                    f32 push_strength = 1.0f;
+                                    if(e == player){
+                                        push_strength = 10.0f;
+                                    }
+                                    if(e != player){
+                                        e->velocity.x += (dir.x * push_strength * (f32)clock.dt) / distance;
+                                        e->velocity.y += (dir.y * push_strength * (f32)clock.dt) / distance;
+                                    }
+                                    if(other != player){
+                                        other->velocity.x -= (dir.x * push_strength * (f32)clock.dt) / distance;
+                                        other->velocity.y -= (dir.y * push_strength * (f32)clock.dt) / distance;
+                                    }
                                 }
                             }
                         }
@@ -264,10 +272,17 @@ sim_game(void){
                     }
                 }
 
+                // Move entity to player
+                v2 dir = direction_v2(e->pos, player->pos);
+                e->velocity.x += (dir.x * e->speed) * (f32)clock.dt;
+                e->velocity.y += (dir.y * e->speed) * (f32)clock.dt;
+                print("--------(%f, %f)-------\n", dir.x, dir.y);
+
                 // Apply friction.
                 e->velocity.x *= 0.75f;
                 e->velocity.y *= 0.75f;
 
+                // Equation of motion
                 e->pos.x += e->velocity.x * (f32)clock.dt;
                 e->pos.y += e->velocity.y * (f32)clock.dt;
             }
@@ -301,12 +316,14 @@ sim_game(void){
                         Entity* other = bin->entities[k];
                         if(other == player) continue;
                         if(!has_flags(other->flags, EntityFlag_Active)) continue;
+                        if(!has_flags(other->flags, EntityFlag_Alive)) continue;
 
                         if(player->attacking){
                             if(has_flags(other->flags, EntityFlag_CanDie)){
                                 Rect other_rect = rect_from_center(other);
                                 if(rect_collides_rect(player->attack_box, other_rect)){
                                     other->dead = true;
+                                    clear_flags(&other->flags, EntityFlag_Alive);
                                 }
                             }
                         }
@@ -457,27 +474,6 @@ add_castle(TextureAsset texture, v2 cell, v2 dim, RGBA color, u32 flags){
 }
 
 static Entity*
-add_skeleton(TextureAsset texture, v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
-    Entity* e = add_entity(EntityType_Skeleton1);
-    if(e){
-        e->color = color;
-        e->pos = grid_pos_from_cell(cell, state->world_cell_size);
-        e->dim = dim;
-        e->texture_id = texture;
-        e->velocity = {0};
-        e->speed = 1000.0f;
-        e->dir = dir;
-        e->rot = make_v2(1, 0);
-        e->deg = deg_from_dir(e->rot);
-        set_flags(&e->flags, EntityFlag_MoveWithPhys);
-    }
-    else{
-        print("Failed to add entity: Quad\n");
-    }
-    return(e);
-}
-
-static Entity*
 add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
     Entity* e = add_entity(EntityType_Monster);
     if(e){
@@ -487,7 +483,7 @@ add_monster(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->velocity = {0};
         e->speed = 250.0f;
         e->bounding_box_scale = make_v2(0.25f, 0.25f);
-        set_flags(&e->flags, EntityFlag_MoveWithPhys|EntityFlag_HasSprite|EntityFlag_CanDie);
+        set_flags(&e->flags, standard_unit);
 
         e->sprite.kind = SPRITE_ANIM_IDLE;
         e->sprite.direction = (Sprite_Direction)random_range_u32(SPRITE_DIRECTION_COUNT);
@@ -640,7 +636,8 @@ add_fire(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->pos = grid_pos_from_cell(cell, state->world_cell_size);
         e->dim = dim;
         e->bounding_box_scale = make_v2(0.5f, 0.5f);
-        set_flags(&e->flags, EntityFlag_HasSprite);
+        set_flags(&e->flags, standard_unit);
+        set_flags(&e->flags, EntityFlag_ChasePlayer);
 
         e->sprite.kind = SPRITE_ANIM_IDLE;
         e->sprite.direction = RIGHT_FRONT;
@@ -679,9 +676,9 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->pos = grid_pos_from_cell(cell, state->world_cell_size);
         e->dim = dim;
         e->velocity = {0};
-        e->speed = 3.5f;
+        e->speed = 350.0f;
         e->bounding_box_scale = make_v2(0.25f, 0.25f);
-        set_flags(&e->flags, EntityFlag_MoveWithPhys|EntityFlag_HasSprite|flags);
+        set_flags(&e->flags, standard_unit);
 
         e->sprite.kind = SPRITE_ANIM_IDLE;
         e->sprite.direction = RIGHT_FRONT;
@@ -1904,6 +1901,7 @@ partition_entities_in_bins(){
         Entity *e = state->active_entities[i];
         if(!has_flags(e->flags, EntityFlag_Active)) continue;
         if(!has_flags(e->flags, EntityFlag_MoveWithPhys)) continue;
+        if(!has_flags(e->flags, EntityFlag_Alive)) continue;
 
         v2 cell_coords = grid_cell_from_pos(e->pos, state->flocking_cell_size);
         if(!grid_cell_coords_in_bounds(cell_coords)) continue;
@@ -2490,6 +2488,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                         Entity *e = state->active_entities[i];
                         if(e == player) continue;
                         if(!has_flags(e->flags, EntityFlag_Active)) continue;
+                        if(!has_flags(e->flags, EntityFlag_Alive)) continue;
 
                         if(rect_contains_point(state->selection_rect, e->pos)){
                             selected_new_units = true;
@@ -2518,6 +2517,7 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 for(s32 i = 0; i < state->active_entities_count; ++i){
                     Entity *e = state->active_entities[i];
                     if(!has_flags(e->flags, EntityFlag_Active)) continue;
+                    if(!has_flags(e->flags, EntityFlag_Alive)) continue;
 
                     if(mouse_in_bounding_box(e)){
                         state->entity_hovered = e;

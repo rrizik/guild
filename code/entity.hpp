@@ -65,7 +65,17 @@ typedef enum EntityFlag {
     EntityFlag_Particle      = (1 << 7),
     EntityFlag_HasSprite     = (1 << 8),
     EntityFlag_CanDie        = (1 << 9),
+    EntityFlag_Flocking      = (1 << 10),
+    EntityFlag_ChasePlayer   = (1 << 11),
+    EntityFlag_Selectable    = (1 << 12),
+    EntityFlag_Alive         = (1 << 13),
 } EntityFlag;
+u32 standard_unit = EntityFlag_Active |
+                    EntityFlag_MoveWithPhys |
+                    EntityFlag_Flocking |
+                    EntityFlag_HasSprite |
+                    EntityFlag_Alive |
+                    EntityFlag_CanDie;
 
 typedef enum CollisionType {
     CollisionType_None,
