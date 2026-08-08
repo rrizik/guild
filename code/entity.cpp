@@ -2,6 +2,12 @@
 #define ENTITY_C
 
 static bool
+has_any_flags(u32 lflags, u32 rflags){
+    bool result = (lflags & rflags) != 0;
+    return(result);
+}
+
+static bool
 has_flags(u32 lflags, u32 rflags){
     bool result = (lflags & rflags) == rflags;
     return(result);

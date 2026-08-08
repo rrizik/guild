@@ -49,7 +49,7 @@ ui_begin(void){
     ui_push_text_padding(0);
     ui_push_text_color(BLACK);
 
-    ui_push_border_thickness(10);
+    ui_push_border_thickness(0);
 
     ui_push_font(ui_state->default_font_id);
 
@@ -233,18 +233,6 @@ ui_make_size(UI_SizeType type, f32 value, f32 strictness){
     return(result);
 }
 
-static BoxCache cache_from_box(UI_Box* box) {
-    BoxCache result = {0};
-    result.rect = box->rect;
-    result.size[Axis_X] = box->size[Axis_X];
-    result.size[Axis_Y] = box->size[Axis_Y];
-    result.pos[Axis_X] = box->pos[Axis_X];
-    result.pos[Axis_Y] = box->pos[Axis_Y];
-    result.rel_pos[Axis_X] = box->rel_pos[Axis_X];
-    result.rel_pos[Axis_Y] = box->rel_pos[Axis_Y];
-    return(result);
-}
-
 static UI_Box*
 ui_make_box(String8 string, UI_BoxFlags flags){
     UI_Box* result = push_struct_zero(ui_arena(), UI_Box);
@@ -280,19 +268,34 @@ ui_make_box(String8 string, UI_BoxFlags flags){
     result->border_thickness = ui_top_border_thickness();
     result->font_id = ui_top_font();
 
-    BoxCache* cache = ui_table_lookup(ui_state->table, string);
-    if(cache){
-        // todo(rr): I think I need a per cache item flag check, almost like auto_pop
-        if(!has_flags(flags, UI_BoxFlag_NoCache)){
-            result->rect = cache->rect;
-            result->size[Axis_X] = cache->size[Axis_X];
-            result->size[Axis_Y] = cache->size[Axis_Y];
-            result->pos[Axis_X] = cache->pos[Axis_X];
-            result->pos[Axis_Y] = cache->pos[Axis_Y];
-            result->rel_pos[Axis_X] = cache->rel_pos[Axis_X];
-            result->rel_pos[Axis_Y] = cache->rel_pos[Axis_Y];
+    bool cached_rel_pos = has_flags(flags, UI_BoxFlag_Cache|UI_BoxFlag_Draggable);
+    bool cached_rect    = has_flags(flags, UI_BoxFlag_Clickable);
+    if(cached_rel_pos || cached_rect){
+        BoxCache* cache     = ui_table_lookup(ui_state->table, string);
+        if(cache){
+            if(cached_rel_pos){
+                result->rel_pos[Axis_X] = cache->rel_pos[Axis_X];
+                result->rel_pos[Axis_Y] = cache->rel_pos[Axis_Y];
+            }
+            if(cached_rect){
+                result->last_frame_rect = cache->last_frame_rect;
+            }
         }
     }
+
+    //BoxCache* cache = ui_table_lookup(ui_state->table, string);
+    //if(cache){
+    //    // todo(rr): I think I need a per cache item flag check, almost like auto_pop
+    //    if(!has_flags(flags, UI_BoxFlag_Cache)){
+    //        result->rect = cache->rect;
+    //        result->size[Axis_X] = cache->size[Axis_X];
+    //        result->size[Axis_Y] = cache->size[Axis_Y];
+    //        result->pos[Axis_X] = cache->pos[Axis_X];
+    //        result->pos[Axis_Y] = cache->pos[Axis_Y];
+    //        result->rel_pos[Axis_X] = cache->rel_pos[Axis_X];
+    //        result->rel_pos[Axis_Y] = cache->rel_pos[Axis_Y];
+    //    }
+    //}
 
     ui_auto_pop();
 
@@ -329,6 +332,23 @@ ui_button(String8 string, UI_BoxFlags flags_in){
     return(signal);
 }
 
+static void
+ui_box(String8 string, UI_BoxFlags flags_in){
+    u32 flags = UI_BoxFlag_DrawBorder |
+                UI_BoxFlag_DrawBackground |
+                UI_BoxFlag_DrawText |
+                flags_in;
+    UI_Box* box = ui_make_box(string, flags);
+}
+
+static void
+ui_box_empty(UI_BoxFlags flags_in){
+    u32 flags = UI_BoxFlag_DrawBorder |
+                UI_BoxFlag_DrawBackground |
+                flags_in;
+    UI_Box* box = ui_make_box(str8_lit(""), flags);
+}
+
 // todo(rr): make string unique
 static void
 ui_label(String8 string){
@@ -341,7 +361,7 @@ ui_spacer(f32 size){
     u32 flags = 0;
     ui_size(ui_size_pixel(size, 0), ui_size_pixel(size, 0))
     {
-        UI_Box* box = ui_make_box(str8_literal(""), flags);
+        UI_Box* box = ui_make_box(str8_lit(""), flags);
     }
 }
 
@@ -355,7 +375,7 @@ ui_signal_from_box(UI_Box* box){
     v2 mouse_pos = ui_mouse_pos();
     if(has_flags(box->flags, UI_BoxFlag_Clickable)){
 
-        if(rect_contains_point(box->rect, mouse_pos)){
+        if(rect_contains_point(box->last_frame_rect, mouse_pos)){
             if(ui_state->hot == 0){
                 ui_state->hot = box->key;
             }
@@ -371,7 +391,7 @@ ui_signal_from_box(UI_Box* box){
         }
         else if(ui_state->active == box->key){
             if(!controller_button_held(MOUSE_BUTTON_LEFT)){
-                if(rect_contains_point(box->rect, mouse_pos)){
+                if(rect_contains_point(box->last_frame_rect, mouse_pos)){
                     signal.pressed_left = true;
                 }
                 ui_state->active = 0;
@@ -393,14 +413,6 @@ ui_signal_from_box(UI_Box* box){
 
 static void
 ui_traverse_independent(UI_Box* box, Axis axis){
-    //if(box == 0){
-    //    return;
-    //}
-
-    for(UI_Box* child = box->first; child != 0; child = child->next){
-        ui_traverse_independent(child, axis);
-    }
-
     switch(box->semantic_size[axis].type){
         case UI_SizeType_Pixel:{
             box->size[axis] = box->semantic_size[axis].value;
@@ -418,23 +430,13 @@ ui_traverse_independent(UI_Box* box, Axis axis){
         } break;
     }
 
-    //if(box->first != 0){
-    //    ui_traverse_independent(box->first, axis);
-    //}
-
-    //ui_traverse_independent(box->next, axis);
+    for(UI_Box* child = box->first; child != 0; child = child->next){
+        ui_traverse_independent(child, axis);
+    }
 }
 
 static void
 ui_traverse_children(UI_Box* box, Axis axis){
-    //if(box == 0){
-    //    return;
-    //}
-
-    //if(box->last){
-    //    ui_traverse_children(box->last, axis);
-    //}
-
     for(UI_Box* child = box->first; child != 0; child = child->next){
         ui_traverse_children(child, axis);
     }
@@ -456,60 +458,30 @@ ui_traverse_children(UI_Box* box, Axis axis){
         // todo: when we introduce border color, this needs to change as we will be drawing 2 rects for the border
         box->size[axis] += box->border_thickness * 2;
     }
-
-    //ui_traverse_children(box->prev, axis);
 }
-
-// There is a root box that is essentially the window, simply the (0, 0) pos and w/h.
 static void
 ui_traverse_positions(UI_Box* box, Axis axis){
-    //if(box == 0){
-    //    return;
-    //}
+    f32 position = 0;
+
+    for(UI_Box* child = box->first; child != 0; child = child->next){
+        if(!has_flags(child->flags, UI_BoxFlag_NoSiblings)){
+            if(box->layout_axis == axis){
+                child->rel_pos[axis] = position;
+                position += child->size[axis];
+            }
+            else{
+                child->rel_pos[axis] = 0;
+            }
+        }
+
+        child->pos[axis] = box->pos[axis] +
+                           child->rel_pos[axis] +
+                           box->border_thickness;
+    }
 
     for(UI_Box* child = box->first; child != 0; child = child->next){
         ui_traverse_positions(child, axis);
     }
-
-    // TODO(rr): why do I have this here?
-    //if(!box->prev){
-    if(box->layout_axis == axis){
-        if(has_flags(box->flags, UI_BoxFlag_NoSiblings)){
-            if(box->parent){
-                box->pos[axis] = box->parent->pos[axis] + box->rel_pos[axis] + box->border_thickness;
-            }
-        }
-        else{
-            f32 position = box->rel_pos[axis];
-            for(UI_Box* sibling = box; sibling != 0; sibling = sibling->next){
-                sibling->rel_pos[axis] = position;
-                if(sibling->parent){
-                    sibling->pos[axis] = sibling->parent->pos[axis] + sibling->rel_pos[axis] + sibling->border_thickness;
-                }
-                position += sibling->size[axis];
-            }
-        }
-    }
-    else{
-        if(has_flags(box->flags, UI_BoxFlag_NoSiblings)){
-            if(box->parent){
-                box->pos[axis] = box->parent->pos[axis] + box->rel_pos[axis] + box->border_thickness;
-            }
-        }
-        else{
-            for(UI_Box* sibling = box; sibling != 0; sibling = sibling->next){
-                if(sibling->parent){
-                    sibling->pos[axis] = sibling->parent->pos[axis] + sibling->rel_pos[axis] + sibling->border_thickness;
-                }
-            }
-        }
-    }
-    //}
-
-    //if(box->first){
-    //    ui_traverse_positions(box->first, axis);
-    //}
-    //ui_traverse_positions(box->next, axis);
 }
 
 static void
@@ -518,21 +490,24 @@ ui_traverse_rects(UI_Box* box){
         return;
     }
 
-    if(box->parent){
-        box->rect.min = make_v2(box->parent->pos[Axis_X] + box->rel_pos[Axis_X],
-                                box->parent->pos[Axis_Y] + box->rel_pos[Axis_Y]);
-        box->rect.max = make_v2(box->parent->pos[Axis_X] + box->rel_pos[Axis_X] + box->size[Axis_X],
-                                box->parent->pos[Axis_Y] + box->rel_pos[Axis_Y] + box->size[Axis_Y]);
-    }
-    else{
-        box->rect.min = make_v2(box->pos[Axis_X], box->pos[Axis_Y]);
-        box->rect.max = make_v2(box->pos[Axis_X] + box->size[Axis_X], box->pos[Axis_Y] + box->size[Axis_Y]);
-    }
+    box->rect.min = make_v2(box->pos[Axis_X], box->pos[Axis_Y]);
+    box->rect.max = make_v2(box->pos[Axis_X] + box->size[Axis_X], box->pos[Axis_Y] + box->size[Axis_Y]);
 
     // cache rect
+    bool cache_rel_pos = has_flags(box->flags, UI_BoxFlag_Cache|UI_BoxFlag_Draggable);
+    bool cache_rect    = has_flags(box->flags, UI_BoxFlag_Clickable);
     if(!str8_compare(box->string, str8_literal(""))){
-        BoxCache cache = cache_from_box(box);
-        ui_table_insert(ui_state->table, box->string, cache);
+        BoxCache cache = {0};
+        if(cache_rel_pos){
+            cache.rel_pos[Axis_X] = box->rel_pos[Axis_X];
+            cache.rel_pos[Axis_Y] = box->rel_pos[Axis_Y];
+        }
+        if(cache_rect){
+            cache.last_frame_rect = box->rect;
+        }
+        if(cache_rel_pos || cache_rect){
+            ui_table_insert(ui_state->table, box->string, cache);
+        }
     }
 
     if(box->first){
@@ -583,6 +558,7 @@ ui_table_insert(UITable* table, String8 key, BoxCache value){
     for(UIHashNode* n = table->slots[slot_idx]; n != 0; n = n->next){
         if(n->hash == hash && str8_compare(n->key, key)){
             n->value = value;
+            return;
         }
     }
 

@@ -185,6 +185,7 @@ typedef struct Entity{
     u32 commands_write;
 
     s32 health;
+    s32 max_health;
     s32 damage;
 
     //bool dead;
@@ -198,6 +199,7 @@ typedef struct Entity{
     Spritesheet shadow_sprite;
 } Entity;
 
+static bool has_any_flags(u32 lflags, u32 rflags);
 static bool has_flags(u32 lflags, u32 rflags);
 static void set_flags(u32* lflags, u32 rflags);
 static void clear_flags(u32* lflags, u32 rflags);

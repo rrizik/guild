@@ -28,7 +28,6 @@ sim_game(void){
     }
 
     f64 elapsed_time = clock.get_seconds_elapsed(clock.get_os_timer(), state->spawner.timer);
-    print("%f\n", elapsed_time);
     if(elapsed_time > 2.5f){
         state->spawner.timer = clock.get_os_timer();
         v2 cell;
@@ -276,7 +275,6 @@ sim_game(void){
                 v2 dir = direction_v2(e->pos, player->pos);
                 e->velocity.x += (dir.x * e->speed) * (f32)clock.dt;
                 e->velocity.y += (dir.y * e->speed) * (f32)clock.dt;
-                print("--------(%f, %f)-------\n", dir.x, dir.y);
 
                 // Apply friction.
                 e->velocity.x *= 0.75f;
@@ -678,6 +676,7 @@ add_human(v2 cell, v2 dim, v2 dir, RGBA color, u32 flags){
         e->velocity = {0};
         e->speed = 350.0f;
         e->bounding_box_scale = make_v2(0.25f, 0.25f);
+        e->health = 100;
         set_flags(&e->flags, standard_unit);
 
         e->sprite.kind = SPRITE_ANIM_IDLE;
@@ -1027,6 +1026,52 @@ entity_sprite_update(){
     }
 }
 
+static void 
+draw_player_ui(){
+    f32 health_bar_width = 450;
+    f32 health_bar_height = 20;
+    player->max_health = 100;
+    player->health = 25;
+    f32 health_percent = (f32)player->health / player->max_health;
+
+    r_render_space(Render_Space_Screen)
+    {
+        ui_size(ui_size_pixel(window.width, 0), ui_size_pixel(window.height, 0))
+        ui_background_color(MAGENTA)
+        ui_panel(str8_lit("player_ui##1"), ui_fixed_trans_panel)
+        {
+            ui_pos(10, 10)
+            ui_size(ui_size_children(0), ui_size_children(0))
+            ui_panel(str8_lit("player_info##1"), ui_fixed_trans_panel)
+            {
+                ui_size(ui_size_pixel(health_bar_width, 0),
+                        ui_size_pixel(health_bar_height, 0))
+                ui_background_color(LIGHT_GRAY)
+                ui_panel(str8_lit("player_health##1"), UI_BoxFlag_DrawBackground)
+                {
+                    ui_size(ui_size_pixel(health_bar_width * health_percent, 0),
+                            ui_size_pixel(health_bar_height, 0))
+                    ui_background_color(RED)
+                    {
+                        ui_box_empty();
+                    }
+
+                    String8 health_text = str8_fmt(ts->frame_arena, "%i/%i", player->health, player->max_health);
+                    ui_pos(0, 0)
+                    ui_size(ui_size_pixel(health_bar_width, 0),
+                            ui_size_pixel(health_bar_height, 0))
+                    ui_background_color(CLEAR)
+                    ui_text_color(BLACK)
+                    {
+                        ui_box(health_text, UI_BoxFlag_NoSiblings);
+                    }
+                }
+            }
+
+        }
+    }
+}
+
 static void
 draw_entities(State* state){
     // DUMB DUMB ADDED THIS
@@ -1231,37 +1276,37 @@ ui_editor(void){
         ui_set_size(ui_size_children(0), ui_size_children(0));
         ui_set_border_thickness(10);
         ui_set_background_color(DEFAULT);
-        ui_begin_panel(str8_literal("tile_panel##2"), ui_floating_panel);
+        ui_begin_panel(str8_lit("tile_panel##2"), ui_floating_panel);
 
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)
         {
-            if(ui_button(str8_literal("none")).pressed_left){
+            if(ui_button(str8_lit("none")).pressed_left){
                 state->terrain_selected_id = 0;
                 state->terrain_selected = false;
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("erase")).pressed_left){
+            if(ui_button(str8_lit("erase")).pressed_left){
                 state->terrain_selected_id = 0;
                 state->terrain_selected = true;
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("grass")).pressed_left){
+            if(ui_button(str8_lit("grass")).pressed_left){
                 state->terrain_selected_id = TextureAsset_Grass1;
                 state->terrain_selected = true;
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("water")).pressed_left){
+            if(ui_button(str8_lit("water")).pressed_left){
                 state->terrain_selected_id = TextureAsset_Water1;
                 state->terrain_selected = true;
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("wood")).pressed_left){
+            if(ui_button(str8_lit("wood")).pressed_left){
                 state->terrain_selected_id = TextureAsset_Wood1;
                 state->terrain_selected = true;
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("lava")).pressed_left){
+            if(ui_button(str8_lit("lava")).pressed_left){
                 state->terrain_selected_id = TextureAsset_Lava1;
                 state->terrain_selected = true;
             }
@@ -1273,7 +1318,7 @@ ui_editor(void){
         ui_set_size(ui_size_children(0), ui_size_children(0));
         ui_set_border_thickness(10);
         ui_set_background_color(DEFAULT);
-        ui_begin_panel(str8_literal("info_panel##info_panel"), ui_floating_panel);
+        ui_begin_panel(str8_lit("info_panel##info_panel"), ui_floating_panel);
 
         ui_size(ui_size_text(0), ui_size_text(0))
         ui_text_color(LIGHT_GRAY)
@@ -1326,27 +1371,27 @@ ui_editor(void){
         ui_set_size(ui_size_children(0), ui_size_children(0));
         ui_set_border_thickness(5);
         ui_set_background_color(DEFAULT);
-        ui_begin_panel(str8_literal("grid_panel##3"), ui_floating_panel);
+        ui_begin_panel(str8_lit("grid_panel##3"), ui_floating_panel);
 
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)
         {
-            ui_label(str8_literal("Show Grid"));
-            if(ui_button(str8_literal("World")).pressed_left){
+            ui_label(str8_lit("Show Grid"));
+            if(ui_button(str8_lit("World")).pressed_left){
                 state->show_world_cells = !state->show_world_cells;
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("Flocking")).pressed_left){
+            if(ui_button(str8_lit("Flocking")).pressed_left){
                 state->show_flocking_cells = !state->show_flocking_cells;
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("Pathing")).pressed_left){
+            if(ui_button(str8_lit("Pathing")).pressed_left){
                 state->show_pathing_cells = !state->show_pathing_cells;
             }
 
             ui_spacer(10);
-            ui_label(str8_literal("Other"));
-            if(ui_button(str8_literal("Entity Info")).pressed_left){
+            ui_label(str8_lit("Other"));
+            if(ui_button(str8_lit("Entity Info")).pressed_left){
                 state->show_entity_info = !state->show_entity_info;
             }
         }
@@ -1357,18 +1402,18 @@ ui_editor(void){
         ui_set_size(ui_size_children(0), ui_size_children(0));
         ui_set_border_thickness(5);
         ui_set_background_color(DEFAULT);
-        ui_begin_panel(str8_literal("cell_size##5"), ui_floating_panel);
+        ui_begin_panel(str8_lit("cell_size##5"), ui_floating_panel);
 
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)
         {
             String8 str_fmt = str8_formatted(ts->frame_arena, "Cell Size (%i)", state->flocking_cell_size);
             ui_label(str_fmt);
-            if(ui_button(str8_literal("^")).pressed_left){
+            if(ui_button(str8_lit("^")).pressed_left){
                 state->flocking_cell_size++;
             }
             ui_spacer(2);
-            if(ui_button(str8_literal("V")).pressed_left){
+            if(ui_button(str8_lit("V")).pressed_left){
                 if(state->flocking_cell_size > 1){
                     state->flocking_cell_size--;
                 }
@@ -1390,12 +1435,12 @@ ui_castle(void){
         ui_set_background_color(DEFAULT);
         ui_set_pos(20, window.height - 100);
         ui_set_size(ui_size_children(0), ui_size_children(0));
-        ui_begin_panel(str8_literal("castle_panel##4"), ui_floating_panel);
+        ui_begin_panel(str8_lit("castle_panel##4"), ui_floating_panel);
 
         ui_size(ui_size_pixel(100, 0), ui_size_pixel(50, 0))
         ui_background_color(DARK_GRAY)
         {
-            if(ui_button(str8_literal("monster")).pressed_left){
+            if(ui_button(str8_lit("monster")).pressed_left){
                 Entity* castle = state->entities_selected[0];
 
                 v2 dir = direction_v2(castle->pos, castle->rallypoint);
@@ -1407,7 +1452,7 @@ ui_castle(void){
             }
 
             ui_spacer(10);
-            if(ui_button(str8_literal("monster - 15")).pressed_left){
+            if(ui_button(str8_lit("monster - 15")).pressed_left){
                 for(s32 i=0; i < 15; ++i){
                     Entity* castle = state->entities_selected[0];
 
@@ -1420,7 +1465,7 @@ ui_castle(void){
                 }
             }
             ui_spacer(10);
-            if(ui_button(str8_literal("monster - 50")).pressed_left){
+            if(ui_button(str8_lit("monster - 50")).pressed_left){
                 for(s32 i=0; i < 50; ++i){
                     Entity* castle = state->entities_selected[0];
 
@@ -1689,11 +1734,11 @@ init_paths(Arena* arena){
     begin_timed_function();
 
     build_path = os_application_path(global_arena);
-    fonts_path = str8_path_append(global_arena, build_path, str8_literal("fonts"));
-    shaders_path = str8_path_append(global_arena, build_path, str8_literal("shaders"));
-    saves_path = str8_path_append(global_arena, build_path, str8_literal("saves"));
-    sprites_path = str8_path_append(global_arena, build_path, str8_literal("sprites"));
-    sounds_path = str8_path_append(global_arena, build_path, str8_literal("sounds"));
+    fonts_path = str8_path_append(global_arena, build_path, str8_lit("fonts"));
+    shaders_path = str8_path_append(global_arena, build_path, str8_lit("shaders"));
+    saves_path = str8_path_append(global_arena, build_path, str8_lit("saves"));
+    sprites_path = str8_path_append(global_arena, build_path, str8_lit("sprites"));
+    sounds_path = str8_path_append(global_arena, build_path, str8_lit("sounds"));
 }
 
 static void
@@ -1838,7 +1883,7 @@ deserialize_state(void){
     begin_timed_function();
 
     ScratchArena scratch = begin_scratch();
-    String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
+    String8 full_path = str8_path_append(scratch.arena, build_path, str8_lit("config.g"));
     File file = os_file_open(full_path, GENERIC_READ, OPEN_EXISTING);
     String8 data = os_file_read(ts->data_arena, file);
 
@@ -1874,7 +1919,7 @@ serialize_state(void){
                           "current_world:%s\n", state->current_world.str);
 
     ScratchArena scratch = begin_scratch();
-    String8 full_path = str8_path_append(scratch.arena, build_path, str8_literal("config.g"));
+    String8 full_path = str8_path_append(scratch.arena, build_path, str8_lit("config.g"));
     File file = os_file_open(full_path, GENERIC_WRITE, CREATE_ALWAYS);
     os_file_write(&file, arena->base, arena->at);
 
@@ -2308,6 +2353,8 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
         state->castle = add_castle(TextureAsset_Castle1, state->castle_cell, make_v2(2, 2));
         state->player = add_human(make_v2(200, 100), make_v2(2, 2));
         player = state->player;
+        player->max_health = 100;
+        player->health = 25;
 
         add_monster(make_v2(201, 100), make_v2(2, 2));
         add_monster(make_v2(201, 100), make_v2(2, 2));
@@ -2780,8 +2827,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 }
             }
 
-            ui_end();
-
             r_render_space(Render_Space_Screen)
             r_font(FontAsset_Arial1)
             {
@@ -2808,30 +2853,31 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             console_draw();
 
             // draw border
-            r_render_space(Render_Space_World)
-            {
-                v2 p00 = make_v2(camera.p0.x + 0.1, camera.p0.y - 0.1);
-                v2 p11 = make_v2(camera.p1.x - 0.1, camera.p1.y - 0.1);
-                v2 p22 = make_v2(camera.p2.x - 0.1, camera.p2.y + 0.1);
-                v2 p33 = make_v2(camera.p3.x + 0.1, camera.p3.y + 0.1);
-                draw_line(p00, p11, 0.2f, RED);
-                draw_line(p11, p22, 0.2f, RED);
-                draw_line(p22, p33, 0.2f, RED);
-                draw_line(p33, p00, 0.2f, RED);
-            }
+            //r_render_space(Render_Space_World)
+            //{
+            //    v2 p00 = make_v2(camera.p0.x + 0.1, camera.p0.y - 0.1);
+            //    v2 p11 = make_v2(camera.p1.x - 0.1, camera.p1.y - 0.1);
+            //    v2 p22 = make_v2(camera.p2.x - 0.1, camera.p2.y + 0.1);
+            //    v2 p33 = make_v2(camera.p3.x + 0.1, camera.p3.y + 0.1);
+            //    draw_line(p00, p11, 0.2f, RED);
+            //    draw_line(p11, p22, 0.2f, RED);
+            //    draw_line(p22, p33, 0.2f, RED);
+            //    draw_line(p33, p00, 0.2f, RED);
+            //}
 
+            draw_player_ui();
             {
                 // DUMB DUMB ADDED THIS
                 begin_timed_scope("    draw_commands");
                 d3d_clear_color(BACKGROUND_COLOR);
 
+                ui_end();
                 draw_render_commands();
-                //draw_render_batches();
-
                 d3d_present();
 
                 String8 title = str8_fmt(ts->frame_arena, "Entity Count: %i - FPS: %.2f", state->entities_count - 1, FPS);
                 //SetWindowText(window.handle, (char*)title.str);
+
 
                 arena_free(ts->frame_arena);
             }

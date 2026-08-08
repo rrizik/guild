@@ -246,6 +246,7 @@ static void draw_world_terrain(void);
 static void draw_entities(State* state);
 static void ui_editor(void);
 static void ui_castle(void);
+static void draw_player_ui(void);
 
 static bool mouse_in_cell(v2 cell);
 static bool mouse_in_bounding_box(Entity* e);

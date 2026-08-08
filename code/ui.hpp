@@ -10,6 +10,14 @@ INFLUENCE & INSPIRATION:
     - Code Base (subscription required): https://git.rfleury.com/
 */
 
+/*
+todo:
+- strictness is not in use
+- input box
+- sliders
+- toggle buttons
+*/
+
 typedef u32 Axis;
 enum{
     Axis_X,
@@ -18,10 +26,8 @@ enum{
 };
 
 typedef struct BoxCache{
-    Rect rect;
-    f32 size[Axis_Count];
-    f32 pos[Axis_Count];
     f32 rel_pos[Axis_Count];
+    Rect last_frame_rect;
 } BoxCache;
 
 // Hash Table
@@ -89,20 +95,23 @@ enum {
   UI_BoxFlag_ActiveAnimation = (1<<9),
   UI_BoxFlag_Draggable       = (1<<10),
   UI_BoxFlag_NoSiblings      = (1<<11),
-  UI_BoxFlag_NoCache         = (1<<12),
+  UI_BoxFlag_Cache         = (1<<12),
 };
 UI_BoxFlags ui_floating_panel = UI_BoxFlag_DrawBackground |
                                 UI_BoxFlag_Clickable |
                                 UI_BoxFlag_Draggable |
+                                UI_BoxFlag_Cache     |
                                 UI_BoxFlag_NoSiblings;
+
 UI_BoxFlags ui_floating_panel_world = UI_BoxFlag_DrawBackground |
                                       UI_BoxFlag_Clickable |
                                       UI_BoxFlag_Draggable |
-                                      UI_BoxFlag_NoSiblings|
-                                      UI_BoxFlag_NoCache;
+                                      UI_BoxFlag_NoSiblings;
+
 UI_BoxFlags ui_fixed_panel = UI_BoxFlag_DrawBackground |
-                             UI_BoxFlag_Clickable |
                              UI_BoxFlag_NoSiblings;
+
+UI_BoxFlags ui_fixed_trans_panel = UI_BoxFlag_NoSiblings;
 
 // todo(rr): not even using this
 typedef struct TextInfo{
@@ -131,6 +140,7 @@ typedef struct UI_Box{
     f32 size[Axis_Count];
     f32 pos[Axis_Count];
     Rect rect;
+    Rect last_frame_rect;
     //bool hot_dt;
     //bool active_dt;
 
@@ -155,7 +165,6 @@ static void ui_layout(void);
 static void ui_draw(UI_Box* box);
 static void ui_auto_pop(void);
 static UI_Box*   ui_make_box(String8 str, UI_BoxFlags flags);
-static BoxCache  cache_from_box(UI_Box* box);
 static UI_Signal ui_signal_from_box(UI_Box* box);
 
 // Quick access functions
@@ -170,6 +179,8 @@ static String8   ui_text_part_from_key(String8 string);
 static UI_Box*   ui_begin_panel(String8 string, UI_BoxFlags flags=0);
 static void      ui_end_panel(void);
 static UI_Signal ui_button(String8 string, UI_BoxFlags flags_in=0);
+static void      ui_box(String8 string, UI_BoxFlags flags_in=0);
+static void      ui_box_empty(UI_BoxFlags flags_in=0);
 static void      ui_label(String8 string);
 static void      ui_spacer(f32 size);
 
@@ -349,6 +360,7 @@ static void ui_set_size(UI_Size w, UI_Size h)   { ui_set_size_w(w); ui_set_size_
 //------------------------------------------------------------
 // DeferLoops
 
+#define ui_panel(str, flags)   defer_loop(ui_begin_panel((str), (flags)), ui_end_panel())
 #define ui_parent(v)           defer_loop(ui_push_parent(v), ui_pop_parent())
 #define ui_pos_x(v) 		   defer_loop(ui_push_pos_x(v), ui_pop_pos_x())
 #define ui_pos_y(v) 		   defer_loop(ui_push_pos_y(v), ui_pop_pos_y())
@@ -364,8 +376,8 @@ static void ui_set_size(UI_Size w, UI_Size h)   { ui_set_size_w(w); ui_set_size_
 //------------------------------------------------------------
 // DeferLoops Compositions
 
-#define ui_pos(v_1, v_2)       defer_loop(ui_push_pos(v_1, v_2), ui_pop_pos())
-#define ui_size(v_1, v_2)      defer_loop(ui_push_size(v_1, v_2), ui_pop_size())
+#define ui_pos(v_1, v_2)       defer_loop(ui_push_pos((v_1), (v_2)), ui_pop_pos())
+#define ui_size(v_1, v_2)      defer_loop(ui_push_size((v_1), (v_2)), ui_pop_size())
 
 /*
 root_function UI_BoxFlags           UI_TopFlags(void);*
