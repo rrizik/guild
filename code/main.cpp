@@ -330,6 +330,39 @@ sim_game(void){
             }
         }
     }
+
+
+    if(controller_button_pressed(KeyCode_F1)){
+        if(state->scene_state == SceneState_Editor){
+            state->scene_state = SceneState_Game;
+            state->terrain_selected = false;
+            state->terrain_selected_id = 0;
+        }
+        else if(state->scene_state == SceneState_Game){
+            state->scene_state = SceneState_Editor;
+        }
+    }
+
+    // camera drag
+    if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT, false)){
+        world_camera_record = camera;
+        world_mouse_record = controller.mouse.world_pos;
+        state->dragging_world = true;
+    }
+    if(controller.ctrl_pressed && controller_button_held(MOUSE_BUTTON_RIGHT)){
+        v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
+        v2 world_rel_pos = world_mouse_record - world_mouse_current;
+        state->selecting = false;
+        camera.x = world_camera_record.x + world_rel_pos.x;
+        camera.y = world_camera_record.y + world_rel_pos.y;
+    }
+    if(state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT)){
+        world_camera_record = {0};
+        world_mouse_record = {0};
+        state->dragging_world = false;
+    }
+
+
 }
 
 static bool
@@ -1027,7 +1060,7 @@ entity_sprite_update(){
 }
 
 static void 
-draw_player_ui(){
+ui_player(){
     f32 health_bar_width = 450;
     f32 health_bar_height = 20;
     player->max_health = 100;
@@ -1181,31 +1214,6 @@ draw_entities(State* state){
                                 //draw_line(e->pos, screen_space, 0.1f, ORANGE);
                             }
                         }
-
-                        //if(state->scene_state == SceneState_Editor){
-                        //    if(state->show_entity_info){
-                        //        v2 pos = e->pos;
-                        //        ui_set_pos(pos.x + 20, pos.y);
-                        //        ui_set_size(ui_size_children(0), ui_size_children(0));
-                        //        ui_set_border_thickness(10);
-                        //        ui_set_background_color(DEFAULT);
-
-                        //        String8 box_name = str8_formatted(ts->frame_arena, "skelebox##%i", idx);
-                        //        ui_begin_panel(box_name, ui_floating_panel_world);
-
-                        //        String8 fmt_str;
-                        //        //ui_font(font);
-                        //        ui_size(ui_size_text(0), ui_size_text(0))
-                        //        ui_text_color(LIGHT_GRAY)
-                        //        {
-                        //            fmt_str = str8_formatted(ts->frame_arena, "idx: %i", e->index);
-                        //            ui_label(fmt_str);
-                        //            fmt_str = str8_formatted(ts->frame_arena, "pos: %f, %f", e->pos.x, e->pos.y);
-                        //            ui_label(fmt_str);
-                        //        }
-                        //        ui_end_panel();
-                        //    }
-                        //}
                     } break;
                     case EntityType_Quad:{
                         quad = rotate_quad(quad, e->deg, e->pos);
@@ -2434,18 +2442,10 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 }
                 handled = handle_camera_events(event);
                 handled = handle_controller_events(event);
-                handled = handle_game_events(event);
+                // todo: doesn't do anything right now 
+                //handled = handle_game_events(event);
             }
         }
-
-        //state->active_entities_count = 0;
-        //for(s32 i=0; i < array_count(state->entities); ++i){
-        //    Entity* e = state->entities + i;
-        //    if(has_flags(e->flags, EntityFlag_Active)){
-        //        state->active_entities[state->active_entities_count] = e;
-        //        state->active_entities_count++;
-        //    }
-        //}
 
         {
             // DUMB DUMB ADDED THIS
@@ -2454,14 +2454,13 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             partition_entities_in_bins();
         }
 
-        // note todo fixme: consumes input so needs to be here, input needs to be 1 frame later
-        // so that ui drawing doesn't have to happen before simulation and stuff like that
         if(state->scene_state == SceneState_Editor){
             // DUMB DUMB ADDED THIS
             begin_timed_scope("editor ui phase");
 
             ui_editor();
         }
+        ui_player();
 
         // SIM GAME HERE
         simulations = 0;
@@ -2475,36 +2474,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             time_elapsed += clock.dt;
             simulations++;
 
-        }
-
-        if(controller_button_pressed(KeyCode_F1)){
-            if(state->scene_state == SceneState_Editor){
-                state->scene_state = SceneState_Game;
-                state->terrain_selected = false;
-                state->terrain_selected_id = 0;
-            }
-            else if(state->scene_state == SceneState_Game){
-                state->scene_state = SceneState_Editor;
-            }
-        }
-
-        // camera drag
-        if(controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_RIGHT, false)){
-            world_camera_record = camera;
-            world_mouse_record = controller.mouse.world_pos;
-            state->dragging_world = true;
-        }
-        if(controller.ctrl_pressed && controller_button_held(MOUSE_BUTTON_RIGHT)){
-            v2 world_mouse_current = v2_world_from_screen(controller.mouse.pos, &world_camera_record);
-            v2 world_rel_pos = world_mouse_record - world_mouse_current;
-            state->selecting = false;
-            camera.x = world_camera_record.x + world_rel_pos.x;
-            camera.y = world_camera_record.y + world_rel_pos.y;
-        }
-        if(state->dragging_world && controller_button_released(MOUSE_BUTTON_RIGHT)){
-            world_camera_record = {0};
-            world_mouse_record = {0};
-            state->dragging_world = false;
         }
 
         // Entity Selection.
@@ -2524,73 +2493,72 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                 state->selection_rect = make_rect(min, max);
             }
             if(controller_button_released(MOUSE_BUTTON_LEFT)){
-                    state->selection_mouse_record = {0};
-                    state->selecting = false;
+                state->selection_mouse_record = {0};
+                state->selecting = false;
 
-                    s32 count = 0;
-                    bool selected_new_units = false;
-                    //for(s32 i=0; i < array_count(state->entities); ++i){
-                    //    Entity* e = state->entities + i;
-                    for(s32 i = 0; i < state->active_entities_count; ++i){
-                        Entity *e = state->active_entities[i];
-                        if(e == player) continue;
-                        if(!has_flags(e->flags, EntityFlag_Active)) continue;
-                        if(!has_flags(e->flags, EntityFlag_Alive)) continue;
-
-                        if(rect_contains_point(state->selection_rect, e->pos)){
-                            selected_new_units = true;
-                            if(controller.ctrl_pressed){
-                                state->entities_selected[state->entities_selected_count++] = e;
-                            }
-                            else{
-                                state->entities_selected[count] = e;
-                            }
-                            e->selected = true;
-                            count++;
-                        }
-                    }
-
-                    if(!controller.ctrl_pressed && selected_new_units == true){
-                        state->entities_selected_count = count;
-                    }
-
-                    state->selection_rect = {0};
-                }
-
-                // mouse hover
-                bool found = false;
-                //for(s32 idx = 0; idx < array_count(state->entities); ++idx){
-                //    Entity *e = state->entities + idx;
+                s32 count = 0;
+                bool selected_new_units = false;
+                //for(s32 i=0; i < array_count(state->entities); ++i){
+                //    Entity* e = state->entities + i;
                 for(s32 i = 0; i < state->active_entities_count; ++i){
                     Entity *e = state->active_entities[i];
+                    if(e == player) continue;
                     if(!has_flags(e->flags, EntityFlag_Active)) continue;
                     if(!has_flags(e->flags, EntityFlag_Alive)) continue;
 
-                    if(mouse_in_bounding_box(e)){
-                        state->entity_hovered = e;
-                        found = true;
-                    }
-                }
-                if(!found){
-                    state->entity_hovered = 0;
-                }
-
-                // single select
-                if(state->entity_hovered != player){
-                    if(state->entity_hovered && !controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                        clear_entities_selected();
-                        state->entities_selected[0] = state->entity_hovered;
-                        state->entities_selected[0]->selected = true;
-                        state->entities_selected_count = 1;
-                    }
-                    if(state->entity_hovered && controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
-                        state->entities_selected[state->entities_selected_count] = state->entity_hovered;
-                        state->entities_selected[state->entities_selected_count]->selected = true;
-                        state->entities_selected_count++;
+                    if(rect_contains_point(state->selection_rect, e->pos)){
+                        selected_new_units = true;
+                        if(controller.ctrl_pressed){
+                            state->entities_selected[state->entities_selected_count++] = e;
+                        }
+                        else{
+                            state->entities_selected[count] = e;
+                        }
+                        e->selected = true;
+                        count++;
                     }
                 }
 
+                if(!controller.ctrl_pressed && selected_new_units == true){
+                    state->entities_selected_count = count;
+                }
+
+                state->selection_rect = {0};
             }
+
+            // mouse hover
+            bool found = false;
+            //for(s32 idx = 0; idx < array_count(state->entities); ++idx){
+            //    Entity *e = state->entities + idx;
+            for(s32 i = 0; i < state->active_entities_count; ++i){
+                Entity *e = state->active_entities[i];
+                if(!has_flags(e->flags, EntityFlag_Active)) continue;
+                if(!has_flags(e->flags, EntityFlag_Alive)) continue;
+
+                if(mouse_in_bounding_box(e)){
+                    state->entity_hovered = e;
+                    found = true;
+                }
+            }
+            if(!found){
+                state->entity_hovered = 0;
+            }
+
+            // single select
+            if(state->entity_hovered != player){
+                if(state->entity_hovered && !controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                    clear_entities_selected();
+                    state->entities_selected[0] = state->entity_hovered;
+                    state->entities_selected[0]->selected = true;
+                    state->entities_selected_count = 1;
+                }
+                if(state->entity_hovered && controller.ctrl_pressed && controller_button_pressed(MOUSE_BUTTON_LEFT)){
+                    state->entities_selected[state->entities_selected_count] = state->entity_hovered;
+                    state->entities_selected[state->entities_selected_count]->selected = true;
+                    state->entities_selected_count++;
+                }
+            }
+
 
             {
                 // DUMB DUMB ADDED THIS
@@ -2671,32 +2639,34 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
                     clear_entities_selected();
                 }
             }
+        }
+            
 
-            console_update();
+        console_update();
 
-            // zoom
-            if(camera.size > 30){
-                camera.size -= (f32)controller.mouse.wheel_dir * 10;
+        // zoom
+        if(camera.size > 30){
+            camera.size -= (f32)controller.mouse.wheel_dir * 10;
+        }
+        if(camera.size <= 30){
+            camera.size -= (f32)controller.mouse.wheel_dir;
+            if(camera.size < 3){
+                camera.size = 3;
             }
-            if(camera.size <= 30){
-                camera.size -= (f32)controller.mouse.wheel_dir;
-                if(camera.size < 3){
-                    camera.size = 3;
-                }
-            }
+        }
 
-            {
-                // DUMB DUMB ADDED THIS
-                begin_timed_scope("camera update");
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("camera update");
 
-                camera_2d_update(&camera, window.aspect_ratio);
-            }
-            {
-                // DUMB DUMB ADDED THIS
-                begin_timed_scope("audio phase");
+            camera_2d_update(&camera, window.aspect_ratio);
+        }
+        {
+            // DUMB DUMB ADDED THIS
+            begin_timed_scope("audio phase");
 
-                audio_update();
-            }
+            audio_update();
+        }
 
         // rendering
         {
@@ -2865,7 +2835,6 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             //    draw_line(p33, p00, 0.2f, RED);
             //}
 
-            draw_player_ui();
             {
                 // DUMB DUMB ADDED THIS
                 begin_timed_scope("    draw_commands");
@@ -2883,7 +2852,9 @@ s32 WinMain(HINSTANCE instance, HINSTANCE pinstance, LPSTR command_line, s32 win
             }
         }
         arena_free(ts->bin_arena);
-        clear_controller_pressed();
+        if(simulations > 0){
+            clear_controller_pressed();
+        }
 
         frame_inc++;
         f64 second_elapsed = clock.get_seconds_elapsed(clock.get_os_timer(), frame_tick_start);

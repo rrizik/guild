@@ -95,7 +95,7 @@ enum {
   UI_BoxFlag_ActiveAnimation = (1<<9),
   UI_BoxFlag_Draggable       = (1<<10),
   UI_BoxFlag_NoSiblings      = (1<<11),
-  UI_BoxFlag_Cache         = (1<<12),
+  UI_BoxFlag_Cache           = (1<<12),
 };
 UI_BoxFlags ui_floating_panel = UI_BoxFlag_DrawBackground |
                                 UI_BoxFlag_Clickable |
